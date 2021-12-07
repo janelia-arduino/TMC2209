@@ -1,0 +1,16 @@
+#+TITLE: TMC2209
+#+AUTHOR: Peter Polidoro
+#+EMAIL: peter@polidoro.io
+
+* Library Information
+- Name :: TMC2209
+- Version :: 0.1.0
+- License :: BSD
+- URL :: https://github.com/janelia-arduino/TMC2209
+- Author :: Peter Polidoro
+- Email :: peter@polidoro.io
+
+** Description
+
+The TMC2209 is an ultra-silent motor driver IC for two phase stepper motors with a UART interface.
+
