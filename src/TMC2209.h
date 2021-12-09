@@ -93,7 +93,7 @@ public:
 
 private:
   // Serial Settings
-  const static uint32_t SERIAL_BAUD_RATE = 500000;
+  const static uint32_t SERIAL_BAUD_RATE = 250000;
 
   // Datagrams
   const static uint8_t DATAGRAM_SIZE = 5;

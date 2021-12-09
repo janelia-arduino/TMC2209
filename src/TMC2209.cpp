@@ -17,9 +17,6 @@ void TMC2209::setup(Stream & stream)
 {
   stream_ptr_ = &stream;
 
-  pinMode(chip_select_pin_,OUTPUT);
-  digitalWrite(chip_select_pin_,HIGH);
-
   stream_ptr_->begin(SERIAL_BAUD_RATE);
 
   global_config_.uint32 = 0;
