@@ -8,15 +8,30 @@
 #ifndef TMC2209_H
 #define TMC2209_H
 #include <Arduino.h>
+#include <Streaming.h>
 
 
 class TMC2209
 {
 public:
   TMC2209();
-  void setup(Stream & stream);
-  void setup(Stream & stream,
+  void setup(HardwareSerial & serial);
+  void setup(HardwareSerial & serial,
     size_t enable_pin);
+
+  enum UartAddress
+  {
+    UART_ADDRESS_0=0,
+    UART_ADDRESS_1=1,
+    UART_ADDRESS_2=2,
+  };
+  void setUartAddress(UartAddress uart_address=UART_ADDRESS_0);
+
+  void setDebugOn(Stream & debug_stream);
+  void setDebugOff();
+
+  // bool testWriteReadReplyCrc();
+  // bool testReadRequestCrc();
 
   bool communicating();
   uint8_t getVersion();
@@ -95,45 +110,47 @@ private:
   // Serial Settings
   const static uint32_t SERIAL_BAUD_RATE = 250000;
 
-  // Datagrams
-  const static uint8_t DATAGRAM_SIZE = 5;
+  const static uint8_t BYTE_MAX_VALUE = 0xFF;
+  const static uint8_t BITS_PER_BYTE = 8;
 
-  // MOSI Datagram
-  union MosiDatagram
+  // Datagrams
+  const static uint8_t WRITE_READ_REPLY_DATAGRAM_SIZE = 8;
+  union WriteReadReplyDatagram
   {
-    struct Fields
+    struct
     {
-      uint64_t data : 32;
-      uint64_t address : 7;
+      uint64_t sync : 4;
+      uint64_t reserved : 4;
+      uint64_t uart_address : 8;
+      uint64_t register_address : 7;
       uint64_t rw : 1;
-      uint64_t space : 24;
-    } fields;
-    uint64_t uint64;
+      uint64_t data3 : 8;
+      uint64_t data2 : 8;
+      uint64_t data1 : 8;
+      uint64_t data0 : 8;
+      uint64_t crc : 8;
+    };
+    uint64_t bytes;
   };
 
+  const static uint8_t SYNC = 0b101;
   const static uint8_t RW_READ = 0;
   const static uint8_t RW_WRITE = 1;
+  const static uint8_t READ_REPLY_UART_ADDRESS = 0b11111111;
 
-  struct SpiStatus
+  const static uint8_t READ_REQUEST_DATAGRAM_SIZE = 4;
+  union ReadRequestDatagram
   {
-    uint8_t reset_flag : 1;
-    uint8_t driver_error : 1;
-    uint8_t stallguard : 1;
-    uint8_t standstill : 1;
-    uint8_t space : 4;
-  };
-  SpiStatus spi_status_;
-
-  // MISO Datagram
-  union MisoDatagram
-  {
-    struct Fields
+    struct
     {
-      uint64_t data : 32;
-      SpiStatus spi_status;
-      uint64_t space : 24;
-    } fields;
-    uint64_t uint64;
+      uint32_t sync : 4;
+      uint32_t reserved : 4;
+      uint32_t uart_address : 8;
+      uint32_t register_address : 7;
+      uint32_t rw : 1;
+      uint32_t crc : 8;
+    };
+    uint32_t bytes;
   };
 
   // General Configuration Registers
@@ -380,13 +397,20 @@ private:
   const static uint8_t ADDRESS_ENCM_CTRL = 0x72;
   const static uint8_t ADDRESS_LOST_STEPS = 0x73;
 
-  Stream * stream_ptr_;
+  HardwareSerial * serial_ptr_;
   int enable_pin_;
+
+  uint8_t uart_address_;
+  Stream * debug_stream_ptr_;
 
   const static size_t MICROSTEPS_PER_STEP_MIN = 1;
   const static size_t MICROSTEPS_PER_STEP_MAX = 256;
   const static uint8_t MICROSTEPS_PER_STEP_EXPONENT_MAX = 8;
   uint8_t microsteps_per_step_exponent_;
+
+  template<typename Datagram>
+  void calculateCrc(Datagram & datagram,
+    uint8_t datagram_size);
 
   void setEnablePin(size_t enable_pin);
 
@@ -396,7 +420,7 @@ private:
   // microsteps = 2^exponent, 0=1,1=2,2=4,...8=256
   void setMicrostepsPerStepPowerOfTwo(uint8_t exponent);
 
-  uint32_t sendReceivePrevious(MosiDatagram & mosi_datagram);
+  uint32_t sendReceivePrevious(WriteReadReplyDatagram & mosi_datagram);
   uint32_t write(uint8_t address,
     uint32_t data);
   uint32_t read(uint8_t address);

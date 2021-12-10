@@ -1,24 +1,35 @@
 #include <Arduino.h>
 #include <Streaming.h>
-// #include <TMC2209.h>
+#include <TMC2209.h>
+
+HardwareSerial & serial_stream = Serial1;
+
+const long BAUD = 115200;
 
 const int LOOP_DELAY = 2000;
-HardwareSerial * serial_stream_ptr = &Serial1;
 
 // Instantiate TMC2209
-// TMC2209 stepper_driver;
+TMC2209 stepper_driver;
+
 
 void setup()
 {
   // Setup serial communications
-  // Serial.begin(BAUD);
+  Serial.begin(BAUD);
 
-  // stepper_driver.setup(CHIP_SELECT_PIN);
+  stepper_driver.setup(serial_stream);
+  stepper_driver.setDebugOn(Serial);
 
 }
 
 void loop()
 {
+  // bool crc_ok = stepper_driver.testWriteReadReplyCrc();
+  // Serial << "write read reply datagram crc_ok = " << crc_ok << endl;
+
+  // crc_ok = stepper_driver.testReadRequestCrc();
+  // Serial << "read request datagram crc_ok = " << crc_ok << endl;
+
   // if (stepper_driver.communicating())
   // {
   //   Serial << "SPI communicating with stepper driver!\n";

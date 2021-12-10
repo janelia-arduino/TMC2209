@@ -9,15 +9,18 @@
 
 TMC2209::TMC2209()
 {
-  stream_ptr_ = nullptr;
+  serial_ptr_ = nullptr;
   enable_pin_ = -1;
+
+  setUartAddress();
+  setDebugOff();
 }
 
-void TMC2209::setup(Stream & stream)
+void TMC2209::setup(HardwareSerial & serial)
 {
-  stream_ptr_ = &stream;
+  serial_ptr_ = &serial;
 
-  stream_ptr_->begin(SERIAL_BAUD_RATE);
+  serial_ptr_->begin(SERIAL_BAUD_RATE);
 
   global_config_.uint32 = 0;
 
@@ -38,12 +41,55 @@ void TMC2209::setup(Stream & stream)
   pwm_config_.fields.pwm_autoscale = PWM_AUTOSCALE_DEFAULT;
 }
 
-void TMC2209::setup(Stream & stream,
+void TMC2209::setup(HardwareSerial & serial,
   size_t enable_pin)
 {
-  setup(stream);
+  setup(serial);
   setEnablePin(enable_pin);
 }
+
+void TMC2209::setUartAddress(UartAddress uart_address)
+{
+  uart_address_ = uart_address;
+}
+
+void TMC2209::setDebugOn(Stream & debug_stream)
+{
+  debug_stream_ptr_ = &debug_stream;
+}
+
+void TMC2209::setDebugOff()
+{
+  debug_stream_ptr_ = nullptr;
+}
+
+// bool TMC2209::testWriteReadReplyCrc()
+// {
+//   WriteReadReplyDatagram write_read_reply_datagram;
+//   write_read_reply_datagram.bytes = 0;
+//   write_read_reply_datagram.sync = SYNC;
+//   write_read_reply_datagram.uart_address = 0;
+//   write_read_reply_datagram.register_address = 0x10;
+//   write_read_reply_datagram.rw = RW_WRITE;
+//   write_read_reply_datagram.data3 = 0x0;
+//   write_read_reply_datagram.data2 = 0x1;
+//   write_read_reply_datagram.data1 = 0x14;
+//   write_read_reply_datagram.data0 = 0x5;
+//   calculateCrc(write_read_reply_datagram,WRITE_READ_REPLY_DATAGRAM_SIZE);
+//   return write_read_reply_datagram.crc == 0x34;
+// }
+
+// bool TMC2209::testReadRequestCrc()
+// {
+//   ReadRequestDatagram read_request_datagram;
+//   read_request_datagram.bytes = 0;
+//   read_request_datagram.sync = SYNC;
+//   read_request_datagram.uart_address = 0;
+//   read_request_datagram.register_address = 0x6;
+//   read_request_datagram.rw = RW_READ;
+//   calculateCrc(read_request_datagram,READ_REQUEST_DATAGRAM_SIZE);
+//   return read_request_datagram.crc == 0x6F;
+// }
 
 bool TMC2209::communicating()
 {
@@ -242,6 +288,31 @@ TMC2209::Settings TMC2209::getSettings()
 }
 
 // private
+template<typename Datagram>
+void TMC2209::calculateCrc(Datagram & datagram,
+  uint8_t datagram_size)
+{
+  uint8_t crc = 0;
+  uint8_t current_byte;
+  for (uint8_t i=0; i<(datagram_size - 1); ++i)
+  {
+    current_byte = (datagram.bytes >> (i*BITS_PER_BYTE)) & BYTE_MAX_VALUE;
+    for (uint8_t j=0; j<BITS_PER_BYTE; ++j)
+    {
+      if ((crc >> 7) ^ (current_byte & 0x01))
+      {
+        crc = (crc << 1) ^ 0x07;
+      }
+      else
+      {
+        crc = crc << 1;
+      }
+      current_byte = current_byte >> 1;
+    }
+  }
+  datagram.crc = crc;
+}
+
 void TMC2209::setEnablePin(size_t enable_pin)
 {
   enable_pin_ = enable_pin;
@@ -315,50 +386,53 @@ void TMC2209::setMicrostepsPerStepPowerOfTwo(uint8_t exponent)
   setChopperConfig();
 }
 
-uint32_t TMC2209::sendReceivePrevious(TMC2209::MosiDatagram & mosi_datagram)
+uint32_t TMC2209::sendReceivePrevious(TMC2209::WriteReadReplyDatagram & mosi_datagram)
 {
-  MisoDatagram miso_datagram;
-  miso_datagram.uint64 = 0;
+  // MisoDatagram miso_datagram;
+  // miso_datagram.uint64 = 0;
 
-  spiBeginTransaction();
-  for (int i=(DATAGRAM_SIZE - 1); i>=0; --i)
-  {
-    uint8_t byte_write = (mosi_datagram.uint64 >> (8*i)) & 0xff;
-    uint8_t byte_read = SPI.transfer(byte_write);
-    miso_datagram.uint64 |= byte_read << (8*i);
-  }
-  spiEndTransaction();
+  // spiBeginTransaction();
+  // for (int i=(DATAGRAM_SIZE - 1); i>=0; --i)
+  // {
+  //   uint8_t byte_write = (mosi_datagram.uint64 >> (8*i)) & 0xff;
+  //   uint8_t byte_read = SPI.transfer(byte_write);
+  //   miso_datagram.uint64 |= byte_read << (8*i);
+  // }
+  // spiEndTransaction();
 
-  noInterrupts();
-  spi_status_ = miso_datagram.fields.spi_status;
-  interrupts();
+  // noInterrupts();
+  // spi_status_ = miso_datagram.fields.spi_status;
+  // interrupts();
 
-  return miso_datagram.fields.data;
+  // return miso_datagram.fields.data;
+  return 0;
 }
 
 uint32_t TMC2209::write(uint8_t address,
   uint32_t data)
 {
-  MosiDatagram mosi_datagram;
-  mosi_datagram.uint64 = 0;
-  mosi_datagram.fields.rw = RW_WRITE;
-  mosi_datagram.fields.address = address;
-  mosi_datagram.fields.data = data;
+  // WriteReadReplyDatagram mosi_datagram;
+  // mosi_datagram.uint64 = 0;
+  // mosi_datagram.fields.rw = RW_WRITE;
+  // mosi_datagram.fields.address = address;
+  // mosi_datagram.fields.data = data;
 
-  return sendReceivePrevious(mosi_datagram);
+  // return sendReceivePrevious(mosi_datagram);
+  return 0;
 }
 
 uint32_t TMC2209::read(uint8_t address)
 {
-  MosiDatagram mosi_datagram;
-  mosi_datagram.uint64 = 0;
-  mosi_datagram.fields.rw = RW_READ;
-  mosi_datagram.fields.address = address;
+  // WriteReadReplyDatagram mosi_datagram;
+  // mosi_datagram.uint64 = 0;
+  // mosi_datagram.fields.rw = RW_READ;
+  // mosi_datagram.fields.address = address;
 
-  // must read twice to get value at address
-  sendReceivePrevious(mosi_datagram);
-  uint32_t data = sendReceivePrevious(mosi_datagram);
-  return data;
+  // // must read twice to get value at address
+  // sendReceivePrevious(mosi_datagram);
+  // uint32_t data = sendReceivePrevious(mosi_datagram);
+  // return data;
+  return 0;
 }
 
 uint8_t TMC2209::percentToCurrentSetting(uint8_t percent)
@@ -438,21 +512,21 @@ void TMC2209::setPwmConfig()
 
 void TMC2209::enableClockSelect()
 {
-  digitalWrite(chip_select_pin_,LOW);
+  // digitalWrite(chip_select_pin_,LOW);
 }
 
 void TMC2209::disableClockSelect()
 {
-  digitalWrite(chip_select_pin_,HIGH);
+  // digitalWrite(chip_select_pin_,HIGH);
 }
 void TMC2209::spiBeginTransaction()
 {
-  SPI.beginTransaction(SPISettings(SPI_CLOCK,SPI_BIT_ORDER,SPI_MODE));
-  enableClockSelect();
+  // SPI.beginTransaction(SPISettings(SPI_CLOCK,SPI_BIT_ORDER,SPI_MODE));
+  // enableClockSelect();
 }
 
 void TMC2209::spiEndTransaction()
 {
-  disableClockSelect();
-  SPI.endTransaction();
+  // disableClockSelect();
+  // SPI.endTransaction();
 }
