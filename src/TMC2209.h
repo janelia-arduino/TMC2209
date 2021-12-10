@@ -54,21 +54,24 @@ public:
 
   struct Status
   {
-    uint32_t load : 10;
-    uint32_t space0 : 5;
-    uint32_t full_step_active : 1;
-    uint32_t current_scaling : 5;
-    uint32_t space1 : 3;
-    uint32_t stall : 1;
-    uint32_t over_temperature_shutdown : 1;
     uint32_t over_temperature_warning : 1;
+    uint32_t over_temperature_shutdown : 1;
     uint32_t short_to_ground_a : 1;
     uint32_t short_to_ground_b : 1;
+    uint32_t low_side_short_a : 1;
+    uint32_t low_side_short_b : 1;
     uint32_t open_load_a : 1;
     uint32_t open_load_b : 1;
+    uint32_t 120_c_exceeded : 1;
+    uint32_t 143_c_exceeded : 1;
+    uint32_t 150_c_exceeded : 1;
+    uint32_t 157_c_exceeded : 1;
+    uint32_t reserved0 : 4;
+    uint32_t current_scaling : 5;
+    uint32_t reserved1 : 9;
+    uint32_t stealth_mode : 1;
     uint32_t standstill : 1;
   };
-  const static uint16_t LOAD_MAX = 1023;
   const static uint8_t CURRENT_SCALING_MAX = 31;
   Status getStatus();
 
