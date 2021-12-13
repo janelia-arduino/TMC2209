@@ -17,7 +17,7 @@ void setup()
   // Setup serial communications
   Serial.begin(BAUD);
 
-  stepper_driver.setup(serial_stream);
+  stepper_driver.setOperationModeToUart(serial_stream,TMC2209::UART_ADDRESS_0);
   stepper_driver.setDebugOn(Serial);
 
 }
