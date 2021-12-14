@@ -375,8 +375,8 @@ uint32_t TMC2209::reverseData(uint32_t data)
   uint8_t left_shift;
   for (uint8_t i=0; i<DATA_SIZE; ++i)
   {
-    right_shift = (DATA_SIZE - i - 1) * BITS_PER_BYTE;
-    left_shift = i * BITS_PER_BYTE;
+    right_shift = (DATA_SIZE - i - 1)*BITS_PER_BYTE;
+    left_shift = i*BITS_PER_BYTE;
     reversed_data |= ((data >> right_shift) & BYTE_MAX_VALUE) << left_shift;
   }
   return reversed_data;
@@ -387,13 +387,13 @@ uint8_t TMC2209::calculateCrc(Datagram & datagram,
   uint8_t datagram_size)
 {
   uint8_t crc = 0;
-  uint8_t current_byte;
+  uint8_t byte;
   for (uint8_t i=0; i<(datagram_size - 1); ++i)
   {
-    current_byte = (datagram.bytes >> (i*BITS_PER_BYTE)) & BYTE_MAX_VALUE;
+    byte = (datagram.bytes >> (i*BITS_PER_BYTE)) & BYTE_MAX_VALUE;
     for (uint8_t j=0; j<BITS_PER_BYTE; ++j)
     {
-      if ((crc >> 7) ^ (current_byte & 0x01))
+      if ((crc >> 7) ^ (byte & 0x01))
       {
         crc = (crc << 1) ^ 0x07;
       }
@@ -401,7 +401,7 @@ uint8_t TMC2209::calculateCrc(Datagram & datagram,
       {
         crc = crc << 1;
       }
-      current_byte = current_byte >> 1;
+      byte = byte >> 1;
     }
   }
   return crc;
@@ -411,19 +411,28 @@ template<typename Datagram>
 void TMC2209::sendDatagram(Datagram & datagram,
   uint8_t datagram_size)
 {
-  uint8_t current_byte;
+  serial_ptr_->clear();
+  uint8_t byte;
   for (uint8_t i=0; i<datagram_size; ++i)
   {
-    current_byte = (datagram.bytes >> (i*BITS_PER_BYTE)) & BYTE_MAX_VALUE;
-    // serial_ptr_->write(current_byte);
+    byte = (datagram.bytes >> (i*BITS_PER_BYTE)) & BYTE_MAX_VALUE;
+    serial_ptr_->write(byte);
     if (debug_stream_ptr_)
     {
-      debug_stream_ptr_->println(current_byte,BIN);
+      debug_stream_ptr_->println(byte,HEX);
+    }
+    if (serial_ptr_->available() > 0)
+    {
+      byte = serial_ptr_->read();
+    }
+    if (debug_stream_ptr_)
+    {
+      debug_stream_ptr_->println(byte,HEX);
     }
   }
 }
 
-uint32_t TMC2209::write(uint8_t register_address,
+void TMC2209::write(uint8_t register_address,
   uint32_t data)
 {
   WriteReadReplyDatagram write_datagram;
@@ -436,21 +445,35 @@ uint32_t TMC2209::write(uint8_t register_address,
   write_datagram.crc = calculateCrc(write_datagram,WRITE_READ_REPLY_DATAGRAM_SIZE);
 
   sendDatagram(write_datagram,WRITE_READ_REPLY_DATAGRAM_SIZE);
-  return 0;
 }
 
 uint32_t TMC2209::read(uint8_t register_address)
 {
-  // WriteReadReplyDatagram mosi_datagram;
-  // mosi_datagram.uint64 = 0;
-  // mosi_datagram.fields.rw = RW_READ;
-  // mosi_datagram.fields.address = address;
+  ReadRequestDatagram read_request_datagram;
+  read_request_datagram.bytes = 0;
+  read_request_datagram.sync = SYNC;
+  read_request_datagram.uart_address = uart_address_;
+  read_request_datagram.register_address = register_address;
+  read_request_datagram.rw = RW_READ;
+  read_request_datagram.crc = calculateCrc(read_request_datagram,READ_REQUEST_DATAGRAM_SIZE);
 
-  // // must read twice to get value at address
-  // sendReceivePrevious(mosi_datagram);
-  // uint32_t data = sendReceivePrevious(mosi_datagram);
-  // return data;
-  return 0;
+  sendDatagram(read_request_datagram,READ_REQUEST_DATAGRAM_SIZE);
+  delay(10);
+  uint32_t byte;
+  uint8_t byte_count = 0;
+  WriteReadReplyDatagram read_reply_datagram;
+  read_reply_datagram.bytes = 0;
+  while (serial_ptr_->available() > 0)
+  {
+    byte = serial_ptr_->read();
+    read_reply_datagram.bytes |= byte << (byte_count*BITS_PER_BYTE);
+    ++byte_count;
+    if (debug_stream_ptr_)
+    {
+      debug_stream_ptr_->println(byte,HEX);
+    }
+  }
+  return reverseData(read_reply_datagram.data);
 }
 
 uint8_t TMC2209::percentToCurrentSetting(uint8_t percent)

@@ -414,7 +414,7 @@ private:
   void sendDatagram(Datagram & datagram,
     uint8_t datagram_size);
 
-  uint32_t write(uint8_t register_address,
+  void write(uint8_t register_address,
     uint32_t data);
   uint32_t read(uint8_t register_address);
 

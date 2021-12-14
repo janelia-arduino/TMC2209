@@ -26,8 +26,9 @@ void loop()
   stepper_driver.setOperationModeToUart(serial_stream,TMC2209::UART_ADDRESS_0);
   // stepper_driver.test();
   Serial << "\n";
-  // uint8_t version = stepper_driver.getVersion();
-  // Serial << "stepper driver version: " << _HEX(version) << "/n";
+  uint8_t version = stepper_driver.getVersion();
+  Serial << "stepper driver version: " << _HEX(version) << "\n";
+  Serial << "\n";
 
   // if (stepper_driver.communicating())
   // {
