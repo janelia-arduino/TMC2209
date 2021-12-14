@@ -17,26 +17,25 @@ void setup()
   // Setup serial communications
   Serial.begin(BAUD);
 
-  stepper_driver.setOperationModeToUart(serial_stream,TMC2209::UART_ADDRESS_0);
   stepper_driver.setDebugOn(Serial);
 
 }
 
 void loop()
 {
-  // bool crc_ok = stepper_driver.testWriteReadReplyCrc();
-  // Serial << "write read reply datagram crc_ok = " << crc_ok << endl;
-
-  // crc_ok = stepper_driver.testReadRequestCrc();
-  // Serial << "read request datagram crc_ok = " << crc_ok << endl;
+  stepper_driver.setOperationModeToUart(serial_stream,TMC2209::UART_ADDRESS_0);
+  // stepper_driver.test();
+  Serial << "\n";
+  // uint8_t version = stepper_driver.getVersion();
+  // Serial << "stepper driver version: " << _HEX(version) << "/n";
 
   // if (stepper_driver.communicating())
   // {
-  //   Serial << "SPI communicating with stepper driver!\n";
+  //   Serial << "UART communicating with stepper driver!\n";
   // }
   // else
   // {
-  //   Serial << "SPI not communicating with stepper driver!\n";
+  //   Serial << "UART not communicating with stepper driver!\n";
   // }
 
   // stepper_driver.initialize();

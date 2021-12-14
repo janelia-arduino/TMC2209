@@ -31,9 +31,7 @@ public:
   void setDebugOn(Stream & debug_stream);
   void setDebugOff();
 
-  // bool testWriteReadReplyCrc();
-  // bool testReadRequestCrc();
-
+  void test();
   bool communicating();
   uint8_t getVersion();
 
@@ -125,6 +123,7 @@ private:
 
   // Datagrams
   const static uint8_t WRITE_READ_REPLY_DATAGRAM_SIZE = 8;
+  const static uint8_t DATA_SIZE = 4;
   union WriteReadReplyDatagram
   {
     struct
@@ -401,20 +400,23 @@ private:
   const static uint8_t MICROSTEPS_PER_STEP_EXPONENT_MAX = 8;
   uint8_t microsteps_per_step_exponent_;
 
-  template<typename Datagram>
-  void calculateCrc(Datagram & datagram,
-    uint8_t datagram_size);
-
   // void setStepDirInput();
   // void setSpiInput();
 
   // microsteps = 2^exponent, 0=1,1=2,2=4,...8=256
   void setMicrostepsPerStepPowerOfTwo(uint8_t exponent);
 
-  uint32_t sendReceivePrevious(WriteReadReplyDatagram & mosi_datagram);
-  uint32_t write(uint8_t address,
+  uint32_t reverseData(uint32_t data);
+  template<typename Datagram>
+  uint8_t calculateCrc(Datagram & datagram,
+    uint8_t datagram_size);
+  template<typename Datagram>
+  void sendDatagram(Datagram & datagram,
+    uint8_t datagram_size);
+
+  uint32_t write(uint8_t register_address,
     uint32_t data);
-  uint32_t read(uint8_t address);
+  uint32_t read(uint8_t register_address);
 
   uint8_t percentToCurrentSetting(uint8_t percent);
   uint8_t percentToHoldDelaySetting(uint8_t percent);
