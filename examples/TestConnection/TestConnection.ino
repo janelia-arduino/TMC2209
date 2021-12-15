@@ -14,33 +14,23 @@ TMC2209 stepper_driver;
 
 void setup()
 {
-  // Setup serial communications
   Serial.begin(BAUD);
 
-  // stepper_driver.setDebugOn(Serial);
-
-  stepper_driver.setOperationModeToUart(serial_stream,TMC2209::UART_ADDRESS_0);
+  stepper_driver.setup(serial_stream,TMC2209::UART_ADDRESS_0);
 }
 
 void loop()
 {
-  // stepper_driver.test();
-  // Serial << "\n";
-  // uint8_t version = stepper_driver.getVersion();
-  // Serial << "stepper driver version: " << _HEX(version) << "\n";
-  // Serial << "\n";
-
   if (stepper_driver.communicating())
   {
     Serial << "UART communicating with stepper driver!\n";
+    Serial << "\n";
   }
   else
   {
     Serial << "UART not communicating with stepper driver!\n";
     return;
   }
-
-  // stepper_driver.initialize();
 
   TMC2209::Status status = stepper_driver.getStatus();
   Serial << "status.over_temperature_warning = " << status.over_temperature_warning << "\n";
@@ -58,16 +48,34 @@ void loop()
   Serial << "status.current_scaling = " << status.current_scaling << "\n";
   Serial << "status.stealth_mode = " << status.stealth_mode << "\n";
   Serial << "status.standstill = " << status.standstill << "\n";
+  Serial << "\n";
 
-  // stepper_driver.setRunCurrent(100);
-  // Serial << "\n";
-  // stepper_driver.setHoldCurrent(50);
-  // Serial << "\n";
-  // stepper_driver.setHoldDelay(50);
-  // Serial << "\n";
+  stepper_driver.setAllCurrentValues(100,50,50);
 
-  // stepper_driver.setAllCurrentValues(100,50,50);
-  // Serial << "\n";
+  TMC2209::Settings settings = stepper_driver.getSettings();
+  Serial << "settings.microsteps_per_step = " << settings.microsteps_per_step << "\n";
+  Serial << "settings.inverse_motor_direction_enabled = " << settings.inverse_motor_direction_enabled << "\n";
+  Serial << "settings.spread_cycle_enabled = " << settings.spread_cycle_enabled << "\n";
+  Serial << "settings.zero_hold_current_mode = ";
+  switch (settings.zero_hold_current_mode)
+  {
+    case TMC2209::NORMAL:
+      Serial<< "normal\n";
+      break;
+    case TMC2209::FREEWHEELING:
+      Serial<< "freewheeling\n";
+      break;
+    case TMC2209::STRONG_BRAKING:
+      Serial<< "strong_braking\n";
+      break;
+    case TMC2209::BRAKING:
+      Serial<< "braking\n";
+      break;
+  }
+  Serial << "settings.irun = " << settings.irun << "\n";
+  Serial << "settings.ihold = " << settings.ihold << "\n";
+  Serial << "settings.iholddelay = " << settings.iholddelay << "\n";
+  Serial << "\n";
 
   Serial << "\n";
   delay(LOOP_DELAY);
