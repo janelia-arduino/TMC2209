@@ -121,6 +121,9 @@ private:
   const static uint8_t BYTE_MAX_VALUE = 0xFF;
   const static uint8_t BITS_PER_BYTE = 8;
 
+  const static uint16_t ECHO_DELAY_MAX_VALUE = 20;
+  const static uint16_t REPLY_DELAY_MAX_VALUE = 100;
+
   // Datagrams
   const static uint8_t WRITE_READ_REPLY_DATAGRAM_SIZE = 8;
   const static uint8_t DATA_SIZE = 4;

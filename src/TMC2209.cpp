@@ -375,8 +375,8 @@ uint32_t TMC2209::reverseData(uint32_t data)
   uint8_t left_shift;
   for (uint8_t i=0; i<DATA_SIZE; ++i)
   {
-    right_shift = (DATA_SIZE - i - 1)*BITS_PER_BYTE;
-    left_shift = i*BITS_PER_BYTE;
+    right_shift = (DATA_SIZE - i - 1) * BITS_PER_BYTE;
+    left_shift = i * BITS_PER_BYTE;
     reversed_data |= ((data >> right_shift) & BYTE_MAX_VALUE) << left_shift;
   }
   return reversed_data;
@@ -390,7 +390,7 @@ uint8_t TMC2209::calculateCrc(Datagram & datagram,
   uint8_t byte;
   for (uint8_t i=0; i<(datagram_size - 1); ++i)
   {
-    byte = (datagram.bytes >> (i*BITS_PER_BYTE)) & BYTE_MAX_VALUE;
+    byte = (datagram.bytes >> (i * BITS_PER_BYTE)) & BYTE_MAX_VALUE;
     for (uint8_t j=0; j<BITS_PER_BYTE; ++j)
     {
       if ((crc >> 7) ^ (byte & 0x01))
@@ -411,20 +411,29 @@ template<typename Datagram>
 void TMC2209::sendDatagram(Datagram & datagram,
   uint8_t datagram_size)
 {
-  serial_ptr_->clear();
   uint8_t byte;
   for (uint8_t i=0; i<datagram_size; ++i)
   {
-    byte = (datagram.bytes >> (i*BITS_PER_BYTE)) & BYTE_MAX_VALUE;
+    byte = (datagram.bytes >> (i * BITS_PER_BYTE)) & BYTE_MAX_VALUE;
     serial_ptr_->write(byte);
     if (debug_stream_ptr_)
     {
       debug_stream_ptr_->println(byte,HEX);
     }
-    if (serial_ptr_->available() > 0)
-    {
-      byte = serial_ptr_->read();
-    }
+  }
+
+  // wait for bytes sent out on TX line to be echoed on RX line
+  uint16_t echo_delay = 0;
+  while ((serial_ptr_->available() <= 0) && (echo_delay++ < ECHO_DELAY_MAX_VALUE))
+  {
+    delay(1);
+  }
+
+  // clear RX buffer of echo bytes
+  uint8_t bytes_read = 0;
+  while ((serial_ptr_->available() > 0) && (bytes_read++ < datagram_size))
+  {
+    byte = serial_ptr_->read();
     if (debug_stream_ptr_)
     {
       debug_stream_ptr_->println(byte,HEX);
@@ -458,16 +467,19 @@ uint32_t TMC2209::read(uint8_t register_address)
   read_request_datagram.crc = calculateCrc(read_request_datagram,READ_REQUEST_DATAGRAM_SIZE);
 
   sendDatagram(read_request_datagram,READ_REQUEST_DATAGRAM_SIZE);
-  delay(10);
-  uint32_t byte;
+  uint16_t reply_delay = 0;
+  while ((serial_ptr_->available() <= 0) && (reply_delay++ < REPLY_DELAY_MAX_VALUE))
+  {
+    delay(1);
+  }
+  uint64_t byte;
   uint8_t byte_count = 0;
   WriteReadReplyDatagram read_reply_datagram;
   read_reply_datagram.bytes = 0;
   while (serial_ptr_->available() > 0)
   {
     byte = serial_ptr_->read();
-    read_reply_datagram.bytes |= byte << (byte_count*BITS_PER_BYTE);
-    ++byte_count;
+    read_reply_datagram.bytes |= (byte << (byte_count++ * BITS_PER_BYTE));
     if (debug_stream_ptr_)
     {
       debug_stream_ptr_->println(byte,HEX);
