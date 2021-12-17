@@ -93,6 +93,11 @@ public:
 
   void setPwmThreshold(uint32_t value);
 
+  void enableAutomaticCurrentScaling();
+  void disableAutomaticCurrentScaling();
+  void setPwmOffset(uint8_t pwm_amplitude);
+  void setPwmGradient(uint8_t pwm_amplitude);
+
 private:
   HardwareSerial * serial_ptr_;
   int enable_pin_;
@@ -359,6 +364,16 @@ private:
   };
   PwmConfig pwm_config_;
   const static uint32_t PWM_CONFIG_DEFAULT = 0xC10D0024;
+  const static uint8_t PWM_OFFSET_MIN = 0;
+  const static uint8_t PWM_OFFSET_MAX = 255;
+  const static uint8_t PWM_OFFSET_DEFAULT = 0x24;
+  const static uint8_t PWM_GRAD_MIN = 0;
+  const static uint8_t PWM_GRAD_MAX = 255;
+  const static uint8_t PWM_GRAD_DEFAULT = 0x00;
+  const static uint8_t PWM_FREQ_DEFAULT = 0b00; // 2/1024 fclk
+  const static uint8_t PWM_AUTOSCALE_DISABLED = 0;
+  const static uint8_t PWM_AUTOSCALE_ENABLED = 1;
+  const static uint8_t PWM_AUTOSCALE_DEFAULT = 1;
 
   const static uint8_t ADDRESS_PWM_SCALE = 0x71;
   const static uint8_t ADDRESS_PWM_AUTO = 0x72;
@@ -387,6 +402,9 @@ private:
   uint8_t percentToHoldDelaySetting(uint8_t percent);
   uint8_t holdDelaySettingToPercent(uint8_t hold_delay_setting);
   uint16_t getMicrostepsPerStep();
+
+  uint8_t pwmAmplitudeToPwmAmpl(uint8_t pwm_amplitude);
+  uint8_t pwmAmplitudeToPwmGrad(uint8_t pwm_amplitude);
 
   void setGlobalConfig();
   void getGlobalConfig();

@@ -35,6 +35,7 @@ void TMC2209::setup(HardwareSerial & serial,
   UartAddress uart_address)
 {
   setOperationModeToUart(serial,uart_address);
+  getSettings();
 }
 
 bool TMC2209::communicating()
@@ -232,6 +233,34 @@ TMC2209::Settings TMC2209::getSettings()
 void TMC2209::setPwmThreshold(uint32_t value)
 {
   write(ADDRESS_TPWMTHRS,value);
+}
+
+void TMC2209::enableAutomaticCurrentScaling()
+{
+  pwm_config_.pwm_autoscale = PWM_AUTOSCALE_ENABLED;
+  pwm_config_.pwm_offset = PWM_OFFSET_DEFAULT;
+  pwm_config_.pwm_grad = PWM_GRAD_DEFAULT;
+  setPwmConfig();
+}
+
+void TMC2209::disableAutomaticCurrentScaling()
+{
+  pwm_config_.pwm_autoscale = PWM_AUTOSCALE_DISABLED;
+  pwm_config_.pwm_offset = PWM_OFFSET_MIN;
+  pwm_config_.pwm_grad = PWM_GRAD_MIN;
+  setPwmConfig();
+}
+
+void TMC2209::setPwmOffset(uint8_t pwm_amplitude)
+{
+  pwm_config_.pwm_offset = pwm_amplitude;
+  setPwmConfig();
+}
+
+void TMC2209::setPwmGradient(uint8_t pwm_amplitude)
+{
+  pwm_config_.pwm_grad = pwm_amplitude;
+  setPwmConfig();
 }
 
 // private
