@@ -17,14 +17,14 @@ public:
   TMC2209();
   void setEnablePin(size_t enable_pin);
 
-  enum UartAddress
+  enum SerialAddress
   {
-    UART_ADDRESS_0=0,
-    UART_ADDRESS_1=1,
-    UART_ADDRESS_2=2,
+    SERIAL_ADDRESS_0=0,
+    SERIAL_ADDRESS_1=1,
+    SERIAL_ADDRESS_2=2,
   };
   void setup(HardwareSerial & serial,
-    UartAddress uart_address=UART_ADDRESS_0);
+    SerialAddress serial_address=SERIAL_ADDRESS_0);
 
   bool communicating();
   uint8_t getVersion();
@@ -102,7 +102,7 @@ private:
   HardwareSerial * serial_ptr_;
   int enable_pin_;
 
-  uint8_t uart_address_;
+  uint8_t serial_address_;
 
   // Serial Settings
   const static uint32_t SERIAL_BAUD_RATE = 250000;
@@ -122,7 +122,7 @@ private:
     {
       uint64_t sync : 4;
       uint64_t reserved : 4;
-      uint64_t uart_address : 8;
+      uint64_t serial_address : 8;
       uint64_t register_address : 7;
       uint64_t rw : 1;
       uint64_t data : 32;
@@ -134,7 +134,7 @@ private:
   const static uint8_t SYNC = 0b101;
   const static uint8_t RW_READ = 0;
   const static uint8_t RW_WRITE = 1;
-  const static uint8_t READ_REPLY_UART_ADDRESS = 0b11111111;
+  const static uint8_t READ_REPLY_SERIAL_ADDRESS = 0b11111111;
 
   const static uint8_t READ_REQUEST_DATAGRAM_SIZE = 4;
   union ReadRequestDatagram
@@ -143,7 +143,7 @@ private:
     {
       uint32_t sync : 4;
       uint32_t reserved : 4;
-      uint32_t uart_address : 8;
+      uint32_t serial_address : 8;
       uint32_t register_address : 7;
       uint32_t rw : 1;
       uint32_t crc : 8;
@@ -220,7 +220,7 @@ private:
       uint32_t ms2 : 1;
       uint32_t diag : 1;
       uint32_t reserved_1 : 1;
-      uint32_t pdn_uart : 1;
+      uint32_t pdn_serial : 1;
       uint32_t step : 1;
       uint32_t spread_en : 1;
       uint32_t dir : 1;
@@ -378,8 +378,8 @@ private:
   const static uint8_t ADDRESS_PWM_SCALE = 0x71;
   const static uint8_t ADDRESS_PWM_AUTO = 0x72;
 
-  void setOperationModeToUart(HardwareSerial & serial,
-    UartAddress uart_address=UART_ADDRESS_0);
+  void setOperationModeToSerial(HardwareSerial & serial,
+    SerialAddress serial_address=SERIAL_ADDRESS_0);
   void setOperationModeToStandalone();
 
   // microsteps = 2^exponent, 0=1,1=2,2=4,...8=256

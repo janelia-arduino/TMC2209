@@ -11,7 +11,7 @@ TMC2209::TMC2209()
 {
   serial_ptr_ = nullptr;
   enable_pin_ = -1;
-  uart_address_ = UART_ADDRESS_0;
+  serial_address_ = SERIAL_ADDRESS_0;
 
   global_config_.bytes = 0;
 
@@ -32,9 +32,9 @@ void TMC2209::setEnablePin(size_t enable_pin)
 }
 
 void TMC2209::setup(HardwareSerial & serial,
-  UartAddress uart_address)
+  SerialAddress serial_address)
 {
-  setOperationModeToUart(serial,uart_address);
+  setOperationModeToSerial(serial,serial_address);
   getSettings();
 }
 
@@ -264,11 +264,11 @@ void TMC2209::setPwmGradient(uint8_t pwm_amplitude)
 }
 
 // private
-void TMC2209::setOperationModeToUart(HardwareSerial & serial,
-  UartAddress uart_address)
+void TMC2209::setOperationModeToSerial(HardwareSerial & serial,
+  SerialAddress serial_address)
 {
   serial_ptr_ = &serial;
-  uart_address_ = uart_address;
+  serial_address_ = serial_address;
 
   serial_ptr_->begin(SERIAL_BAUD_RATE);
 
@@ -419,7 +419,7 @@ void TMC2209::write(uint8_t register_address,
   WriteReadReplyDatagram write_datagram;
   write_datagram.bytes = 0;
   write_datagram.sync = SYNC;
-  write_datagram.uart_address = uart_address_;
+  write_datagram.serial_address = serial_address_;
   write_datagram.register_address = register_address;
   write_datagram.rw = RW_WRITE;
   write_datagram.data = reverseData(data);
@@ -433,7 +433,7 @@ uint32_t TMC2209::read(uint8_t register_address)
   ReadRequestDatagram read_request_datagram;
   read_request_datagram.bytes = 0;
   read_request_datagram.sync = SYNC;
-  read_request_datagram.uart_address = uart_address_;
+  read_request_datagram.serial_address = serial_address_;
   read_request_datagram.register_address = register_address;
   read_request_datagram.rw = RW_READ;
   read_request_datagram.crc = calculateCrc(read_request_datagram,READ_REQUEST_DATAGRAM_SIZE);
