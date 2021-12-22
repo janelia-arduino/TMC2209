@@ -226,6 +226,9 @@ TMC2209::Settings TMC2209::getSettings()
   settings.irun = currentSettingToPercent(driver_current_.irun);
   settings.ihold = currentSettingToPercent(driver_current_.ihold);
   settings.iholddelay = holdDelaySettingToPercent(driver_current_.iholddelay);
+  settings.automatic_current_scaling_enabled = not pwm_config_.pwm_autoscale;
+  settings.pwm_offset = pwm_config_.pwm_offset;
+  settings.pwm_gradient = pwm_config_.pwm_grad;
 
   return settings;
 }
@@ -400,14 +403,14 @@ void TMC2209::sendDatagram(Datagram & datagram,
 
   // wait for bytes sent out on TX line to be echoed on RX line
   uint16_t echo_delay = 0;
-  while ((serial_ptr_->available() <= 0) && (echo_delay++ < ECHO_DELAY_MAX_VALUE))
+  while ((serial_ptr_->available() <= 0) and (echo_delay++ < ECHO_DELAY_MAX_VALUE))
   {
     delay(1);
   }
 
   // clear RX buffer of echo bytes
   uint8_t bytes_read = 0;
-  while ((serial_ptr_->available() > 0) && (bytes_read++ < datagram_size))
+  while ((serial_ptr_->available() > 0) and (bytes_read++ < datagram_size))
   {
     byte = serial_ptr_->read();
   }
@@ -440,7 +443,7 @@ uint32_t TMC2209::read(uint8_t register_address)
 
   sendDatagram(read_request_datagram,READ_REQUEST_DATAGRAM_SIZE);
   uint16_t reply_delay = 0;
-  while ((serial_ptr_->available() <= 0) && (reply_delay++ < REPLY_DELAY_MAX_VALUE))
+  while ((serial_ptr_->available() <= 0) and (reply_delay++ < REPLY_DELAY_MAX_VALUE))
   {
     delay(1);
   }

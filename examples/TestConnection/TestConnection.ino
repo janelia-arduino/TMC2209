@@ -16,19 +16,19 @@ void setup()
 {
   Serial.begin(BAUD);
 
-  stepper_driver.setup(serial_stream,TMC2209::UART_ADDRESS_0);
+  stepper_driver.setup(serial_stream,TMC2209::SERIAL_ADDRESS_0);
 }
 
 void loop()
 {
   if (stepper_driver.communicating())
   {
-    Serial << "UART communicating with stepper driver!\n";
+    Serial << "Communicating with stepper driver!\n";
     Serial << "\n";
   }
   else
   {
-    Serial << "UART not communicating with stepper driver!\n";
+    Serial << "Not communicating with stepper driver!\n";
     return;
   }
 
@@ -75,6 +75,9 @@ void loop()
   Serial << "settings.irun = " << settings.irun << "\n";
   Serial << "settings.ihold = " << settings.ihold << "\n";
   Serial << "settings.iholddelay = " << settings.iholddelay << "\n";
+  Serial << "settings.automatic_current_scaling_enabled = " << settings.automatic_current_scaling_enabled << "\n";
+  Serial << "settings.pwm_offset = " << settings.pwm_offset << "\n";
+  Serial << "settings.pwm_gradient = " << settings.pwm_gradient << "\n";
   Serial << "\n";
 
   Serial << "\n";

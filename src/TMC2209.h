@@ -88,6 +88,9 @@ public:
     uint8_t irun;
     uint8_t ihold;
     uint8_t iholddelay;
+    bool automatic_current_scaling_enabled;
+    uint8_t pwm_offset;
+    uint8_t pwm_gradient;
   };
   Settings getSettings();
 
