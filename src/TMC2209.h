@@ -101,6 +101,9 @@ public:
   void setPwmOffset(uint8_t pwm_amplitude);
   void setPwmGradient(uint8_t pwm_amplitude);
 
+  void moveAtVelocity(int32_t microsteps_per_period);
+  void moveUsingStepDirInterface();
+
 private:
   HardwareSerial * serial_ptr_;
   int enable_pin_;
@@ -274,6 +277,7 @@ private:
   const static uint8_t ADDRESS_TPWMTHRS = 0x13;
 
   const static uint8_t ADDRESS_VACTUAL = 0x22;
+  const static int32_t VACTUAL_STEP_DIR_INTERFACE = 0x0;
 
   // CoolStep and StallGuard Control Register Set
   const static uint8_t ADDRESS_TCOOLTHRS = 0x14;

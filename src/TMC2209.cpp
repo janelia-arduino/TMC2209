@@ -266,6 +266,16 @@ void TMC2209::setPwmGradient(uint8_t pwm_amplitude)
   setPwmConfig();
 }
 
+void TMC2209::moveAtVelocity(int32_t microsteps_per_period)
+{
+  write(ADDRESS_VACTUAL,microsteps_per_period);
+}
+
+void TMC2209::moveUsingStepDirInterface()
+{
+  write(ADDRESS_VACTUAL,VACTUAL_STEP_DIR_INTERFACE);
+}
+
 // private
 void TMC2209::setOperationModeToSerial(HardwareSerial & serial,
   SerialAddress serial_address)
