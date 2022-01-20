@@ -14,10 +14,19 @@ TMC2209::TMC2209()
   serial_address_ = SERIAL_ADDRESS_0;
 
   global_config_.bytes = 0;
-
-  driver_current_.bytes = 0;
+  global_config_.i_scale_analog = 1;
+  global_config_.multistep_filt = 1;
 
   chopper_config_.bytes = CHOPPER_CONFIG_DEFAULT;
+  chopper_config_.tbl = TBL_DEFAULT;
+  chopper_config_.hend = HEND_DEFAULT;
+  chopper_config_.hstart = HSTART_DEFAULT;
+  chopper_config_.toff = TOFF_DEFAULT;
+
+  driver_current_.bytes = 0;
+  driver_current_.ihold = IHOLD_DEFAULT;
+  driver_current_.irun = IRUN_DEFAULT;
+  driver_current_.iholddelay = IHOLDDELAY_DEFAULT;
 
   pwm_config_.bytes = PWM_CONFIG_DEFAULT;
 
@@ -35,6 +44,8 @@ void TMC2209::setup(HardwareSerial & serial,
   SerialAddress serial_address)
 {
   setOperationModeToSerial(serial,serial_address);
+  disable();
+  minimizeMotorCurrent();
   getSettings();
 }
 
@@ -57,6 +68,11 @@ void TMC2209::enable()
   {
     digitalWrite(enable_pin_,LOW);
   }
+  else
+  {
+    chopper_config_.toff = toff_;
+    setChopperConfig();
+  }
 }
 
 void TMC2209::disable()
@@ -64,6 +80,11 @@ void TMC2209::disable()
   if (enable_pin_ >= 0)
   {
     digitalWrite(enable_pin_,HIGH);
+  }
+  else
+  {
+    chopper_config_.toff = TOFF_DISABLE;
+    setChopperConfig();
   }
 }
 
@@ -140,7 +161,6 @@ uint16_t TMC2209::getMicrostepsPerStep()
 void TMC2209::setRunCurrent(uint8_t percent)
 {
   uint8_t run_current = percentToCurrentSetting(percent);
-
   driver_current_.irun = run_current;
   setDriverCurrent();
 }
@@ -206,7 +226,7 @@ void TMC2209::enableSpreadCycle()
   setGlobalConfig();
 }
 
-void TMC2209::setZeroHoldCurrentMode(TMC2209::ZeroHoldCurrentMode mode)
+void TMC2209::setStandstillMode(TMC2209::StandstillMode mode)
 {
   pwm_config_.freewheel = mode;
   setPwmConfig();
@@ -222,11 +242,11 @@ TMC2209::Settings TMC2209::getSettings()
   settings.microsteps_per_step = getMicrostepsPerStep();
   settings.inverse_motor_direction_enabled = global_config_.shaft;
   settings.spread_cycle_enabled = global_config_.enable_spread_cycle;
-  settings.zero_hold_current_mode = pwm_config_.freewheel;
+  settings.standstill_mode = pwm_config_.freewheel;
   settings.irun = currentSettingToPercent(driver_current_.irun);
   settings.ihold = currentSettingToPercent(driver_current_.ihold);
   settings.iholddelay = holdDelaySettingToPercent(driver_current_.iholddelay);
-  settings.automatic_current_scaling_enabled = not pwm_config_.pwm_autoscale;
+  settings.automatic_current_scaling_enabled = pwm_config_.pwm_autoscale;
   settings.pwm_offset = pwm_config_.pwm_offset;
   settings.pwm_gradient = pwm_config_.pwm_grad;
 
@@ -286,8 +306,6 @@ void TMC2209::setOperationModeToSerial(HardwareSerial & serial,
   serial_ptr_->begin(SERIAL_BAUD_RATE);
 
   global_config_.i_scale_analog = 0;
-  global_config_.internal_rsense = 0;
-  global_config_.enable_spread_cycle = 0;
   global_config_.pdn_disable = 1;
   global_config_.mstep_reg_select = 1;
 
@@ -299,12 +317,16 @@ void TMC2209::setOperationModeToStandalone()
   serial_ptr_ = nullptr;
 
   global_config_.i_scale_analog = 1;
-  global_config_.internal_rsense = 1;
-  global_config_.enable_spread_cycle = 0;
   global_config_.pdn_disable = 0;
   global_config_.mstep_reg_select = 0;
 
   setGlobalConfig();
+}
+
+void TMC2209::minimizeMotorCurrent()
+{
+  driver_current_.irun = CURRENT_SETTING_MIN;
+  setDriverCurrent();
 }
 
 void TMC2209::setMicrostepsPerStepPowerOfTwo(uint8_t exponent)

@@ -70,21 +70,21 @@ public:
 
   void enableStealthChop();
   void enableSpreadCycle();
-  enum ZeroHoldCurrentMode
+  enum StandstillMode
   {
     NORMAL=0,
     FREEWHEELING=1,
     STRONG_BRAKING=2,
     BRAKING=3,
   };
-  void setZeroHoldCurrentMode(ZeroHoldCurrentMode mode);
+  void setStandstillMode(StandstillMode mode);
 
   struct Settings
   {
     uint16_t microsteps_per_step;
     bool inverse_motor_direction_enabled;
     bool spread_cycle_enabled;
-    uint8_t zero_hold_current_mode;
+    uint8_t standstill_mode;
     uint8_t irun;
     uint8_t ihold;
     uint8_t iholddelay;
@@ -260,6 +260,9 @@ private:
   const static uint8_t CURRENT_SETTING_MAX = 31;
   const static uint8_t HOLD_DELAY_MIN = 0;
   const static uint8_t HOLD_DELAY_MAX = 15;
+  const static uint8_t IHOLD_DEFAULT = 16;
+  const static uint8_t IRUN_DEFAULT = 31;
+  const static uint8_t IHOLDDELAY_DEFAULT = 1;
 
   const static uint8_t ADDRESS_TPOWERDOWN = 0x11;
   union PowerDownDelay
@@ -275,6 +278,7 @@ private:
   const static uint8_t ADDRESS_TSTEP = 0x12;
 
   const static uint8_t ADDRESS_TPWMTHRS = 0x13;
+  const static uint32_t TPWMTHRS_DEFAULT = 500;
 
   const static uint8_t ADDRESS_VACTUAL = 0x22;
   const static int32_t VACTUAL_STEP_DIR_INTERFACE = 0x0;
@@ -313,7 +317,7 @@ private:
     struct
     {
       uint32_t toff : 4;
-      uint32_t hstrt : 3;
+      uint32_t hstart : 3;
       uint32_t hend : 4;
       uint32_t reserved_0 : 4;
       uint32_t tbl : 2;
@@ -329,6 +333,12 @@ private:
   };
   ChopperConfig chopper_config_;
   const static uint32_t CHOPPER_CONFIG_DEFAULT = 0x10000053;
+  const static uint8_t TBL_DEFAULT = 0b10;
+  const static uint8_t HEND_DEFAULT = 0;
+  const static uint8_t HSTART_DEFAULT = 5;
+  const static uint8_t TOFF_DEFAULT = 3;
+  const static uint8_t TOFF_DISABLE = 0;
+  uint8_t toff_ = TOFF_DEFAULT;
   const static uint8_t MRES_256 = 0b0000;
   const static uint8_t MRES_128 = 0b0001;
   const static uint8_t MRES_064 = 0b0010;
@@ -376,7 +386,7 @@ private:
   const static uint8_t PWM_OFFSET_DEFAULT = 0x24;
   const static uint8_t PWM_GRAD_MIN = 0;
   const static uint8_t PWM_GRAD_MAX = 255;
-  const static uint8_t PWM_GRAD_DEFAULT = 0x00;
+  const static uint8_t PWM_GRAD_DEFAULT = 0x14;
   const static uint8_t PWM_FREQ_DEFAULT = 0b00; // 2/1024 fclk
   const static uint8_t PWM_AUTOSCALE_DISABLED = 0;
   const static uint8_t PWM_AUTOSCALE_ENABLED = 1;
@@ -388,6 +398,8 @@ private:
   void setOperationModeToSerial(HardwareSerial & serial,
     SerialAddress serial_address=SERIAL_ADDRESS_0);
   void setOperationModeToStandalone();
+
+  void minimizeMotorCurrent();
 
   // microsteps = 2^exponent, 0=1,1=2,2=4,...8=256
   void setMicrostepsPerStepPowerOfTwo(uint8_t exponent);

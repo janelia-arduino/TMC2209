@@ -1,0 +1,73 @@
+#include <Arduino.h>
+#include <TMC2209.h>
+
+HardwareSerial & serial_stream = Serial1;
+
+const long BAUD = 115200;
+const int DELAY = 4000;
+const int32_t VELOCITY = 10000;
+const int32_t VELOCITY_STOPPED = 0;
+const uint8_t PERCENT_MIN = 0;
+const uint8_t PERCENT_MAX = 100;
+const uint8_t PERCENT_INC = 10;
+const uint8_t RUN_CURRENT_PERCENT = 50;
+
+uint8_t hold_current_percent = PERCENT_INC;
+
+// Instantiate TMC2209
+TMC2209 stepper_driver;
+
+
+void setup()
+{
+  Serial.begin(BAUD);
+
+  stepper_driver.setup(serial_stream,TMC2209::SERIAL_ADDRESS_0);
+
+  if (stepper_driver.communicating())
+  {
+    Serial.print("Communicating with stepper driver!\n");
+    Serial.print("\n");
+  }
+  else
+  {
+    Serial.print("Not communicating with stepper driver!\n");
+    return;
+  }
+
+  stepper_driver.enable();
+  stepper_driver.setRunCurrent(RUN_CURRENT_PERCENT);
+}
+
+void loop()
+{
+  if (not stepper_driver.communicating())
+  {
+    Serial.print("Not communicating with stepper driver!\n");
+    return;
+  }
+
+  Serial.println("enable and run");
+  stepper_driver.enable();
+  stepper_driver.moveAtVelocity(VELOCITY);
+
+  Serial.print("setHoldCurrent(");
+  Serial.print(hold_current_percent);
+  Serial.print(")\n");
+  stepper_driver.setHoldCurrent(hold_current_percent);
+  delay(DELAY);
+
+  Serial.println("stop");
+  stepper_driver.moveAtVelocity(VELOCITY_STOPPED);
+  delay(DELAY);
+
+  Serial.println("disable");
+  stepper_driver.disable();
+  delay(DELAY);
+
+  if (hold_current_percent == PERCENT_MAX)
+  {
+    hold_current_percent = PERCENT_MIN;
+  }
+  hold_current_percent += PERCENT_INC;
+}

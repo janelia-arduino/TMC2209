@@ -4,11 +4,6 @@
 HardwareSerial & serial_stream = Serial1;
 
 const long BAUD = 115200;
-
-const uint8_t RUN_CURRENT_PERCENT = 20;
-const uint8_t HOLD_CURRENT_PERCENT = 10;
-const uint8_t HOLD_DELAY_PERCENT = 50;
-
 const int LOOP_DELAY = 2000;
 
 // Instantiate TMC2209
@@ -83,8 +78,6 @@ void loop()
   Serial.print("\n");
   Serial.print("\n");
 
-  stepper_driver.setAllCurrentValues(RUN_CURRENT_PERCENT,HOLD_CURRENT_PERCENT,HOLD_DELAY_PERCENT);
-
   TMC2209::Settings settings = stepper_driver.getSettings();
   Serial.print("settings.microsteps_per_step = ");
   Serial.print(settings.microsteps_per_step);
@@ -95,8 +88,8 @@ void loop()
   Serial.print("settings.spread_cycle_enabled = ");
   Serial.print(settings.spread_cycle_enabled);
   Serial.print("\n");
-  Serial.print("settings.zero_hold_current_mode = ");
-  switch (settings.zero_hold_current_mode)
+  Serial.print("settings.standstill_mode = ");
+  switch (settings.standstill_mode)
   {
     case TMC2209::NORMAL:
       Serial.print("normal\n");
