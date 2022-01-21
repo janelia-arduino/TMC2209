@@ -30,6 +30,11 @@ TMC2209::TMC2209()
 
   pwm_config_.bytes = PWM_CONFIG_DEFAULT;
 
+  cool_config_.bytes = 0;
+  cool_config_.seup = 3;
+  cool_config_.sedn = 3;
+  cool_step_enabled_ = false;
+
 }
 
 void TMC2209::setEnablePin(size_t enable_pin)
@@ -214,18 +219,6 @@ void TMC2209::disableInverseMotorDirection()
   setGlobalConfig();
 }
 
-void TMC2209::enableStealthChop()
-{
-  global_config_.enable_spread_cycle = 0;
-  setGlobalConfig();
-}
-
-void TMC2209::enableSpreadCycle()
-{
-  global_config_.enable_spread_cycle = 1;
-  setGlobalConfig();
-}
-
 void TMC2209::setStandstillMode(TMC2209::StandstillMode mode)
 {
   pwm_config_.freewheel = mode;
@@ -243,10 +236,14 @@ TMC2209::Settings TMC2209::getSettings()
   settings.inverse_motor_direction_enabled = global_config_.shaft;
   settings.spread_cycle_enabled = global_config_.enable_spread_cycle;
   settings.standstill_mode = pwm_config_.freewheel;
-  settings.irun = currentSettingToPercent(driver_current_.irun);
-  settings.ihold = currentSettingToPercent(driver_current_.ihold);
-  settings.iholddelay = holdDelaySettingToPercent(driver_current_.iholddelay);
+  settings.irun_percent = currentSettingToPercent(driver_current_.irun);
+  settings.irun_register_value = driver_current_.irun;
+  settings.ihold_percent = currentSettingToPercent(driver_current_.ihold);
+  settings.ihold_register_value = driver_current_.ihold;
+  settings.iholddelay_percent = holdDelaySettingToPercent(driver_current_.iholddelay);
+  settings.iholddelay_register_value = driver_current_.iholddelay;
   settings.automatic_current_scaling_enabled = pwm_config_.pwm_autoscale;
+  settings.automatic_gradient_adaptation_enabled = pwm_config_.pwm_autograd;
   settings.pwm_offset = pwm_config_.pwm_offset;
   settings.pwm_gradient = pwm_config_.pwm_grad;
 
@@ -260,17 +257,25 @@ void TMC2209::setPwmThreshold(uint32_t value)
 
 void TMC2209::enableAutomaticCurrentScaling()
 {
-  pwm_config_.pwm_autoscale = PWM_AUTOSCALE_ENABLED;
-  pwm_config_.pwm_offset = PWM_OFFSET_DEFAULT;
-  pwm_config_.pwm_grad = PWM_GRAD_DEFAULT;
+  pwm_config_.pwm_autoscale = ENABLED;
   setPwmConfig();
 }
 
 void TMC2209::disableAutomaticCurrentScaling()
 {
-  pwm_config_.pwm_autoscale = PWM_AUTOSCALE_DISABLED;
-  pwm_config_.pwm_offset = PWM_OFFSET_MIN;
-  pwm_config_.pwm_grad = PWM_GRAD_MIN;
+  pwm_config_.pwm_autoscale = DISABLED;
+  setPwmConfig();
+}
+
+void TMC2209::enableAutomaticGradientAdaptation()
+{
+  pwm_config_.pwm_autograd = ENABLED;
+  setPwmConfig();
+}
+
+void TMC2209::disableAutomaticGradientAdaptation()
+{
+  pwm_config_.pwm_autograd = DISABLED;
   setPwmConfig();
 }
 
@@ -294,6 +299,93 @@ void TMC2209::moveAtVelocity(int32_t microsteps_per_period)
 void TMC2209::moveUsingStepDirInterface()
 {
   write(ADDRESS_VACTUAL,VACTUAL_STEP_DIR_INTERFACE);
+}
+
+void TMC2209::enableStealthChop()
+{
+  global_config_.enable_spread_cycle = 0;
+  setGlobalConfig();
+}
+
+void TMC2209::enableSpreadCycle()
+{
+  global_config_.enable_spread_cycle = 1;
+  setGlobalConfig();
+}
+
+uint32_t TMC2209::getInterstepDuration()
+{
+  return read(ADDRESS_TSTEP);
+}
+
+void TMC2209::setCoolStepDurationThreshold(uint32_t duration_threshold)
+{
+  write(ADDRESS_TCOOLTHRS,duration_threshold);
+}
+
+void TMC2209::setStealthChopDurationThreshold(uint32_t duration_threshold)
+{
+  write(ADDRESS_TPWMTHRS,duration_threshold);
+}
+
+uint16_t TMC2209::getStallGuardResult()
+{
+  return read(ADDRESS_SG_RESULT);
+}
+
+void TMC2209::setStallGuardThreshold(uint8_t stall_guard_threshold)
+{
+  write(ADDRESS_SGTHRS,stall_guard_threshold);
+}
+
+uint8_t TMC2209::getPwmScaleSum()
+{
+  PwmScale pwm_scale;
+  pwm_scale.bytes = read(ADDRESS_PWM_SCALE);
+
+  return pwm_scale.pwm_scale_sum;
+}
+
+int16_t TMC2209::getPwmScaleAuto()
+{
+  PwmScale pwm_scale;
+  pwm_scale.bytes = read(ADDRESS_PWM_SCALE);
+
+  return pwm_scale.pwm_scale_auto;
+}
+
+uint8_t TMC2209::getPwmOffsetAuto()
+{
+  PwmAuto pwm_auto;
+  pwm_auto.bytes = read(ADDRESS_PWM_AUTO);
+
+  return pwm_auto.pwm_offset_auto;
+}
+
+uint8_t TMC2209::getPwmGradientAuto()
+{
+  PwmAuto pwm_auto;
+  pwm_auto.bytes = read(ADDRESS_PWM_AUTO);
+
+  return pwm_auto.pwm_gradient_auto;
+}
+
+void TMC2209::enableCoolStep(uint8_t lower_threshold,
+    uint8_t upper_threshold)
+{
+  lower_threshold = constrain(lower_threshold,SEMIN_MIN,SEMIN_MAX);
+  cool_config_.semin = lower_threshold;
+  upper_threshold = constrain(upper_threshold,SEMAX_MIN,SEMAX_MAX);
+  cool_config_.semax = upper_threshold;
+  write(ADDRESS_COOLCONF,cool_config_.bytes);
+  cool_step_enabled_ = true;
+}
+
+void TMC2209::disableCoolStep()
+{
+  cool_config_.semin = SEMIN_DISABLED;
+  write(ADDRESS_COOLCONF,cool_config_.bytes);
+  cool_step_enabled_ = false;
 }
 
 // private
@@ -550,6 +642,19 @@ void TMC2209::getGlobalConfig()
 void TMC2209::setDriverCurrent()
 {
   write(ADDRESS_IHOLD_IRUN,driver_current_.bytes);
+
+  if (driver_current_.irun >= SEIMIN_UPPER_CURRENT_LIMIT)
+  {
+    cool_config_.seimin = SEIMIN_UPPER_SETTING;
+  }
+  else
+  {
+    cool_config_.seimin = SEIMIN_LOWER_SETTING;
+  }
+  if (cool_step_enabled_)
+  {
+    write(ADDRESS_COOLCONF,cool_config_.bytes);
+  }
 }
 
 void TMC2209::setChopperConfig()

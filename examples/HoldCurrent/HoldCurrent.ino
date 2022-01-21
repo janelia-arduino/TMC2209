@@ -26,12 +26,11 @@ void setup()
 
   if (stepper_driver.communicating())
   {
-    Serial.print("Communicating with stepper driver!\n");
-    Serial.print("\n");
+    Serial.println("Communicating with stepper driver!\n");
   }
   else
   {
-    Serial.print("Not communicating with stepper driver!\n");
+    Serial.println("Not communicating with stepper driver!");
     return;
   }
 
@@ -43,7 +42,7 @@ void loop()
 {
   if (not stepper_driver.communicating())
   {
-    Serial.print("Not communicating with stepper driver!\n");
+    Serial.println("Not communicating with stepper driver!");
     return;
   }
 
@@ -53,7 +52,7 @@ void loop()
 
   Serial.print("setHoldCurrent(");
   Serial.print(hold_current_percent);
-  Serial.print(")\n");
+  Serial.println(")");
   stepper_driver.setHoldCurrent(hold_current_percent);
   delay(DELAY);
 

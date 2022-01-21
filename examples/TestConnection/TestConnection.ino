@@ -4,7 +4,7 @@
 HardwareSerial & serial_stream = Serial1;
 
 const long BAUD = 115200;
-const int LOOP_DELAY = 2000;
+const int DELAY = 2000;
 
 // Instantiate TMC2209
 TMC2209 stepper_driver;
@@ -21,73 +21,54 @@ void loop()
 {
   if (stepper_driver.communicating())
   {
-    Serial.print("Communicating with stepper driver!\n");
-    Serial.print("\n");
+    Serial.println("Communicating with stepper driver!\n");
   }
   else
   {
-    Serial.print("Not communicating with stepper driver!\n");
+    Serial.println("Not communicating with stepper driver!");
     return;
   }
 
   TMC2209::Status status = stepper_driver.getStatus();
   Serial.print("status.over_temperature_warning = ");
-  Serial.print(status.over_temperature_warning);
-  Serial.print("\n");
+  Serial.println(status.over_temperature_warning);
   Serial.print("status.over_temperature_shutdown = ");
-  Serial.print(status.over_temperature_shutdown);
-  Serial.print("\n");
+  Serial.println(status.over_temperature_shutdown);
   Serial.print("status.short_to_ground_a = ");
-  Serial.print(status.short_to_ground_a);
-  Serial.print("\n");
+  Serial.println(status.short_to_ground_a);
   Serial.print("status.short_to_ground_b = ");
-  Serial.print(status.short_to_ground_b);
-  Serial.print("\n");
+  Serial.println(status.short_to_ground_b);
   Serial.print("status.low_side_short_a = ");
-  Serial.print(status.low_side_short_a);
-  Serial.print("\n");
+  Serial.println(status.low_side_short_a);
   Serial.print("status.low_side_short_b = ");
-  Serial.print(status.low_side_short_b);
-  Serial.print("\n");
+  Serial.println(status.low_side_short_b);
   Serial.print("status.open_load_a = ");
-  Serial.print(status.open_load_a);
-  Serial.print("\n");
+  Serial.println(status.open_load_a);
   Serial.print("status.open_load_b = ");
-  Serial.print(status.open_load_b);
-  Serial.print("\n");
+  Serial.println(status.open_load_b);
   Serial.print("status.over_temperature_120c = ");
-  Serial.print(status.over_temperature_120c);
-  Serial.print("\n");
+  Serial.println(status.over_temperature_120c);
   Serial.print("status.over_temperature_143c = ");
-  Serial.print(status.over_temperature_143c);
-  Serial.print("\n");
+  Serial.println(status.over_temperature_143c);
   Serial.print("status.over_temperature_150c = ");
-  Serial.print(status.over_temperature_150c);
-  Serial.print("\n");
+  Serial.println(status.over_temperature_150c);
   Serial.print("status.over_temperature_157c = ");
-  Serial.print(status.over_temperature_157c);
-  Serial.print("\n");
+  Serial.println(status.over_temperature_157c);
   Serial.print("status.current_scaling = ");
-  Serial.print(status.current_scaling);
-  Serial.print("\n");
+  Serial.println(status.current_scaling);
   Serial.print("status.stealth_mode = ");
-  Serial.print(status.stealth_mode);
-  Serial.print("\n");
+  Serial.println(status.stealth_mode);
   Serial.print("status.standstill = ");
-  Serial.print(status.standstill);
-  Serial.print("\n");
+  Serial.println(status.standstill);
   Serial.print("\n");
 
   TMC2209::Settings settings = stepper_driver.getSettings();
   Serial.print("settings.microsteps_per_step = ");
-  Serial.print(settings.microsteps_per_step);
-  Serial.print("\n");
+  Serial.println(settings.microsteps_per_step);
   Serial.print("settings.inverse_motor_direction_enabled = ");
-  Serial.print(settings.inverse_motor_direction_enabled);
-  Serial.print("\n");
+  Serial.println(settings.inverse_motor_direction_enabled);
   Serial.print("settings.spread_cycle_enabled = ");
-  Serial.print(settings.spread_cycle_enabled);
-  Serial.print("\n");
+  Serial.println(settings.spread_cycle_enabled);
   Serial.print("settings.standstill_mode = ");
   switch (settings.standstill_mode)
   {
@@ -104,26 +85,22 @@ void loop()
       Serial.print("braking\n");
       break;
   }
-  Serial.print("settings.irun = ");
-  Serial.print(settings.irun);
-  Serial.print("\n");
-  Serial.print("settings.ihold = ");
-  Serial.print(settings.ihold);
-  Serial.print("\n");
-  Serial.print("settings.iholddelay = ");
-  Serial.print(settings.iholddelay);
-  Serial.print("\n");
+  Serial.print("settings.irun_percent = ");
+  Serial.println(settings.irun_percent);
+  Serial.print("settings.ihold_percent = ");
+  Serial.println(settings.ihold_percent);
+  Serial.print("settings.iholddelay_percent = ");
+  Serial.println(settings.iholddelay_percent);
   Serial.print("settings.automatic_current_scaling_enabled = ");
-  Serial.print(settings.automatic_current_scaling_enabled);
-  Serial.print("\n");
+  Serial.println(settings.automatic_current_scaling_enabled);
+  Serial.print("settings.automatic_gradient_adaptation_enabled = ");
+  Serial.println(settings.automatic_gradient_adaptation_enabled);
   Serial.print("settings.pwm_offset = ");
-  Serial.print(settings.pwm_offset);
-  Serial.print("\n");
+  Serial.println(settings.pwm_offset);
   Serial.print("settings.pwm_gradient = ");
-  Serial.print(settings.pwm_gradient);
-  Serial.print("\n");
+  Serial.println(settings.pwm_gradient);
   Serial.print("\n");
 
   Serial.print("\n");
-  delay(LOOP_DELAY);
+  delay(DELAY);
 }

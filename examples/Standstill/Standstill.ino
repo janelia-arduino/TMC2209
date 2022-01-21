@@ -20,12 +20,11 @@ void setup()
 
   if (stepper_driver.communicating())
   {
-    Serial.print("Communicating with stepper driver!\n");
-    Serial.print("\n");
+    Serial.println("Communicating with stepper driver!\n");
   }
   else
   {
-    Serial.print("Not communicating with stepper driver!\n");
+    Serial.println("Not communicating with stepper driver!");
     return;
   }
 
@@ -38,7 +37,7 @@ void loop()
 {
   if (not stepper_driver.communicating())
   {
-    Serial.print("Not communicating with stepper driver!\n");
+    Serial.println("Not communicating with stepper driver!");
     return;
   }
 

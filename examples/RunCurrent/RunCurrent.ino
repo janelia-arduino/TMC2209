@@ -4,7 +4,7 @@
 HardwareSerial & serial_stream = Serial1;
 
 const long BAUD = 115200;
-const int LOOP_DELAY = 4000;
+const int DELAY = 4000;
 const int32_t VELOCITY = 10000;
 const uint8_t PERCENT_MIN = 0;
 const uint8_t PERCENT_MAX = 100;
@@ -25,12 +25,11 @@ void setup()
 
   if (stepper_driver.communicating())
   {
-    Serial.print("Communicating with stepper driver!\n");
-    Serial.print("\n");
+    Serial.println("Communicating with stepper driver!\n");
   }
   else
   {
-    Serial.print("Not communicating with stepper driver!\n");
+    Serial.println("Not communicating with stepper driver!");
     return;
   }
 
@@ -42,15 +41,15 @@ void loop()
 {
   if (not stepper_driver.communicating())
   {
-    Serial.print("Not communicating with stepper driver!\n");
+    Serial.println("Not communicating with stepper driver!");
     return;
   }
 
   Serial.print("setRunCurrent(");
   Serial.print(run_current_percent);
-  Serial.print(")\n");
+  Serial.println(")");
   stepper_driver.setRunCurrent(run_current_percent);
-  delay(LOOP_DELAY);
+  delay(DELAY);
 
   if (run_current_percent == PERCENT_MAX)
   {

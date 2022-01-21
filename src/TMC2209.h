@@ -8,7 +8,6 @@
 #ifndef TMC2209_H
 #define TMC2209_H
 #include <Arduino.h>
-#include <Streaming.h>
 
 
 class TMC2209
@@ -68,8 +67,6 @@ public:
   void enableInverseMotorDirection();
   void disableInverseMotorDirection();
 
-  void enableStealthChop();
-  void enableSpreadCycle();
   enum StandstillMode
   {
     NORMAL=0,
@@ -85,10 +82,14 @@ public:
     bool inverse_motor_direction_enabled;
     bool spread_cycle_enabled;
     uint8_t standstill_mode;
-    uint8_t irun;
-    uint8_t ihold;
-    uint8_t iholddelay;
+    uint8_t irun_percent;
+    uint8_t irun_register_value;
+    uint8_t ihold_percent;
+    uint8_t ihold_register_value;
+    uint8_t iholddelay_percent;
+    uint8_t iholddelay_register_value;
     bool automatic_current_scaling_enabled;
+    bool automatic_gradient_adaptation_enabled;
     uint8_t pwm_offset;
     uint8_t pwm_gradient;
   };
@@ -98,11 +99,33 @@ public:
 
   void enableAutomaticCurrentScaling();
   void disableAutomaticCurrentScaling();
+  void enableAutomaticGradientAdaptation();
+  void disableAutomaticGradientAdaptation();
   void setPwmOffset(uint8_t pwm_amplitude);
   void setPwmGradient(uint8_t pwm_amplitude);
 
   void moveAtVelocity(int32_t microsteps_per_period);
   void moveUsingStepDirInterface();
+
+  void enableStealthChop();
+  void enableSpreadCycle();
+  uint32_t getInterstepDuration();
+  void setCoolStepDurationThreshold(uint32_t duration_threshold);
+  void setStealthChopDurationThreshold(uint32_t duration_threshold);
+
+  uint16_t getStallGuardResult();
+  void setStallGuardThreshold(uint8_t stall_guard_threshold);
+
+  uint8_t getPwmScaleSum();
+  int16_t getPwmScaleAuto();
+  uint8_t getPwmOffsetAuto();
+  uint8_t getPwmGradientAuto();
+
+  // lower_threshold: min = 1, max = 15
+  // upper_threshold: min = 0, max = 15, 0-2 recommended
+  void enableCoolStep(uint8_t lower_threshold=1,
+    uint8_t upper_threshold=0);
+  void disableCoolStep();
 
 private:
   HardwareSerial * serial_ptr_;
@@ -118,6 +141,9 @@ private:
 
   const static uint16_t ECHO_DELAY_MAX_VALUE = 20;
   const static uint16_t REPLY_DELAY_MAX_VALUE = 100;
+
+  const static uint8_t DISABLED = 0;
+  const static uint8_t ENABLED = 1;
 
   // Datagrams
   const static uint8_t WRITE_READ_REPLY_DATAGRAM_SIZE = 8;
@@ -305,6 +331,16 @@ private:
     };
     uint32_t bytes;
   };
+  CoolConfig cool_config_;
+  bool cool_step_enabled_;
+  const static uint8_t SEIMIN_UPPER_CURRENT_LIMIT = 20;
+  const static uint8_t SEIMIN_LOWER_SETTING = 0;
+  const static uint8_t SEIMIN_UPPER_SETTING = 1;
+  const static uint8_t SEMIN_DISABLED = 0;
+  const static uint8_t SEMIN_MIN = 1;
+  const static uint8_t SEMIN_MAX = 15;
+  const static uint8_t SEMAX_MIN = 0;
+  const static uint8_t SEMAX_MAX = 15;
 
   // Microstepping Control Register Set
   const static uint8_t ADDRESS_MSCNT = 0x6A;
@@ -387,12 +423,31 @@ private:
   const static uint8_t PWM_GRAD_MIN = 0;
   const static uint8_t PWM_GRAD_MAX = 255;
   const static uint8_t PWM_GRAD_DEFAULT = 0x14;
-  const static uint8_t PWM_FREQ_DEFAULT = 0b00; // 2/1024 fclk
-  const static uint8_t PWM_AUTOSCALE_DISABLED = 0;
-  const static uint8_t PWM_AUTOSCALE_ENABLED = 1;
-  const static uint8_t PWM_AUTOSCALE_DEFAULT = 1;
 
+  union PwmScale
+  {
+    struct
+    {
+      uint32_t pwm_scale_sum : 8;
+      uint32_t reserved_0 : 8;
+      uint32_t pwm_scale_auto : 9;
+      uint32_t reserved_1 : 7;
+    };
+    uint32_t bytes;
+  };
   const static uint8_t ADDRESS_PWM_SCALE = 0x71;
+
+  union PwmAuto
+  {
+    struct
+    {
+      uint32_t pwm_offset_auto : 8;
+      uint32_t reserved_0 : 8;
+      uint32_t pwm_gradient_auto : 8;
+      uint32_t reserved_1 : 8;
+    };
+    uint32_t bytes;
+  };
   const static uint8_t ADDRESS_PWM_AUTO = 0x72;
 
   void setOperationModeToSerial(HardwareSerial & serial,
