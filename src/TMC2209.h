@@ -149,6 +149,8 @@ public:
   };
   void setMeasurementsPerDecrement(MeasurementsPerDecrement measurements);
 
+  uint16_t getMicrostepCounter();
+
 private:
   HardwareSerial * serial_ptr_;
   int enable_pin_;
@@ -304,21 +306,26 @@ private:
   const static uint8_t IHOLDDELAY_DEFAULT = 1;
 
   const static uint8_t ADDRESS_TPOWERDOWN = 0x11;
+  const static uint8_t TPOWERDOWN_DEFAULT = 20;
 
   const static uint8_t ADDRESS_TSTEP = 0x12;
 
   const static uint8_t ADDRESS_TPWMTHRS = 0x13;
-  const static uint32_t TPWMTHRS_DEFAULT = 500;
+  const static uint32_t TPWMTHRS_DEFAULT = 0;
 
   const static uint8_t ADDRESS_VACTUAL = 0x22;
-  const static int32_t VACTUAL_STEP_DIR_INTERFACE = 0x0;
+  const static int32_t VACTUAL_DEFAULT = 0;
+  const static int32_t VACTUAL_STEP_DIR_INTERFACE = 0;
 
   // CoolStep and StallGuard Control Register Set
   const static uint8_t ADDRESS_TCOOLTHRS = 0x14;
+  const static uint8_t TCOOLTHRS_DEFAULT = 0;
   const static uint8_t ADDRESS_SGTHRS = 0x40;
+  const static uint8_t SGTHRS_DEFAULT = 0;
   const static uint8_t ADDRESS_SG_RESULT = 0x41;
 
   const static uint8_t ADDRESS_COOLCONF = 0x42;
+  const static uint8_t COOLCONF_DEFAULT = 0;
   union CoolConfig
   {
     struct
@@ -457,6 +464,8 @@ private:
   void setOperationModeToSerial(HardwareSerial & serial,
     SerialAddress serial_address=SERIAL_ADDRESS_0);
   void setOperationModeToStandalone();
+
+  void setRegistersToDefaults();
 
   void minimizeMotorCurrent();
 

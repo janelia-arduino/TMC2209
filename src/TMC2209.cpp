@@ -17,16 +17,16 @@ TMC2209::TMC2209()
   global_config_.i_scale_analog = 1;
   global_config_.multistep_filt = 1;
 
+  driver_current_.bytes = 0;
+  driver_current_.ihold = IHOLD_DEFAULT;
+  driver_current_.irun = IRUN_DEFAULT;
+  driver_current_.iholddelay = IHOLDDELAY_DEFAULT;
+
   chopper_config_.bytes = CHOPPER_CONFIG_DEFAULT;
   chopper_config_.tbl = TBL_DEFAULT;
   chopper_config_.hend = HEND_DEFAULT;
   chopper_config_.hstart = HSTART_DEFAULT;
   chopper_config_.toff = TOFF_DEFAULT;
-
-  driver_current_.bytes = 0;
-  driver_current_.ihold = IHOLD_DEFAULT;
-  driver_current_.irun = IRUN_DEFAULT;
-  driver_current_.iholddelay = IHOLDDELAY_DEFAULT;
 
   pwm_config_.bytes = PWM_CONFIG_DEFAULT;
 
@@ -40,16 +40,17 @@ void TMC2209::setEnablePin(size_t enable_pin)
   enable_pin_ = enable_pin;
 
   pinMode(enable_pin_,OUTPUT);
-  disable();
+  digitalWrite(enable_pin_,HIGH);
 }
 
 void TMC2209::setup(HardwareSerial & serial,
   SerialAddress serial_address)
 {
   setOperationModeToSerial(serial,serial_address);
-  disable();
-  minimizeMotorCurrent();
   getSettings();
+  minimizeMotorCurrent();
+  setRegistersToDefaults();
+  disable();
 }
 
 bool TMC2209::communicating()
@@ -71,11 +72,8 @@ void TMC2209::enable()
   {
     digitalWrite(enable_pin_,LOW);
   }
-  else
-  {
-    chopper_config_.toff = toff_;
-    setChopperConfig();
-  }
+  chopper_config_.toff = toff_;
+  setChopperConfig();
 }
 
 void TMC2209::disable()
@@ -84,11 +82,8 @@ void TMC2209::disable()
   {
     digitalWrite(enable_pin_,HIGH);
   }
-  else
-  {
-    chopper_config_.toff = TOFF_DISABLE;
-    setChopperConfig();
-  }
+  chopper_config_.toff = TOFF_DISABLE;
+  setChopperConfig();
 }
 
 void TMC2209::setMicrostepsPerStep(uint16_t microsteps_per_step)
@@ -403,6 +398,11 @@ void TMC2209::setMeasurementsPerDecrement(MeasurementsPerDecrement measurements)
   write(ADDRESS_COOLCONF,cool_config_.bytes);
 }
 
+uint16_t TMC2209::getMicrostepCounter()
+{
+  return read(ADDRESS_MSCNT);
+}
+
 // private
 void TMC2209::setOperationModeToSerial(HardwareSerial & serial,
   SerialAddress serial_address)
@@ -430,9 +430,20 @@ void TMC2209::setOperationModeToStandalone()
   setGlobalConfig();
 }
 
+void TMC2209::setRegistersToDefaults()
+{
+  write(ADDRESS_TPOWERDOWN,TPOWERDOWN_DEFAULT);
+  write(ADDRESS_TPWMTHRS,TPWMTHRS_DEFAULT);
+  write(ADDRESS_VACTUAL,VACTUAL_DEFAULT);
+  write(ADDRESS_TCOOLTHRS,TCOOLTHRS_DEFAULT);
+  write(ADDRESS_SGTHRS,SGTHRS_DEFAULT);
+  write(ADDRESS_COOLCONF,COOLCONF_DEFAULT);
+}
+
 void TMC2209::minimizeMotorCurrent()
 {
   driver_current_.irun = CURRENT_SETTING_MIN;
+  driver_current_.ihold = CURRENT_SETTING_MAX;
   setDriverCurrent();
 }
 
