@@ -21,7 +21,8 @@ void loop()
 {
   if (stepper_driver.communicating())
   {
-    Serial.println("Communicating with stepper driver!\n");
+    Serial.println("Communicating with stepper driver!");
+    Serial.println("");
   }
   else
   {
@@ -60,7 +61,7 @@ void loop()
   Serial.println(status.stealth_chop_mode);
   Serial.print("status.standstill = ");
   Serial.println(status.standstill);
-  Serial.print("\n");
+  Serial.println("");
 
   TMC2209::Settings settings = stepper_driver.getSettings();
   Serial.print("settings.microsteps_per_step = ");
@@ -73,16 +74,16 @@ void loop()
   switch (settings.standstill_mode)
   {
     case TMC2209::NORMAL:
-      Serial.print("normal\n");
+      Serial.println("normal");
       break;
     case TMC2209::FREEWHEELING:
-      Serial.print("freewheeling\n");
+      Serial.println("freewheeling");
       break;
     case TMC2209::STRONG_BRAKING:
-      Serial.print("strong_braking\n");
+      Serial.println("strong_braking");
       break;
     case TMC2209::BRAKING:
-      Serial.print("braking\n");
+      Serial.println("braking");
       break;
   }
   Serial.print("settings.irun_percent = ");
@@ -99,8 +100,8 @@ void loop()
   Serial.println(settings.pwm_offset);
   Serial.print("settings.pwm_gradient = ");
   Serial.println(settings.pwm_gradient);
-  Serial.print("\n");
+  Serial.println("");
 
-  Serial.print("\n");
+  Serial.println("");
   delay(DELAY);
 }

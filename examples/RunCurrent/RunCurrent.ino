@@ -25,7 +25,8 @@ void setup()
 
   if (stepper_driver.communicating())
   {
-    Serial.println("Communicating with stepper driver!\n");
+    Serial.println("Communicating with stepper driver!");
+    Serial.println("");
   }
   else
   {
@@ -50,6 +51,11 @@ void loop()
   Serial.println(")");
   stepper_driver.setRunCurrent(run_current_percent);
   delay(DELAY);
+
+  TMC2209::Status status = stepper_driver.getStatus();
+  Serial.print("status.current_scaling = ");
+  Serial.println(status.current_scaling);
+  Serial.println("");
 
   if (run_current_percent == PERCENT_MAX)
   {

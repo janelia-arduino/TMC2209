@@ -381,16 +381,6 @@ void TMC2209::enableCoolStep(uint8_t lower_threshold,
   upper_threshold = constrain(upper_threshold,SEMAX_MIN,SEMAX_MAX);
   cool_config_.semax = upper_threshold;
   write(ADDRESS_COOLCONF,cool_config_.bytes);
-  Serial.print("cool_config_.semin = ");
-  Serial.println(cool_config_.semin);
-  Serial.print("cool_config_.seup = ");
-  Serial.println(cool_config_.seup);
-  Serial.print("cool_config_.semax = ");
-  Serial.println(cool_config_.semax);
-  Serial.print("cool_config_.sedn = ");
-  Serial.println(cool_config_.sedn);
-  Serial.print("cool_config_.seimin = ");
-  Serial.println(cool_config_.seimin);
   cool_step_enabled_ = true;
 }
 

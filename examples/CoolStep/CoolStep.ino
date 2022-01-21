@@ -5,7 +5,7 @@ HardwareSerial & serial_stream = Serial1;
 
 const long BAUD = 115200;
 const int DELAY = 500;
-const int32_t VELOCITY = 10000;
+const int32_t VELOCITY = 20000;
 const uint8_t RUN_CURRENT_PERCENT = 60;
 const uint8_t LOOPS_BEFORE_TOGGLING = 3;
 const uint8_t COOL_STEP_LOWER_THRESHOLD = 1;
@@ -30,7 +30,8 @@ void setup()
 
   if (stepper_driver.communicating())
   {
-    Serial.println("Communicating with stepper driver!\n");
+    Serial.println("Communicating with stepper driver!");
+    Serial.println("");
   }
   else
   {
@@ -39,8 +40,8 @@ void setup()
   }
 
   stepper_driver.setRunCurrent(RUN_CURRENT_PERCENT);
-  // stepper_driver.setCurrentIncrementStep(STEP_WIDTH);
-  // stepper_driver.setMeasurementsPerDecrement(MEASUREMENTS);
+  stepper_driver.setCurrentIncrementStep(STEP_WIDTH);
+  stepper_driver.setMeasurementsPerDecrement(MEASUREMENTS);
   stepper_driver.setCoolStepDurationThreshold(COOL_STEP_DURATION_THRESHOLD);
   stepper_driver.enable();
   stepper_driver.moveAtVelocity(VELOCITY);
@@ -101,7 +102,7 @@ void loop()
   Serial.print("settings.irun_register_value = ");
   Serial.println(settings.irun_register_value);
 
-  Serial.print("\n");
+  Serial.println("");
 
   if (++loop_count == LOOPS_BEFORE_TOGGLING)
   {

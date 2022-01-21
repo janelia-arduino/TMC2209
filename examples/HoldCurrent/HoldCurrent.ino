@@ -26,7 +26,8 @@ void setup()
 
   if (stepper_driver.communicating())
   {
-    Serial.println("Communicating with stepper driver!\n");
+    Serial.println("Communicating with stepper driver!");
+    Serial.println("");
   }
   else
   {
@@ -60,8 +61,14 @@ void loop()
   stepper_driver.moveAtVelocity(VELOCITY_STOPPED);
   delay(DELAY);
 
-  Serial.println("disable");
+  uint8_t pwm_scale_sum = stepper_driver.getPwmScaleSum();
+  Serial.print("pwm_scale_sum = ");
+  Serial.println(pwm_scale_sum);
+  delay(DELAY);
+
   stepper_driver.disable();
+  Serial.println("disable");
+  Serial.println("");
   delay(DELAY);
 
   if (hold_current_percent == PERCENT_MAX)

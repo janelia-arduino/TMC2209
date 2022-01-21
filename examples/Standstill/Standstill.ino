@@ -20,7 +20,8 @@ void setup()
 
   if (stepper_driver.communicating())
   {
-    Serial.println("Communicating with stepper driver!\n");
+    Serial.println("Communicating with stepper driver!");
+    Serial.println("");
   }
   else
   {
@@ -56,4 +57,6 @@ void loop()
   Serial.println("standstill mode = BRAKING");
   stepper_driver.setStandstillMode(stepper_driver.BRAKING);
   delay(DELAY);
+
+  Serial.println("");
 }
