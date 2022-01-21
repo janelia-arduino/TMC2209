@@ -56,8 +56,8 @@ void loop()
   Serial.println(status.over_temperature_157c);
   Serial.print("status.current_scaling = ");
   Serial.println(status.current_scaling);
-  Serial.print("status.stealth_mode = ");
-  Serial.println(status.stealth_mode);
+  Serial.print("status.stealth_chop_mode = ");
+  Serial.println(status.stealth_chop_mode);
   Serial.print("status.standstill = ");
   Serial.println(status.standstill);
   Serial.print("\n");

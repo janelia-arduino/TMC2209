@@ -33,6 +33,7 @@ public:
 
   // valid values = 1,2,4,8,...128,256, other values get rounded down
   void setMicrostepsPerStep(uint16_t microsteps_per_step);
+  uint16_t getMicrostepsPerStep();
 
   void setRunCurrent(uint8_t percent);
   void setHoldCurrent(uint8_t percent);
@@ -58,7 +59,7 @@ public:
     uint32_t reserved0 : 4;
     uint32_t current_scaling : 5;
     uint32_t reserved1 : 9;
-    uint32_t stealth_mode : 1;
+    uint32_t stealth_chop_mode : 1;
     uint32_t standstill : 1;
   };
   const static uint8_t CURRENT_SCALING_MAX = 31;
@@ -95,8 +96,6 @@ public:
   };
   Settings getSettings();
 
-  void setPwmThreshold(uint32_t value);
-
   void enableAutomaticCurrentScaling();
   void disableAutomaticCurrentScaling();
   void enableAutomaticGradientAdaptation();
@@ -104,11 +103,18 @@ public:
   void setPwmOffset(uint8_t pwm_amplitude);
   void setPwmGradient(uint8_t pwm_amplitude);
 
+  // default = 20
+  // mimimum of 2 for StealthChop auto tuning
+  void setPowerDownDelay(uint8_t delay);
+
+  uint8_t getInterfaceTransmissionCounter();
+
   void moveAtVelocity(int32_t microsteps_per_period);
   void moveUsingStepDirInterface();
 
   void enableStealthChop();
   void enableSpreadCycle();
+
   uint32_t getInterstepDuration();
   void setCoolStepDurationThreshold(uint32_t duration_threshold);
   void setStealthChopDurationThreshold(uint32_t duration_threshold);
@@ -126,6 +132,22 @@ public:
   void enableCoolStep(uint8_t lower_threshold=1,
     uint8_t upper_threshold=0);
   void disableCoolStep();
+  enum CurrentIncrementStep
+  {
+    STEP_WIDTH_1=0,
+    STEP_WIDTH_2=1,
+    STEP_WIDTH_4=2,
+    STEP_WIDTH_8=3,
+  };
+  void setCurrentIncrementStep(CurrentIncrementStep step_width);
+  enum MeasurementsPerDecrement
+  {
+    MEASUREMENTS_32=0,
+    MEASUREMENTS_8=1,
+    MEASUREMENTS_2=2,
+    MEASUREMENTS_1=3,
+  };
+  void setMeasurementsPerDecrement(MeasurementsPerDecrement measurements);
 
 private:
   HardwareSerial * serial_ptr_;
@@ -219,15 +241,6 @@ private:
   };
 
   const static uint8_t ADDRESS_IFCNT = 0x02;
-  union InterfaceTransmissionCounter
-  {
-    struct
-    {
-      uint32_t ifcnt : 8;
-      uint32_t reserved : 24;
-    };
-    uint32_t bytes;
-  };
 
   const static uint8_t ADDRESS_SENDDELAY = 0x03;
   union SendDelay
@@ -291,15 +304,6 @@ private:
   const static uint8_t IHOLDDELAY_DEFAULT = 1;
 
   const static uint8_t ADDRESS_TPOWERDOWN = 0x11;
-  union PowerDownDelay
-  {
-    struct
-    {
-      uint32_t value : 8;
-      uint32_t reserved : 24;
-    };
-    uint32_t bytes;
-  };
 
   const static uint8_t ADDRESS_TSTEP = 0x12;
 
@@ -475,7 +479,6 @@ private:
   uint8_t currentSettingToPercent(uint8_t current_setting);
   uint8_t percentToHoldDelaySetting(uint8_t percent);
   uint8_t holdDelaySettingToPercent(uint8_t hold_delay_setting);
-  uint16_t getMicrostepsPerStep();
 
   uint8_t pwmAmplitudeToPwmAmpl(uint8_t pwm_amplitude);
   uint8_t pwmAmplitudeToPwmGrad(uint8_t pwm_amplitude);

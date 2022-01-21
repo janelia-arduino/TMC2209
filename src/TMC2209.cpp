@@ -31,8 +31,6 @@ TMC2209::TMC2209()
   pwm_config_.bytes = PWM_CONFIG_DEFAULT;
 
   cool_config_.bytes = 0;
-  cool_config_.seup = 3;
-  cool_config_.sedn = 3;
   cool_step_enabled_ = false;
 
 }
@@ -250,11 +248,6 @@ TMC2209::Settings TMC2209::getSettings()
   return settings;
 }
 
-void TMC2209::setPwmThreshold(uint32_t value)
-{
-  write(ADDRESS_TPWMTHRS,value);
-}
-
 void TMC2209::enableAutomaticCurrentScaling()
 {
   pwm_config_.pwm_autoscale = ENABLED;
@@ -289,6 +282,16 @@ void TMC2209::setPwmGradient(uint8_t pwm_amplitude)
 {
   pwm_config_.pwm_grad = pwm_amplitude;
   setPwmConfig();
+}
+
+void TMC2209::setPowerDownDelay(uint8_t delay)
+{
+  write(ADDRESS_TPOWERDOWN,delay);
+}
+
+uint8_t TMC2209::getInterfaceTransmissionCounter()
+{
+  return read(ADDRESS_IFCNT);
 }
 
 void TMC2209::moveAtVelocity(int32_t microsteps_per_period)
@@ -378,6 +381,16 @@ void TMC2209::enableCoolStep(uint8_t lower_threshold,
   upper_threshold = constrain(upper_threshold,SEMAX_MIN,SEMAX_MAX);
   cool_config_.semax = upper_threshold;
   write(ADDRESS_COOLCONF,cool_config_.bytes);
+  Serial.print("cool_config_.semin = ");
+  Serial.println(cool_config_.semin);
+  Serial.print("cool_config_.seup = ");
+  Serial.println(cool_config_.seup);
+  Serial.print("cool_config_.semax = ");
+  Serial.println(cool_config_.semax);
+  Serial.print("cool_config_.sedn = ");
+  Serial.println(cool_config_.sedn);
+  Serial.print("cool_config_.seimin = ");
+  Serial.println(cool_config_.seimin);
   cool_step_enabled_ = true;
 }
 
@@ -386,6 +399,18 @@ void TMC2209::disableCoolStep()
   cool_config_.semin = SEMIN_DISABLED;
   write(ADDRESS_COOLCONF,cool_config_.bytes);
   cool_step_enabled_ = false;
+}
+
+void TMC2209::setCurrentIncrementStep(CurrentIncrementStep step_width)
+{
+  cool_config_.seup = step_width;
+  write(ADDRESS_COOLCONF,cool_config_.bytes);
+}
+
+void TMC2209::setMeasurementsPerDecrement(MeasurementsPerDecrement measurements)
+{
+  cool_config_.sedn = measurements;
+  write(ADDRESS_COOLCONF,cool_config_.bytes);
 }
 
 // private
