@@ -10,7 +10,7 @@ const uint8_t RUN_CURRENT_PERCENT = 60;
 const uint8_t LOOPS_BEFORE_TOGGLING = 3;
 const uint8_t COOL_STEP_LOWER_THRESHOLD = 1;
 const uint8_t COOL_STEP_UPPER_THRESHOLD = 0;
-const uint32_t COOL_STEP_DURATION_THRESHOLD = 1000;
+const uint32_t COOL_STEP_DURATION_THRESHOLD = 2000;
 const TMC2209::CurrentIncrementStep STEP_WIDTH = TMC2209::STEP_WIDTH_8;
 const TMC2209::MeasurementsPerDecrement MEASUREMENTS = TMC2209::MEASUREMENTS_1;
 
@@ -40,6 +40,8 @@ void setup()
   }
 
   stepper_driver.setRunCurrent(RUN_CURRENT_PERCENT);
+  stepper_driver.disableAutomaticCurrentScaling();
+  stepper_driver.disableAutomaticGradientAdaptation();
   stepper_driver.setCurrentIncrementStep(STEP_WIDTH);
   stepper_driver.setMeasurementsPerDecrement(MEASUREMENTS);
   stepper_driver.setCoolStepDurationThreshold(COOL_STEP_DURATION_THRESHOLD);
@@ -79,7 +81,7 @@ void loop()
   Serial.println(pwm_scale_sum);
   delay(DELAY);
 
-  uint8_t pwm_scale_auto = stepper_driver.getPwmScaleAuto();
+  int16_t pwm_scale_auto = stepper_driver.getPwmScaleAuto();
   Serial.print("pwm_scale_auto = ");
   Serial.println(pwm_scale_auto);
   delay(DELAY);
