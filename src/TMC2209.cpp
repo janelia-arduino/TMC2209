@@ -245,25 +245,25 @@ TMC2209::Settings TMC2209::getSettings()
 
 void TMC2209::enableAutomaticCurrentScaling()
 {
-  pwm_config_.pwm_autoscale = ENABLED;
+  pwm_config_.pwm_autoscale = STEPPER_DRIVER_FEATURE_ON;
   setPwmConfig();
 }
 
 void TMC2209::disableAutomaticCurrentScaling()
 {
-  pwm_config_.pwm_autoscale = DISABLED;
+  pwm_config_.pwm_autoscale = STEPPER_DRIVER_FEATURE_OFF;
   setPwmConfig();
 }
 
 void TMC2209::enableAutomaticGradientAdaptation()
 {
-  pwm_config_.pwm_autograd = ENABLED;
+  pwm_config_.pwm_autograd = STEPPER_DRIVER_FEATURE_ON;
   setPwmConfig();
 }
 
 void TMC2209::disableAutomaticGradientAdaptation()
 {
-  pwm_config_.pwm_autograd = DISABLED;
+  pwm_config_.pwm_autograd = STEPPER_DRIVER_FEATURE_OFF;
   setPwmConfig();
 }
 
@@ -381,7 +381,7 @@ void TMC2209::enableCoolStep(uint8_t lower_threshold,
 
 void TMC2209::disableCoolStep()
 {
-  cool_config_.semin = SEMIN_DISABLED;
+  cool_config_.semin = SEMIN_OFF;
   write(ADDRESS_COOLCONF,cool_config_.bytes);
   cool_step_enabled_ = false;
 }
@@ -401,6 +401,30 @@ void TMC2209::setMeasurementsPerDecrement(MeasurementsPerDecrement measurements)
 uint16_t TMC2209::getMicrostepCounter()
 {
   return read(ADDRESS_MSCNT);
+}
+
+void TMC2209::enableAnalogCurrentScaling()
+{
+  global_config_.i_scale_analog = 1;
+  setGlobalConfig();
+}
+
+void TMC2209::disableAnalogCurrentScaling()
+{
+  global_config_.i_scale_analog = 0;
+  setGlobalConfig();
+}
+
+void TMC2209::useExternalSenseResistors()
+{
+  global_config_.internal_rsense = 0;
+  setGlobalConfig();
+}
+
+void TMC2209::useInternalSenseResistors()
+{
+  global_config_.internal_rsense = 1;
+  setGlobalConfig();
 }
 
 // private

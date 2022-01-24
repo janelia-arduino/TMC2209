@@ -151,6 +151,12 @@ public:
 
   uint16_t getMicrostepCounter();
 
+  void enableAnalogCurrentScaling();
+  void disableAnalogCurrentScaling();
+
+  void useExternalSenseResistors();
+  void useInternalSenseResistors();
+
 private:
   HardwareSerial * serial_ptr_;
   int enable_pin_;
@@ -166,8 +172,8 @@ private:
   const static uint16_t ECHO_DELAY_MAX_VALUE = 20;
   const static uint16_t REPLY_DELAY_MAX_VALUE = 100;
 
-  const static uint8_t DISABLED = 0;
-  const static uint8_t ENABLED = 1;
+  const static uint8_t STEPPER_DRIVER_FEATURE_OFF = 0;
+  const static uint8_t STEPPER_DRIVER_FEATURE_ON = 1;
 
   // Datagrams
   const static uint8_t WRITE_READ_REPLY_DATAGRAM_SIZE = 8;
@@ -347,7 +353,7 @@ private:
   const static uint8_t SEIMIN_UPPER_CURRENT_LIMIT = 20;
   const static uint8_t SEIMIN_LOWER_SETTING = 0;
   const static uint8_t SEIMIN_UPPER_SETTING = 1;
-  const static uint8_t SEMIN_DISABLED = 0;
+  const static uint8_t SEMIN_OFF = 0;
   const static uint8_t SEMIN_MIN = 1;
   const static uint8_t SEMIN_MAX = 15;
   const static uint8_t SEMAX_MIN = 0;
