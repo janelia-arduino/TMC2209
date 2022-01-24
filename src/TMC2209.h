@@ -132,22 +132,22 @@ public:
   void enableCoolStep(uint8_t lower_threshold=1,
     uint8_t upper_threshold=0);
   void disableCoolStep();
-  enum CurrentIncrementStep
+  enum CurrentIncrement
   {
     STEP_WIDTH_1=0,
     STEP_WIDTH_2=1,
     STEP_WIDTH_4=2,
     STEP_WIDTH_8=3,
   };
-  void setCurrentIncrementStep(CurrentIncrementStep step_width);
+  void setCurrentIncrement(CurrentIncrement step_width);
   enum MeasurementsPerDecrement
   {
-    MEASUREMENTS_32=0,
-    MEASUREMENTS_8=1,
-    MEASUREMENTS_2=2,
-    MEASUREMENTS_1=3,
+    MEASUREMENT_COUNT_32=0,
+    MEASUREMENT_COUNT_8=1,
+    MEASUREMENT_COUNT_2=2,
+    MEASUREMENT_COUNT_1=3,
   };
-  void setMeasurementsPerDecrement(MeasurementsPerDecrement measurements);
+  void setMeasurementsPerDecrement(MeasurementsPerDecrement measurement_count);
 
   uint16_t getMicrostepCounter();
 

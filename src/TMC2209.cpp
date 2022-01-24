@@ -386,15 +386,15 @@ void TMC2209::disableCoolStep()
   cool_step_enabled_ = false;
 }
 
-void TMC2209::setCurrentIncrementStep(CurrentIncrementStep step_width)
+void TMC2209::setCurrentIncrement(CurrentIncrement step_width)
 {
   cool_config_.seup = step_width;
   write(ADDRESS_COOLCONF,cool_config_.bytes);
 }
 
-void TMC2209::setMeasurementsPerDecrement(MeasurementsPerDecrement measurements)
+void TMC2209::setMeasurementsPerDecrement(MeasurementsPerDecrement measurement_count)
 {
-  cool_config_.sedn = measurements;
+  cool_config_.sedn = measurement_count;
   write(ADDRESS_COOLCONF,cool_config_.bytes);
 }
 

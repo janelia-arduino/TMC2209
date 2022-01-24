@@ -11,8 +11,8 @@ const uint8_t LOOPS_BEFORE_TOGGLING = 3;
 const uint8_t COOL_STEP_LOWER_THRESHOLD = 1;
 const uint8_t COOL_STEP_UPPER_THRESHOLD = 0;
 const uint32_t COOL_STEP_DURATION_THRESHOLD = 2000;
-const TMC2209::CurrentIncrementStep STEP_WIDTH = TMC2209::STEP_WIDTH_8;
-const TMC2209::MeasurementsPerDecrement MEASUREMENTS = TMC2209::MEASUREMENTS_1;
+const TMC2209::CurrentIncrement STEP_WIDTH = TMC2209::STEP_WIDTH_8;
+const TMC2209::MeasurementsPerDecrement MEASUREMENT_COUNT = TMC2209::MEASUREMENT_COUNT_1;
 
 uint8_t loop_count = 0;
 bool cool_step_enabled = false;
@@ -42,8 +42,8 @@ void setup()
   stepper_driver.setRunCurrent(RUN_CURRENT_PERCENT);
   stepper_driver.disableAutomaticCurrentScaling();
   stepper_driver.disableAutomaticGradientAdaptation();
-  stepper_driver.setCurrentIncrementStep(STEP_WIDTH);
-  stepper_driver.setMeasurementsPerDecrement(MEASUREMENTS);
+  stepper_driver.setCurrentIncrement(STEP_WIDTH);
+  stepper_driver.setMeasurementsPerDecrement(MEASUREMENT_COUNT);
   stepper_driver.setCoolStepDurationThreshold(COOL_STEP_DURATION_THRESHOLD);
   stepper_driver.enable();
   stepper_driver.moveAtVelocity(VELOCITY);
