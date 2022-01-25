@@ -10,7 +10,6 @@
 TMC2209::TMC2209()
 {
   serial_ptr_ = nullptr;
-  enable_pin_ = -1;
   serial_address_ = SERIAL_ADDRESS_0;
 
   global_config_.bytes = 0;
@@ -35,14 +34,6 @@ TMC2209::TMC2209()
 
 }
 
-void TMC2209::setEnablePin(size_t enable_pin)
-{
-  enable_pin_ = enable_pin;
-
-  pinMode(enable_pin_,OUTPUT);
-  digitalWrite(enable_pin_,HIGH);
-}
-
 void TMC2209::setup(HardwareSerial & serial,
   SerialAddress serial_address)
 {
@@ -51,6 +42,8 @@ void TMC2209::setup(HardwareSerial & serial,
   minimizeMotorCurrent();
   setRegistersToDefaults();
   disable();
+  disableAutomaticCurrentScaling();
+  disableAutomaticGradientAdaptation();
 }
 
 bool TMC2209::communicating()
@@ -68,22 +61,22 @@ uint8_t TMC2209::getVersion()
 
 void TMC2209::enable()
 {
-  if (enable_pin_ >= 0)
-  {
-    digitalWrite(enable_pin_,LOW);
-  }
   chopper_config_.toff = toff_;
   setChopperConfig();
 }
 
 void TMC2209::disable()
 {
-  if (enable_pin_ >= 0)
-  {
-    digitalWrite(enable_pin_,HIGH);
-  }
   chopper_config_.toff = TOFF_DISABLE;
   setChopperConfig();
+}
+
+bool TMC2209::disabledByInputPin()
+{
+  Input input;
+  input.bytes = read(ADDRESS_IOIN);
+
+  return input.enn;
 }
 
 void TMC2209::setMicrostepsPerStep(uint16_t microsteps_per_step)
@@ -225,9 +218,10 @@ TMC2209::Settings TMC2209::getSettings()
   getPwmConfig();
 
   Settings settings;
+  settings.enabled = (chopper_config_.toff > TOFF_DISABLE);
   settings.microsteps_per_step = getMicrostepsPerStep();
   settings.inverse_motor_direction_enabled = global_config_.shaft;
-  settings.spread_cycle_enabled = global_config_.enable_spread_cycle;
+  settings.stealth_chop_enabled = not global_config_.enable_spread_cycle;
   settings.standstill_mode = pwm_config_.freewheel;
   settings.irun_percent = currentSettingToPercent(driver_current_.irun);
   settings.irun_register_value = driver_current_.irun;
@@ -239,6 +233,9 @@ TMC2209::Settings TMC2209::getSettings()
   settings.automatic_gradient_adaptation_enabled = pwm_config_.pwm_autograd;
   settings.pwm_offset = pwm_config_.pwm_offset;
   settings.pwm_gradient = pwm_config_.pwm_grad;
+  settings.cool_step_enabled = cool_step_enabled_;
+  settings.analog_current_scaling_enabled = global_config_.i_scale_analog;
+  settings.internal_sense_resistors_enabled = global_config_.internal_rsense;
 
   return settings;
 }
@@ -305,7 +302,7 @@ void TMC2209::enableStealthChop()
   setGlobalConfig();
 }
 
-void TMC2209::enableSpreadCycle()
+void TMC2209::disableStealthChop()
 {
   global_config_.enable_spread_cycle = 1;
   setGlobalConfig();
@@ -386,13 +383,13 @@ void TMC2209::disableCoolStep()
   cool_step_enabled_ = false;
 }
 
-void TMC2209::setCurrentIncrement(CurrentIncrement step_width)
+void TMC2209::setCoolStepCurrentIncrement(CurrentIncrement current_increment)
 {
-  cool_config_.seup = step_width;
+  cool_config_.seup = current_increment;
   write(ADDRESS_COOLCONF,cool_config_.bytes);
 }
 
-void TMC2209::setMeasurementsPerDecrement(MeasurementsPerDecrement measurement_count)
+void TMC2209::setCoolStepMeasurementCount(MeasurementCount measurement_count)
 {
   cool_config_.sedn = measurement_count;
   write(ADDRESS_COOLCONF,cool_config_.bytes);
@@ -443,17 +440,6 @@ void TMC2209::setOperationModeToSerial(HardwareSerial & serial,
   setGlobalConfig();
 }
 
-void TMC2209::setOperationModeToStandalone()
-{
-  serial_ptr_ = nullptr;
-
-  global_config_.i_scale_analog = 1;
-  global_config_.pdn_disable = 0;
-  global_config_.mstep_reg_select = 0;
-
-  setGlobalConfig();
-}
-
 void TMC2209::setRegistersToDefaults()
 {
   write(ADDRESS_TPOWERDOWN,TPOWERDOWN_DEFAULT);
@@ -467,7 +453,7 @@ void TMC2209::setRegistersToDefaults()
 void TMC2209::minimizeMotorCurrent()
 {
   driver_current_.irun = CURRENT_SETTING_MIN;
-  driver_current_.ihold = CURRENT_SETTING_MAX;
+  driver_current_.ihold = CURRENT_SETTING_MIN;
   setDriverCurrent();
 }
 

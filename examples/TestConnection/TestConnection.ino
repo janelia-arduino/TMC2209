@@ -30,6 +30,11 @@ void loop()
     return;
   }
 
+  bool disabled_by_input_pin = stepper_driver.disabledByInputPin();
+  Serial.print("disabled_by_input_pin = ");
+  Serial.println(disabled_by_input_pin);
+  Serial.println("");
+
   TMC2209::Status status = stepper_driver.getStatus();
   Serial.print("status.over_temperature_warning = ");
   Serial.println(status.over_temperature_warning);
@@ -64,12 +69,14 @@ void loop()
   Serial.println("");
 
   TMC2209::Settings settings = stepper_driver.getSettings();
+  Serial.print("settings.enabled = ");
+  Serial.println(settings.enabled);
   Serial.print("settings.microsteps_per_step = ");
   Serial.println(settings.microsteps_per_step);
   Serial.print("settings.inverse_motor_direction_enabled = ");
   Serial.println(settings.inverse_motor_direction_enabled);
-  Serial.print("settings.spread_cycle_enabled = ");
-  Serial.println(settings.spread_cycle_enabled);
+  Serial.print("settings.stealth_chop_enabled = ");
+  Serial.println(settings.stealth_chop_enabled);
   Serial.print("settings.standstill_mode = ");
   switch (settings.standstill_mode)
   {
@@ -88,10 +95,16 @@ void loop()
   }
   Serial.print("settings.irun_percent = ");
   Serial.println(settings.irun_percent);
+  Serial.print("settings.irun_register_value = ");
+  Serial.println(settings.irun_register_value);
   Serial.print("settings.ihold_percent = ");
   Serial.println(settings.ihold_percent);
+  Serial.print("settings.ihold_register_value = ");
+  Serial.println(settings.ihold_register_value);
   Serial.print("settings.iholddelay_percent = ");
   Serial.println(settings.iholddelay_percent);
+  Serial.print("settings.iholddelay_register_value = ");
+  Serial.println(settings.iholddelay_register_value);
   Serial.print("settings.automatic_current_scaling_enabled = ");
   Serial.println(settings.automatic_current_scaling_enabled);
   Serial.print("settings.automatic_gradient_adaptation_enabled = ");
@@ -100,6 +113,12 @@ void loop()
   Serial.println(settings.pwm_offset);
   Serial.print("settings.pwm_gradient = ");
   Serial.println(settings.pwm_gradient);
+  Serial.print("settings.cool_step_enabled = ");
+  Serial.println(settings.cool_step_enabled);
+  Serial.print("settings.analog_current_scaling_enabled = ");
+  Serial.println(settings.analog_current_scaling_enabled);
+  Serial.print("settings.internal_sense_resistors_enabled = ");
+  Serial.println(settings.internal_sense_resistors_enabled);
   Serial.println("");
 
   Serial.println("");

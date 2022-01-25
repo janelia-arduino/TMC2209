@@ -14,7 +14,6 @@ class TMC2209
 {
 public:
   TMC2209();
-  void setEnablePin(size_t enable_pin);
 
   enum SerialAddress
   {
@@ -30,6 +29,8 @@ public:
 
   void enable();
   void disable();
+
+  bool disabledByInputPin();
 
   // valid values = 1,2,4,8,...128,256, other values get rounded down
   void setMicrostepsPerStep(uint16_t microsteps_per_step);
@@ -79,9 +80,10 @@ public:
 
   struct Settings
   {
+    bool enabled;
     uint16_t microsteps_per_step;
     bool inverse_motor_direction_enabled;
-    bool spread_cycle_enabled;
+    bool stealth_chop_enabled;
     uint8_t standstill_mode;
     uint8_t irun_percent;
     uint8_t irun_register_value;
@@ -93,6 +95,9 @@ public:
     bool automatic_gradient_adaptation_enabled;
     uint8_t pwm_offset;
     uint8_t pwm_gradient;
+    bool cool_step_enabled;
+    bool analog_current_scaling_enabled;
+    bool internal_sense_resistors_enabled;
   };
   Settings getSettings();
 
@@ -113,10 +118,9 @@ public:
   void moveUsingStepDirInterface();
 
   void enableStealthChop();
-  void enableSpreadCycle();
+  void disableStealthChop();
 
   uint32_t getInterstepDuration();
-  void setCoolStepDurationThreshold(uint32_t duration_threshold);
   void setStealthChopDurationThreshold(uint32_t duration_threshold);
 
   uint16_t getStallGuardResult();
@@ -134,20 +138,21 @@ public:
   void disableCoolStep();
   enum CurrentIncrement
   {
-    STEP_WIDTH_1=0,
-    STEP_WIDTH_2=1,
-    STEP_WIDTH_4=2,
-    STEP_WIDTH_8=3,
+    CURRENT_INCREMENT_1=0,
+    CURRENT_INCREMENT_2=1,
+    CURRENT_INCREMENT_4=2,
+    CURRENT_INCREMENT_8=3,
   };
-  void setCurrentIncrement(CurrentIncrement step_width);
-  enum MeasurementsPerDecrement
+  void setCoolStepCurrentIncrement(CurrentIncrement current_increment);
+  enum MeasurementCount
   {
     MEASUREMENT_COUNT_32=0,
     MEASUREMENT_COUNT_8=1,
     MEASUREMENT_COUNT_2=2,
     MEASUREMENT_COUNT_1=3,
   };
-  void setMeasurementsPerDecrement(MeasurementsPerDecrement measurement_count);
+  void setCoolStepMeasurementCount(MeasurementCount measurement_count);
+  void setCoolStepDurationThreshold(uint32_t duration_threshold);
 
   uint16_t getMicrostepCounter();
 
@@ -159,7 +164,6 @@ public:
 
 private:
   HardwareSerial * serial_ptr_;
-  int enable_pin_;
 
   uint8_t serial_address_;
 
@@ -469,7 +473,6 @@ private:
 
   void setOperationModeToSerial(HardwareSerial & serial,
     SerialAddress serial_address=SERIAL_ADDRESS_0);
-  void setOperationModeToStandalone();
 
   void setRegistersToDefaults();
 
