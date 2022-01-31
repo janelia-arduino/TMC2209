@@ -9,6 +9,7 @@
 
 TMC2209::TMC2209()
 {
+  set_up_ = false;
   serial_ptr_ = nullptr;
   serial_address_ = SERIAL_ADDRESS_0;
 
@@ -44,6 +45,7 @@ void TMC2209::setup(HardwareSerial & serial,
   disable();
   disableAutomaticCurrentScaling();
   disableAutomaticGradientAdaptation();
+  set_up_ = true;
 }
 
 bool TMC2209::communicating()
@@ -579,6 +581,10 @@ void TMC2209::sendDatagram(Datagram & datagram,
 void TMC2209::write(uint8_t register_address,
   uint32_t data)
 {
+  if (not set_up_)
+  {
+    return;
+  }
   WriteReadReplyDatagram write_datagram;
   write_datagram.bytes = 0;
   write_datagram.sync = SYNC;
@@ -593,6 +599,10 @@ void TMC2209::write(uint8_t register_address,
 
 uint32_t TMC2209::read(uint8_t register_address)
 {
+  if (not set_up_)
+  {
+    return 0;
+  }
   ReadRequestDatagram read_request_datagram;
   read_request_datagram.bytes = 0;
   read_request_datagram.sync = SYNC;

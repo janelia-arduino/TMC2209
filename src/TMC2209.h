@@ -163,8 +163,8 @@ public:
   void useInternalSenseResistors();
 
 private:
+  bool set_up_;
   HardwareSerial * serial_ptr_;
-
   uint8_t serial_address_;
 
   // Serial Settings
