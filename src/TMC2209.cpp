@@ -12,40 +12,20 @@ TMC2209::TMC2209()
   set_up_ = false;
   serial_ptr_ = nullptr;
   serial_address_ = SERIAL_ADDRESS_0;
-
-  global_config_.bytes = 0;
-  global_config_.i_scale_analog = 1;
-  global_config_.multistep_filt = 1;
-
-  driver_current_.bytes = 0;
-  driver_current_.ihold = IHOLD_DEFAULT;
-  driver_current_.irun = IRUN_DEFAULT;
-  driver_current_.iholddelay = IHOLDDELAY_DEFAULT;
-
-  chopper_config_.bytes = CHOPPER_CONFIG_DEFAULT;
-  chopper_config_.tbl = TBL_DEFAULT;
-  chopper_config_.hend = HEND_DEFAULT;
-  chopper_config_.hstart = HSTART_DEFAULT;
-  chopper_config_.toff = TOFF_DEFAULT;
-
-  pwm_config_.bytes = PWM_CONFIG_DEFAULT;
-
-  cool_config_.bytes = 0;
   cool_step_enabled_ = false;
-
 }
 
 void TMC2209::setup(HardwareSerial & serial,
   SerialAddress serial_address)
 {
+  set_up_ = true;
   setOperationModeToSerial(serial,serial_address);
+  setRegistersToDefaults();
   getSettings();
   minimizeMotorCurrent();
-  setRegistersToDefaults();
   disable();
   disableAutomaticCurrentScaling();
   disableAutomaticGradientAdaptation();
-  set_up_ = true;
 }
 
 bool TMC2209::communicating()
@@ -435,15 +415,36 @@ void TMC2209::setOperationModeToSerial(HardwareSerial & serial,
 
   serial_ptr_->begin(SERIAL_BAUD_RATE);
 
+  global_config_.bytes = 0;
   global_config_.i_scale_analog = 0;
   global_config_.pdn_disable = 1;
   global_config_.mstep_reg_select = 1;
+  global_config_.multistep_filt = 1;
 
   setGlobalConfig();
 }
 
 void TMC2209::setRegistersToDefaults()
 {
+  driver_current_.bytes = 0;
+  driver_current_.ihold = IHOLD_DEFAULT;
+  driver_current_.irun = IRUN_DEFAULT;
+  driver_current_.iholddelay = IHOLDDELAY_DEFAULT;
+  write(ADDRESS_IHOLD_IRUN,driver_current_.bytes);
+
+  chopper_config_.bytes = CHOPPER_CONFIG_DEFAULT;
+  chopper_config_.tbl = TBL_DEFAULT;
+  chopper_config_.hend = HEND_DEFAULT;
+  chopper_config_.hstart = HSTART_DEFAULT;
+  chopper_config_.toff = TOFF_DEFAULT;
+  write(ADDRESS_CHOPCONF,chopper_config_.bytes);
+
+  pwm_config_.bytes = PWM_CONFIG_DEFAULT;
+  write(ADDRESS_PWMCONF,pwm_config_.bytes);
+
+  cool_config_.bytes = COOLCONF_DEFAULT;
+  write(ADDRESS_COOLCONF,cool_config_.bytes);
+
   write(ADDRESS_TPOWERDOWN,TPOWERDOWN_DEFAULT);
   write(ADDRESS_TPWMTHRS,TPWMTHRS_DEFAULT);
   write(ADDRESS_VACTUAL,VACTUAL_DEFAULT);
