@@ -4,7 +4,7 @@
 HardwareSerial & serial_stream = Serial1;
 
 const long BAUD = 115200;
-const int DELAY = 2000;
+const int DELAY = 3000;
 
 // Instantiate TMC2209
 TMC2209 stepper_driver;
@@ -19,22 +19,21 @@ void setup()
 
 void loop()
 {
-  Serial.println("Try turning driver power off, waiting, and on again to see what happens.");
-  if (stepper_driver.isCommunicating())
+  if (stepper_driver.isSetupAndCommunicating())
   {
-    Serial.println("Stepper driver is communicating!");
+    Serial.println("Stepper driver is setup and communicating!");
+    Serial.println("Try turning driver power off to see what happens.");
+  }
+  else if (stepper_driver.isCommunicatingButNotSetup())
+  {
+    Serial.println("Stepper driver is communicating but not setup!");
+    Serial.println("Running setup again...");
+    stepper_driver.setup(serial_stream,TMC2209::SERIAL_ADDRESS_0);
   }
   else
   {
     Serial.println("Stepper driver is not communicating!");
-  }
-  if (stepper_driver.isSetup())
-  {
-    Serial.println("Stepper driver is setup!");
-  }
-  else
-  {
-    Serial.println("Stepper driver is not setup!");
+    Serial.println("Try turning driver power on to see what happens.");
   }
   Serial.println("");
   delay(DELAY);

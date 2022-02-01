@@ -24,15 +24,14 @@ public:
   void setup(HardwareSerial & serial,
     SerialAddress serial_address=SERIAL_ADDRESS_0);
 
-  // driver may be setup but not communicating if driver power is lost or a
-  // communication cable is unplugged after setup
+  bool isSetupAndCommunicating();
+
+  // if driver is not communicating, check power and communication connections
   bool isCommunicating();
 
   // driver may be communicating but not setup if driver power is lost then
-  // restored after setup
-  bool isSetupAndCommunicating();
-
-  uint8_t getVersion();
+  // restored after setup so that defaults are loaded instead of setup options
+  bool isCommunicatingButNotSetup();
 
   void enable();
   void disable();
@@ -49,6 +48,31 @@ public:
   void setAllCurrentValues(uint8_t run_current_percent,
     uint8_t hold_current_percent,
     uint8_t hold_delay_percent);
+
+  struct Settings
+  {
+    bool is_communicating;
+    bool is_setup;
+    bool enabled;
+    uint16_t microsteps_per_step;
+    bool inverse_motor_direction_enabled;
+    bool stealth_chop_enabled;
+    uint8_t standstill_mode;
+    uint8_t irun_percent;
+    uint8_t irun_register_value;
+    uint8_t ihold_percent;
+    uint8_t ihold_register_value;
+    uint8_t iholddelay_percent;
+    uint8_t iholddelay_register_value;
+    bool automatic_current_scaling_enabled;
+    bool automatic_gradient_adaptation_enabled;
+    uint8_t pwm_offset;
+    uint8_t pwm_gradient;
+    bool cool_step_enabled;
+    bool analog_current_scaling_enabled;
+    bool internal_sense_resistors_enabled;
+  };
+  Settings getSettings();
 
   struct Status
   {
@@ -84,29 +108,6 @@ public:
     BRAKING=3,
   };
   void setStandstillMode(StandstillMode mode);
-
-  struct Settings
-  {
-    bool enabled;
-    uint16_t microsteps_per_step;
-    bool inverse_motor_direction_enabled;
-    bool stealth_chop_enabled;
-    uint8_t standstill_mode;
-    uint8_t irun_percent;
-    uint8_t irun_register_value;
-    uint8_t ihold_percent;
-    uint8_t ihold_register_value;
-    uint8_t iholddelay_percent;
-    uint8_t iholddelay_register_value;
-    bool automatic_current_scaling_enabled;
-    bool automatic_gradient_adaptation_enabled;
-    uint8_t pwm_offset;
-    uint8_t pwm_gradient;
-    bool cool_step_enabled;
-    bool analog_current_scaling_enabled;
-    bool internal_sense_resistors_enabled;
-  };
-  Settings getSettings();
 
   void enableAutomaticCurrentScaling();
   void disableAutomaticCurrentScaling();
@@ -170,7 +171,6 @@ public:
   void useInternalSenseResistors();
 
 private:
-  bool setup_;
   HardwareSerial * serial_ptr_;
   uint8_t serial_address_;
 
@@ -482,6 +482,10 @@ private:
     SerialAddress serial_address=SERIAL_ADDRESS_0);
 
   void setRegistersToDefaults();
+  void readAndStoreRegisters();
+
+  uint8_t getVersion();
+  bool serialOperationMode();
 
   void minimizeMotorCurrent();
 
@@ -508,13 +512,13 @@ private:
   uint8_t pwmAmplitudeToPwmAmpl(uint8_t pwm_amplitude);
   uint8_t pwmAmplitudeToPwmGrad(uint8_t pwm_amplitude);
 
-  void setGlobalConfig();
-  void getGlobalConfig();
-  void setDriverCurrent();
-  void setChopperConfig();
-  void getChopperConfig();
-  void setPwmConfig();
-  void getPwmConfig();
+  void writeStoredGlobalConfig();
+  uint32_t readGlobalConfigBytes();
+  void writeStoredDriverCurrent();
+  void writeStoredChopperConfig();
+  uint32_t readChopperConfigBytes();
+  void writeStoredPwmConfig();
+  uint32_t readPwmConfigBytes();
 };
 
 #endif

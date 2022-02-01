@@ -4,7 +4,7 @@
 HardwareSerial & serial_stream = Serial1;
 
 const long BAUD = 115200;
-const int DELAY = 4000;
+const int DELAY = 2000;
 const int32_t VELOCITY = 10000;
 const int32_t VELOCITY_STOPPED = 0;
 const uint8_t PERCENT_MIN = 0;

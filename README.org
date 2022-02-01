@@ -13,9 +13,9 @@
 ** Description
 
 The TMC2209 is an ultra-silent motor driver IC for two phase stepper motors with
-a UART serial interface.
+both UART serial and step and direction interfaces.
 
-[[TMC2209.png]]
+[[./images/TMC2209.png]]
 
 * Documentation
 
@@ -36,7 +36,7 @@ microcontroller UART serial TX and RX pins. The single serial signal is
 connected to both the TX pin and the RX pin, with a 1k resistor between the TX
 pin and the RX pin to separate them.
 
-[[TMC2209_connections.png]]
+[[./images/TMC2209_connections.png]]
 
 
 ** Arduino Serial
