@@ -19,14 +19,14 @@ void setup()
 
 void loop()
 {
-  if (stepper_driver.communicating())
+  if (stepper_driver.isSetupAndCommunicating())
   {
-    Serial.println("Communicating with stepper driver!");
+    Serial.println("Stepper driver setup and communicating!");
     Serial.println("");
   }
   else
   {
-    Serial.println("Not communicating with stepper driver!");
+    Serial.println("Stepper driver not setup and communicating!");
     return;
   }
 

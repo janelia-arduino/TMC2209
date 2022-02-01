@@ -9,7 +9,7 @@
 
 TMC2209::TMC2209()
 {
-  set_up_ = false;
+  setup_ = false;
   serial_ptr_ = nullptr;
   serial_address_ = SERIAL_ADDRESS_0;
   cool_step_enabled_ = false;
@@ -18,7 +18,6 @@ TMC2209::TMC2209()
 void TMC2209::setup(HardwareSerial & serial,
   SerialAddress serial_address)
 {
-  set_up_ = true;
   setOperationModeToSerial(serial,serial_address);
   setRegistersToDefaults();
   getSettings();
@@ -28,9 +27,19 @@ void TMC2209::setup(HardwareSerial & serial,
   disableAutomaticGradientAdaptation();
 }
 
-bool TMC2209::communicating()
+bool TMC2209::isCommunicating()
 {
   return (getVersion() == VERSION);
+}
+
+bool TMC2209::isSetupAndCommunicating()
+{
+  return setup_;
+}
+
+bool TMC2209::isSetupAndCommunicating()
+{
+  return (isSetup() && isCommunicating());
 }
 
 uint8_t TMC2209::getVersion()
@@ -410,6 +419,7 @@ void TMC2209::useInternalSenseResistors()
 void TMC2209::setOperationModeToSerial(HardwareSerial & serial,
   SerialAddress serial_address)
 {
+  setup_ = true;
   serial_ptr_ = &serial;
   serial_address_ = serial_address;
 
@@ -421,7 +431,15 @@ void TMC2209::setOperationModeToSerial(HardwareSerial & serial,
   global_config_.mstep_reg_select = 1;
   global_config_.multistep_filt = 1;
 
+  uint32_t set_global_config = global_config_.bytes;
   setGlobalConfig();
+
+  getGlobalConfig();
+  uint32_t get_global_config = global_config_.bytes;
+  if (set_global_config != get_global_config)
+  {
+    setup_ = false;
+  }
 }
 
 void TMC2209::setRegistersToDefaults()
@@ -582,10 +600,6 @@ void TMC2209::sendDatagram(Datagram & datagram,
 void TMC2209::write(uint8_t register_address,
   uint32_t data)
 {
-  if (not set_up_)
-  {
-    return;
-  }
   WriteReadReplyDatagram write_datagram;
   write_datagram.bytes = 0;
   write_datagram.sync = SYNC;
@@ -600,10 +614,6 @@ void TMC2209::write(uint8_t register_address,
 
 uint32_t TMC2209::read(uint8_t register_address)
 {
-  if (not set_up_)
-  {
-    return 0;
-  }
   ReadRequestDatagram read_request_datagram;
   read_request_datagram.bytes = 0;
   read_request_datagram.sync = SYNC;

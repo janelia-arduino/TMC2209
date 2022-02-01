@@ -23,14 +23,14 @@ void setup()
 
   stepper_driver.setup(serial_stream,TMC2209::SERIAL_ADDRESS_0);
 
-  if (stepper_driver.communicating())
+  if (stepper_driver.isSetupAndCommunicating())
   {
-    Serial.println("Communicating with stepper driver!");
+    Serial.println("Stepper driver setup and communicating!");
     Serial.println("");
   }
   else
   {
-    Serial.println("Not communicating with stepper driver!");
+    Serial.println("Stepper driver not setup and communicating!");
     return;
   }
 
@@ -40,9 +40,9 @@ void setup()
 
 void loop()
 {
-  if (not stepper_driver.communicating())
+  if (not stepper_driver.isSetupAndCommunicating())
   {
-    Serial.println("Not communicating with stepper driver!");
+    Serial.println("Stepper driver not setup and communicating!");
     return;
   }
 

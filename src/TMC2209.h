@@ -24,7 +24,14 @@ public:
   void setup(HardwareSerial & serial,
     SerialAddress serial_address=SERIAL_ADDRESS_0);
 
-  bool communicating();
+  // driver may be setup but not communicating if driver power is lost or a
+  // communication cable is unplugged after setup
+  bool isCommunicating();
+
+  // driver may be communicating but not setup if driver power is lost then
+  // restored after setup
+  bool isSetupAndCommunicating();
+
   uint8_t getVersion();
 
   void enable();
@@ -163,7 +170,7 @@ public:
   void useInternalSenseResistors();
 
 private:
-  bool set_up_;
+  bool setup_;
   HardwareSerial * serial_ptr_;
   uint8_t serial_address_;
 
