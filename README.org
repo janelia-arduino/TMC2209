@@ -4,7 +4,7 @@
 
 * Library Information
 - Name :: TMC2209
-- Version :: 7.0.0
+- Version :: 7.0.1
 - License :: BSD
 - URL :: https://github.com/janelia-arduino/TMC2209
 - Author :: Peter Polidoro
@@ -89,12 +89,15 @@ For example:
 #include <Arduino.h>
 #include <TMC2209.h>
 
-// Instantiate TMC2209
-TMC2209 stepper_driver;
+// Instantiate the two TMC2209
+TMC2209 stepper_driver_0;
+TMC2209 stepper_driver_1;
 
 void setup()
 {
-  stepper_driver.setup(Serial1,TMC2209::SERIAL_ADDRESS_1);
+  // TMC2209::SERIAL_ADDRESS_0 is used by default if not specified
+  stepper_driver_0.setup(Serial1,TMC2209::SERIAL_ADDRESS_0);
+  stepper_driver_1.setup(Serial1,TMC2209::SERIAL_ADDRESS_1);
 }
 
 #+END_SRC
