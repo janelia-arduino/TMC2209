@@ -17,16 +17,6 @@ both UART serial and step and direction interfaces.
 
 [[./images/TMC2209.png]]
 
-* Documentation
-
-** TMC2209 Integrated Circuit
-
-[[https://www.trinamic.com/products/integrated-circuits/details/tmc2209-la][Trinamic TMC2209-LA Web Page]]
-
-** SilentStepStick Stepper Driver Board
-
-[[https://www.trinamic.com/support/eval-kits/details/silentstepstick][Trinamic TMC2209 SilentStepStick Web Page]]
-
 * Communication
 
 The TMC2209 communicates over a UART serial port using a single wire interface.
@@ -36,15 +26,34 @@ microcontroller UART serial TX and RX pins. The single serial signal is
 connected to both the TX pin and the RX pin, with a 1k resistor between the TX
 pin and the RX pin to separate them.
 
-[[./images/TMC2209_connections.png]]
+The microcontroller serial port must be specified during the TMC2209 setup.
 
+For example:
+
+#+BEGIN_SRC cpp
+
+#include <Arduino.h>
+#include <TMC2209.h>
+
+// Instantiate TMC2209
+TMC2209 stepper_driver;
+
+void setup()
+{
+  stepper_driver.setup(Serial1);
+}
+
+#+END_SRC
+
+[[./images/TMC2209_serial.png]]
 
 ** Arduino Serial
 
 [[https://www.arduino.cc/reference/en/language/functions/communication/serial][Arduino Serial Web Page]]
 
-Some Arduino boards (e.g. Uno, Nano, and Mini) have only one serial port (named
-"Serial") that is used for communication with the host computer. Connecting
+On some Arduino boards (e.g. Uno, Nano, Mini, and Mega) pins 0 and 1 are used
+for communication with the computer on the serial port named "Serial". Pins 0
+and 1 cannot be used on these boards to communicate with the TMC2209. Connecting
 anything to these pins can interfere with that communication, including causing
 failed uploads to the board.
 
@@ -55,6 +64,57 @@ can use those ports to communicate with the TMC2209.
 
 [[https://www.pjrc.com/teensy/td_uart.html][Teensy Serial Web Page]]
 
+The Teensy boards have 1 to 8 hardware serial ports (Serial1 - Serial8), which
+may be used to connect to serial devices.
 
+Unlike Arduino boards, the Teensy USB serial interface is not connected to pins
+0 and 1, allowing pins 0 and 1 to be used to communicate with a TMC2209 using
+"Serial1".
 
+** Serial Addresses
 
+More than one TMC2209 may be connected to a single serial port, if each TMC2209
+is assigned a unique serial address. The default serial address is
+"SERIAL_ADDRESS_0". The serial address may be changed from "SERIAL_ADDRESS_0"
+using the TMC2209 hardware input pins MS1 and MS2, to "SERIAL_ADDRESS_1",
+"SERIAL_ADDRESS_2", or "SERIAL_ADDRESS_3".
+
+The TMC2209 serial address must be specified during the TMC2209 setup, if it is
+not equal to the default of "SERIAL_ADDRESS_0".
+
+For example:
+
+#+BEGIN_SRC cpp
+
+#include <Arduino.h>
+#include <TMC2209.h>
+
+// Instantiate TMC2209
+TMC2209 stepper_driver;
+
+void setup()
+{
+  stepper_driver.setup(Serial1,TMC2209::SERIAL_ADDRESS_1);
+}
+
+#+END_SRC
+
+[[./images/TMC2209_serial_address.png]]
+
+* Hardware Documentation
+
+** TMC2209 Integrated Circuit
+
+[[https://www.trinamic.com/products/integrated-circuits/details/tmc2209-la][Trinamic TMC2209-LA Web Page]]
+
+** SilentStepStick Stepper Driver Board
+
+[[https://www.trinamic.com/support/eval-kits/details/silentstepstick][Trinamic TMC2209 SilentStepStick Web Page]]
+
+** BIGTREETECH TMC2209 V1.2 UART Stepper Motor Driver
+
+[[https://www.biqu.equipment/products/bigtreetech-tmc2209-stepper-motor-driver-for-3d-printer-board-vs-tmc2208][BIGTREETECH TMC2209 Web Page]]
+
+** Janelia Stepper Driver
+
+[[https://github.com/janelia-kicad/stepper_driver][Janelia Stepper Driver Web Page]]

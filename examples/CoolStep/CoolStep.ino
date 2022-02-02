@@ -26,7 +26,7 @@ void setup()
 {
   Serial.begin(BAUD);
 
-  stepper_driver.setup(serial_stream,TMC2209::SERIAL_ADDRESS_0);
+  stepper_driver.setup(serial_stream);
 
   if (stepper_driver.isSetupAndCommunicating())
   {

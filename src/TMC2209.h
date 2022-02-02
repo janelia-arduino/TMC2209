@@ -20,10 +20,16 @@ public:
     SERIAL_ADDRESS_0=0,
     SERIAL_ADDRESS_1=1,
     SERIAL_ADDRESS_2=2,
+    SERIAL_ADDRESS_3=3,
   };
+  // identify which microcontroller serial port is connected to the TMC2209
+  // e.g. Serial1, Serial2...
+  // optionally identify which serial address is assigned to the TMC2209 if not
+  // the default of SERIAL_ADDRESS_0
   void setup(HardwareSerial & serial,
     SerialAddress serial_address=SERIAL_ADDRESS_0);
 
+  // check to make sure TMC2209 is properly setup and communicating
   bool isSetupAndCommunicating();
 
   // if driver is not communicating, check power and communication connections
@@ -33,13 +39,21 @@ public:
   // restored after setup so that defaults are loaded instead of setup options
   bool isCommunicatingButNotSetup();
 
+  // driver must be enabled before use it is disabled by default
   void enable();
   void disable();
 
+  // driver may also be disabled by the hardware enable input pin
+  // this pin must be grounded or disconnected before driver may be enabled
   bool disabledByInputPin();
 
   // valid values = 1,2,4,8,...128,256, other values get rounded down
   void setMicrostepsPerStep(uint16_t microsteps_per_step);
+
+  // valid values = 0-8, microsteps = 2^exponent, 0=1,1=2,2=4,...8=256
+  // https://en.wikipedia.org/wiki/Power_of_two
+  void setMicrostepsPerStepPowerOfTwo(uint8_t exponent);
+
   uint16_t getMicrostepsPerStep();
 
   void setRunCurrent(uint8_t percent);
@@ -488,9 +502,6 @@ private:
   bool serialOperationMode();
 
   void minimizeMotorCurrent();
-
-  // microsteps = 2^exponent, 0=1,1=2,2=4,...8=256
-  void setMicrostepsPerStepPowerOfTwo(uint8_t exponent);
 
   uint32_t reverseData(uint32_t data);
   template<typename Datagram>

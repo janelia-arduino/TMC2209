@@ -14,7 +14,7 @@ void setup()
 {
   Serial.begin(BAUD);
 
-  stepper_driver.setup(serial_stream,TMC2209::SERIAL_ADDRESS_0);
+  stepper_driver.setup(serial_stream);
 }
 
 void loop()
@@ -28,7 +28,7 @@ void loop()
   {
     Serial.println("Stepper driver is communicating but not setup!");
     Serial.println("Running setup again...");
-    stepper_driver.setup(serial_stream,TMC2209::SERIAL_ADDRESS_0);
+    stepper_driver.setup(serial_stream);
   }
   else
   {

@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include <TMC2209.h>
 
+  // Identify which microcontroller serial port is connected to the TMC2209
+  // e.g. Serial1, Serial2...
 HardwareSerial & serial_stream = Serial1;
 
 const long BAUD = 115200;
@@ -21,7 +23,7 @@ void setup()
 {
   Serial.begin(BAUD);
 
-  stepper_driver.setup(serial_stream,TMC2209::SERIAL_ADDRESS_0);
+  stepper_driver.setup(serial_stream);
 
   if (stepper_driver.isSetupAndCommunicating())
   {

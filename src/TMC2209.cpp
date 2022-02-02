@@ -76,6 +76,60 @@ void TMC2209::setMicrostepsPerStep(uint16_t microsteps_per_step)
   setMicrostepsPerStepPowerOfTwo(exponent);
 }
 
+void TMC2209::setMicrostepsPerStepPowerOfTwo(uint8_t exponent)
+{
+  switch (exponent)
+  {
+    case 0:
+    {
+      chopper_config_.mres = MRES_001;
+      break;
+    }
+    case 1:
+    {
+      chopper_config_.mres = MRES_002;
+      break;
+    }
+    case 2:
+    {
+      chopper_config_.mres = MRES_004;
+      break;
+    }
+    case 3:
+    {
+      chopper_config_.mres = MRES_008;
+      break;
+    }
+    case 4:
+    {
+      chopper_config_.mres = MRES_016;
+      break;
+    }
+    case 5:
+    {
+      chopper_config_.mres = MRES_032;
+      break;
+    }
+    case 6:
+    {
+      chopper_config_.mres = MRES_064;
+      break;
+    }
+    case 7:
+    {
+      chopper_config_.mres = MRES_128;
+      break;
+    }
+    case 8:
+    default:
+    {
+      chopper_config_.mres = MRES_256;
+      break;
+    }
+  }
+  writeStoredChopperConfig();
+}
+
 uint16_t TMC2209::getMicrostepsPerStep()
 {
   uint16_t microsteps_per_step_exponent;
@@ -506,60 +560,6 @@ void TMC2209::minimizeMotorCurrent()
   driver_current_.irun = CURRENT_SETTING_MIN;
   driver_current_.ihold = CURRENT_SETTING_MIN;
   writeStoredDriverCurrent();
-}
-
-void TMC2209::setMicrostepsPerStepPowerOfTwo(uint8_t exponent)
-{
-  switch (exponent)
-  {
-    case 0:
-    {
-      chopper_config_.mres = MRES_001;
-      break;
-    }
-    case 1:
-    {
-      chopper_config_.mres = MRES_002;
-      break;
-    }
-    case 2:
-    {
-      chopper_config_.mres = MRES_004;
-      break;
-    }
-    case 3:
-    {
-      chopper_config_.mres = MRES_008;
-      break;
-    }
-    case 4:
-    {
-      chopper_config_.mres = MRES_016;
-      break;
-    }
-    case 5:
-    {
-      chopper_config_.mres = MRES_032;
-      break;
-    }
-    case 6:
-    {
-      chopper_config_.mres = MRES_064;
-      break;
-    }
-    case 7:
-    {
-      chopper_config_.mres = MRES_128;
-      break;
-    }
-    case 8:
-    default:
-    {
-      chopper_config_.mres = MRES_256;
-      break;
-    }
-  }
-  writeStoredChopperConfig();
 }
 
 uint32_t TMC2209::reverseData(uint32_t data)
