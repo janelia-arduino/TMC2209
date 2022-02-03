@@ -185,6 +185,7 @@ public:
   void useInternalSenseResistors();
 
 private:
+  bool blocking_;
   HardwareSerial * serial_ptr_;
   uint8_t serial_address_;
 
