@@ -27,6 +27,7 @@ public:
   // optionally identify which serial address is assigned to the TMC2209 if not
   // the default of SERIAL_ADDRESS_0
   void setup(HardwareSerial & serial,
+    long serial_baud_rate=115200,
     SerialAddress serial_address=SERIAL_ADDRESS_0);
 
   // check to make sure TMC2209 is properly setup and communicating
@@ -190,13 +191,13 @@ private:
   uint8_t serial_address_;
 
   // Serial Settings
-  const static uint32_t SERIAL_BAUD_RATE = 250000;
-
   const static uint8_t BYTE_MAX_VALUE = 0xFF;
   const static uint8_t BITS_PER_BYTE = 8;
 
-  const static uint16_t ECHO_DELAY_MAX_VALUE = 20;
-  const static uint16_t REPLY_DELAY_MAX_VALUE = 100;
+  const static uint32_t ECHO_DELAY_INC_VALUE = 1;
+  const static uint32_t ECHO_DELAY_MAX_VALUE = 4000;
+  const static uint32_t REPLY_DELAY_INC_VALUE = 1;
+  const static uint32_t REPLY_DELAY_MAX_VALUE = 10000;
 
   const static uint8_t STEPPER_DRIVER_FEATURE_OFF = 0;
   const static uint8_t STEPPER_DRIVER_FEATURE_ON = 1;
@@ -494,6 +495,7 @@ private:
   const static uint8_t ADDRESS_PWM_AUTO = 0x72;
 
   void setOperationModeToSerial(HardwareSerial & serial,
+    long serial_baud_rate,
     SerialAddress serial_address=SERIAL_ADDRESS_0);
 
   void setRegistersToDefaults();

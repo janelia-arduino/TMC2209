@@ -19,7 +19,9 @@ both UART serial and step and direction interfaces.
 
 * Communication
 
-The TMC2209 communicates over a UART serial port using a single wire interface.
+The TMC2209 communicates over a UART serial port using a single wire interface,
+allowing bi-directional operation for full control and diagnostics. It can be
+driven by any standard microcontroller UART or even by bit banging in software.
 
 The UART single wire interface allows control of the TMC2209 with any set of
 microcontroller UART serial TX and RX pins. The single serial signal is
@@ -37,10 +39,11 @@ For example:
 
 // Instantiate TMC2209
 TMC2209 stepper_driver;
+HardwareSerial & serial_stream = Serial1;
 
 void setup()
 {
-  stepper_driver.setup(Serial1);
+  stepper_driver.setup(serial_stream);
 }
 
 #+END_SRC
@@ -71,6 +74,50 @@ Unlike Arduino boards, the Teensy USB serial interface is not connected to pins
 0 and 1, allowing pins 0 and 1 to be used to communicate with a TMC2209 using
 "Serial1".
 
+** Serial Baud Rate
+
+The serial baud rate is the speed of communication in bits per second of the
+UART serial port connected to the TMC2209.
+
+Baud rates from 9600 Baud to 500k Baud or even higher (when using an external
+clock) may be used. No baud rate configuration on the chip is required, as the
+TMC2209 automatically adapts to the baud rate.
+
+The higher the baud rate the better, but microcontrollers have various UART
+serial abilities and limitations which affects the maximum baud allowed. The
+baud rate may be specified when setting up the stepper driver.
+
+*** Arduino
+
+The maximum serial baud rate on typical Arduino boards is 115200, so that is the
+default, but other values as low as 9600 may be used.
+
+[[https://www.arduino.cc/en/Reference/SoftwareSerialBegin][Arduino Serial Baud Rate Web Page]]
+
+*** Teensy
+
+Teensy UART baud rates can go higher than many typical Arduino boards, so 500k
+is a good setting to use.
+
+[[https://www.pjrc.com/teensy/td_uart.html][Teensy Serial Baud Rate Web Page]]
+
+#+BEGIN_SRC cpp
+
+#include <Arduino.h>
+#include <TMC2209.h>
+
+// Instantiate TMC2209
+TMC2209 stepper_driver;
+HardwareSerial & serial_stream = Serial1;
+const long SERIAL1_BAUD_RATE = 500000;
+
+void setup()
+{
+  stepper_driver.setup(Serial1,SERIAL1_BAUD_RATE);
+}
+
+#+END_SRC
+
 ** Serial Addresses
 
 More than one TMC2209 may be connected to a single serial port, if each TMC2209
@@ -91,13 +138,16 @@ For example:
 
 // Instantiate the two TMC2209
 TMC2209 stepper_driver_0;
+const TMC2209::SerialAddress SERIAL_ADDRESS_0 = TMC2209::SERIAL_ADDRESS_0;
 TMC2209 stepper_driver_1;
+const TMC2209::SerialAddress SERIAL_ADDRESS_1 = TMC2209::SERIAL_ADDRESS_1;
+const long SERIALX_BAUD_RATE = 115200;
 
 void setup()
 {
   // TMC2209::SERIAL_ADDRESS_0 is used by default if not specified
-  stepper_driver_0.setup(Serial1,TMC2209::SERIAL_ADDRESS_0);
-  stepper_driver_1.setup(Serial1,TMC2209::SERIAL_ADDRESS_1);
+  stepper_driver_0.setup(Serial1,SERIALX_BAUD_RATE,SERIAL_ADDRESS_0);
+  stepper_driver_1.setup(Serial1,SERIALX_BAUD_RATE,SERIAL_ADDRESS_1);
 }
 
 #+END_SRC

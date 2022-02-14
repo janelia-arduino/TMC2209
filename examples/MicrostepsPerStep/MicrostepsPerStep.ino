@@ -3,7 +3,7 @@
 
 HardwareSerial & serial_stream = Serial1;
 
-const long BAUD = 115200;
+const long SERIAL_BAUD_RATE = 115200;
 const int DELAY = 4000;
 const int32_t VELOCITY = 200;
 const uint8_t RUN_CURRENT_PERCENT = 60;
@@ -20,7 +20,7 @@ TMC2209 stepper_driver;
 
 void setup()
 {
-  Serial.begin(BAUD);
+  Serial.begin(SERIAL_BAUD_RATE);
 
   stepper_driver.setup(serial_stream);
 
