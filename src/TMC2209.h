@@ -188,16 +188,19 @@ public:
 private:
   bool blocking_;
   HardwareSerial * serial_ptr_;
+  uint32_t serial_baud_rate_;
   uint8_t serial_address_;
 
   // Serial Settings
   const static uint8_t BYTE_MAX_VALUE = 0xFF;
   const static uint8_t BITS_PER_BYTE = 8;
 
-  const static uint32_t ECHO_DELAY_INC_VALUE = 1;
-  const static uint32_t ECHO_DELAY_MAX_VALUE = 4000;
-  const static uint32_t REPLY_DELAY_INC_VALUE = 1;
-  const static uint32_t REPLY_DELAY_MAX_VALUE = 10000;
+  const static uint32_t ECHO_DELAY_INC_MICROSECONDS = 1;
+  const static uint32_t ECHO_DELAY_MAX_MICROSECONDS = 4000;
+  const static uint32_t REPLY_DELAY_INC_MICROSECONDS = 1;
+  const static uint32_t REPLY_DELAY_MAX_MICROSECONDS = 10000;
+  const static uint32_t POST_READ_DELAY_INC_MICROSECONDS = 10;
+  const static uint32_t POST_READ_DELAY_NUMERATOR = 500000;
 
   const static uint8_t STEPPER_DRIVER_FEATURE_OFF = 0;
   const static uint8_t STEPPER_DRIVER_FEATURE_ON = 1;

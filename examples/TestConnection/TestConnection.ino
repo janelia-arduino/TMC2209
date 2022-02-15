@@ -4,7 +4,6 @@
 HardwareSerial & serial_stream = Serial1;
 
 const long SERIAL_BAUD_RATE = 115200;
-const long SERIAL1_BAUD_RATE = 500000;
 const int DELAY = 2000;
 
 // Instantiate TMC2209
@@ -15,7 +14,7 @@ void setup()
 {
   Serial.begin(SERIAL_BAUD_RATE);
 
-  stepper_driver.setup(serial_stream,SERIAL1_BAUD_RATE);
+  stepper_driver.setup(serial_stream);
 }
 
 void loop()

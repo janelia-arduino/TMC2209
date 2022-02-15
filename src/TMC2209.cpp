@@ -11,6 +11,7 @@ TMC2209::TMC2209()
 {
   blocking_ = true;
   serial_ptr_ = nullptr;
+  serial_baud_rate_ = 500000;
   serial_address_ = SERIAL_ADDRESS_0;
   cool_step_enabled_ = false;
 }
@@ -20,6 +21,7 @@ void TMC2209::setup(HardwareSerial & serial,
   SerialAddress serial_address)
 {
   blocking_ = false;
+  serial_baud_rate_ = serial_baud_rate;
   setOperationModeToSerial(serial,serial_baud_rate,serial_address);
   setRegistersToDefaults();
   readAndStoreRegisters();
@@ -811,15 +813,13 @@ void TMC2209::sendDatagram(Datagram & datagram,
   // wait for bytes sent out on TX line to be echoed on RX line
   uint32_t echo_delay = 0;
   while ((serial_ptr_->available() < datagram_size) and
-    (echo_delay < ECHO_DELAY_MAX_VALUE))
+    (echo_delay < ECHO_DELAY_MAX_MICROSECONDS))
   {
-    delayMicroseconds(ECHO_DELAY_INC_VALUE);
-    echo_delay += ECHO_DELAY_INC_VALUE;
+    delayMicroseconds(ECHO_DELAY_INC_MICROSECONDS);
+    echo_delay += ECHO_DELAY_INC_MICROSECONDS;
   }
-  // Serial.print("echo_delay = ");
-  // Serial.println(echo_delay);
 
-  if (echo_delay >= ECHO_DELAY_MAX_VALUE)
+  if (echo_delay >= ECHO_DELAY_MAX_MICROSECONDS)
   {
     blocking_ = true;
     return;
@@ -844,8 +844,6 @@ void TMC2209::write(uint8_t register_address,
   write_datagram.data = reverseData(data);
   write_datagram.crc = calculateCrc(write_datagram,WRITE_READ_REPLY_DATAGRAM_SIZE);
 
-  // Serial.print("write_datagram.bytes = ");
-  // Serial.println(write_datagram.bytes,HEX);
   sendDatagram(write_datagram,WRITE_READ_REPLY_DATAGRAM_SIZE);
 }
 
@@ -863,21 +861,17 @@ uint32_t TMC2209::read(uint8_t register_address)
   read_request_datagram.rw = RW_READ;
   read_request_datagram.crc = calculateCrc(read_request_datagram,READ_REQUEST_DATAGRAM_SIZE);
 
-  // Serial.print("read_request_datagram.bytes = ");
-  // Serial.println(read_request_datagram.bytes,HEX);
   sendDatagram(read_request_datagram,READ_REQUEST_DATAGRAM_SIZE);
 
   uint32_t reply_delay = 0;
   while ((serial_ptr_->available() < WRITE_READ_REPLY_DATAGRAM_SIZE) and
-    (reply_delay < REPLY_DELAY_MAX_VALUE))
+    (reply_delay < REPLY_DELAY_MAX_MICROSECONDS))
   {
-    delayMicroseconds(REPLY_DELAY_INC_VALUE);
-    reply_delay += REPLY_DELAY_INC_VALUE;
+    delayMicroseconds(REPLY_DELAY_INC_MICROSECONDS);
+    reply_delay += REPLY_DELAY_INC_MICROSECONDS;
   }
-  // Serial.print("reply_delay = ");
-  // Serial.println(reply_delay);
 
-  if (reply_delay >= REPLY_DELAY_MAX_VALUE)
+  if (reply_delay >= REPLY_DELAY_MAX_MICROSECONDS)
   {
     blocking_ = true;
     return 0;
@@ -891,6 +885,13 @@ uint32_t TMC2209::read(uint8_t register_address)
   {
     byte = serial_ptr_->read();
     read_reply_datagram.bytes |= (byte << (byte_count++ * BITS_PER_BYTE));
+  }
+
+  // this unfortunate code was found to be necessary after testing on hardware
+  uint32_t post_read_delay_repeat = POST_READ_DELAY_NUMERATOR / serial_baud_rate_;
+  for (uint8_t i=0; i<post_read_delay_repeat; ++i)
+  {
+    delayMicroseconds(POST_READ_DELAY_INC_MICROSECONDS);
   }
   return reverseData(read_reply_datagram.data);
 }
