@@ -4,7 +4,7 @@
 
 * Library Information
 - Name :: TMC2209
-- Version :: 8.0.3
+- Version :: 8.0.4
 - License :: BSD
 - URL :: https://github.com/janelia-arduino/TMC2209
 - Author :: Peter Polidoro
@@ -17,7 +17,74 @@ both UART serial and step and direction interfaces.
 
 [[./images/TMC2209.png]]
 
-* Communication
+* Stepper Motors
+
+From Wikipedia, the free encyclopedia:
+
+A stepper motor, also known as step motor or stepping motor, is a brushless DC
+electric motor that divides a full rotation into a number of equal steps. The
+motor's position can be commanded to move and hold at one of these steps without
+any position sensor for feedback (an open-loop controller), as long as the motor
+is correctly sized to the application in respect to torque and speed.
+
+[[https://en.wikipedia.org/wiki/Stepper_motor][Wikipedia - Stepper Motor]]
+
+* Stepper Motor Controllers and Drivers
+
+Stepper motors need both a controller and a driver. These may be combined into a
+single component or separated into multiple components that communicate with
+each other, as is the case with the TMC2209 stepper motor driver. One controller
+may be connected to more than one driver for coordinated multi-axis motion
+control.
+
+** Stepper Motor Controller
+
+A stepper motor controller is responsible for the commanding either the motor
+kinetics, the torque, or the motor kinematics, the position, speed, and
+acceleration of one or more stepper motors.
+
+** Stepper Motor Driver
+
+A stepper motor driver is responsible for commanding the electrical current
+through the motor coils as it changes with time to meet the requirements of the
+stepper motor controller.
+
+** TMC2209 Stepper Motor Driver
+
+The TMC2209 is a stepper motor driver and it needs a stepper motor controller
+communicating with it.
+
+*** Microcontroller Stepper Motor Controller
+
+One controller option is to use just a single microcontroller, communicating
+with the TMC2209 over both the UART serial interface and the step and direction
+interface.
+
+[[./images/microcontroller_controller_driver.png]]
+
+*** TMC429 and Microcontroller Stepper Motor Controller
+
+Another controller option is to use both a microcontroller and a separate step
+and direction controller, such as the TMC429.
+
+[[./images/TMC429_controller_driver.png]]
+
+* TMC2209 Communication
+
+The TMC2209 driver has two interfaces to communicate with a stepper motor
+controller, a UART serial interface and a step and direction interface.
+
+The UART serial interface may be used for tuning and control options, for
+diagnostics, and for simple velocity commands.
+
+The step and direction interface may be used for real-time position, velocity,
+and acceleration commands. The step and direction signals may be synchronized
+with the step and direction signals to other TMC2209 chips for coordinated
+multi-axis motion.
+
+** UART Serial Interface
+
+[[https://en.wikipedia.org/wiki/Universal_asynchronous_receiver-transmitter][Wikipedia - UART]]
 
 The TMC2209 communicates over a UART serial port using a single wire interface,
 allowing bi-directional operation for full control and diagnostics. It can be
@@ -50,7 +117,7 @@ void setup()
 
 [[./images/TMC2209_serial.png]]
 
-** Arduino Serial
+*** Arduino Serial
 
 [[https://www.arduino.cc/reference/en/language/functions/communication/serial][Arduino Serial Web Page]]
 
@@ -63,7 +130,7 @@ failed uploads to the board.
 Arduino boards with additional serial ports, such as "Serial1" and "Serial2",
 can use those ports to communicate with the TMC2209.
 
-** Teeny Serial
+*** Teeny Serial
 
 [[https://www.pjrc.com/teensy/td_uart.html][Teensy Serial Web Page]]
 
@@ -74,7 +141,7 @@ Unlike Arduino boards, the Teensy USB serial interface is not connected to pins
 0 and 1, allowing pins 0 and 1 to be used to communicate with a TMC2209 using
 "Serial1".
 
-** Serial Baud Rate
+*** Serial Baud Rate
 
 The serial baud rate is the speed of communication in bits per second of the
 UART serial port connected to the TMC2209.
@@ -87,14 +154,14 @@ The higher the baud rate the better, but microcontrollers have various UART
 serial abilities and limitations which affects the maximum baud allowed. The
 baud rate may be specified when setting up the stepper driver.
 
-*** Arduino
+**** Arduino
 
 The maximum serial baud rate on typical Arduino boards is 115200, so that is the
 default, but other values as low as 9600 may be used.
 
 [[https://www.arduino.cc/en/Reference/SoftwareSerialBegin][Arduino Serial Baud Rate Web Page]]
 
-*** Teensy
+**** Teensy
 
 Teensy UART baud rates can go higher than many typical Arduino boards, so 500k
 is a good setting to use.
@@ -118,7 +185,7 @@ void setup()
 
 #+END_SRC
 
-** Serial Addresses
+*** Serial Addresses
 
 More than one TMC2209 may be connected to a single serial port, if each TMC2209
 is assigned a unique serial address. The default serial address is
@@ -154,11 +221,37 @@ void setup()
 
 [[./images/TMC2209_serial_address.png]]
 
-* Hardware Documentation
+** Step and Direction Interface
 
-** TMC2209 Integrated Circuit
+*** Microcontroller Stepper Motor Controller
+
+The step and direction signals may be output from a microcontroller, using one
+output pin for the step signal and another output pin for the direction signal.
+
+A library such as the Arduino Stepper library may be used to control the step
+and direction output signals.
+
+[[https://www.arduino.cc/reference/en/libraries/stepper/][Arduino Stepper Library]]
+
+*** TMC429 and Microcontroller Stepper Motor Controller
+
+The step and direction signals may be output from a dedicated step and direction
+controller, such as the TMC429.
+
+A library such as the Arduino TMC429 library may be used to control the step and
+direction output signals.
+
+[[https://github.com/janelia-arduino/TMC429][Arduino TMC429 Library]]
+
+* TMC2209 Hardware Documentation
+
+** TMC2209 Stepper Driver Integrated Circuit
 
 [[https://www.trinamic.com/products/integrated-circuits/details/tmc2209-la][Trinamic TMC2209-LA Web Page]]
+
+** TMC429 Stepper Controller Integrated Circuit
+
+[[https://www.trinamic.com/products/integrated-circuits/details/tmc429/][Trinamic TMC429 Web Page]]
 
 ** SilentStepStick Stepper Driver Board
 
