@@ -4,7 +4,7 @@
 
 * Library Information
 - Name :: TMC2209
-- Version :: 8.0.4
+- Version :: 8.0.5
 - License :: BSD
 - URL :: https://github.com/janelia-arduino/TMC2209
 - Author :: Peter Polidoro
@@ -146,9 +146,10 @@ Unlike Arduino boards, the Teensy USB serial interface is not connected to pins
 The serial baud rate is the speed of communication in bits per second of the
 UART serial port connected to the TMC2209.
 
-Baud rates from 9600 Baud to 500k Baud or even higher (when using an external
-clock) may be used. No baud rate configuration on the chip is required, as the
-TMC2209 automatically adapts to the baud rate.
+In theory, baud rates from 9600 Baud to 500000 Baud or even higher (when using an
+external clock) may be used. No baud rate configuration on the chip is required,
+as the TMC2209 automatically adapts to the baud rate. In practice, it was found
+that the baud rate may range from 19200 to 500000 without errors.
 
 The higher the baud rate the better, but microcontrollers have various UART
 serial abilities and limitations which affects the maximum baud allowed. The
@@ -157,14 +158,14 @@ baud rate may be specified when setting up the stepper driver.
 **** Arduino
 
 The maximum serial baud rate on typical Arduino boards is 115200, so that is the
-default, but other values as low as 9600 may be used.
+default, but other values as low as 19200 may be used.
 
 [[https://www.arduino.cc/en/Reference/SoftwareSerialBegin][Arduino Serial Baud Rate Web Page]]
 
 **** Teensy
 
 Teensy UART baud rates can go higher than many typical Arduino boards, so 500k
-is a good setting to use.
+is a good setting to use, but other values as low as 19200 may be used.
 
 [[https://www.pjrc.com/teensy/td_uart.html][Teensy Serial Baud Rate Web Page]]
 
