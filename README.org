@@ -4,7 +4,7 @@
 
 * Library Information
 - Name :: TMC2209
-- Version :: 8.0.5
+- Version :: 8.0.6
 - License :: BSD
 - URL :: https://github.com/janelia-arduino/TMC2209
 - Author :: Peter Polidoro
@@ -53,6 +53,22 @@ stepper motor controller.
 
 The TMC2209 is a stepper motor driver and it needs a stepper motor controller
 communicating with it.
+
+The TMC2209 can be used independently from a stepper motor controller, but it is
+limited to simple velocity control mode only, with no direct position or
+acceleration control. Crude position control can be performed in this simple
+velocity control mode by commanding the driver to move the motor at a velocity,
+then after a given amount of time commanding it to stop, but small delays in the
+system will cause position errors. Plus without acceleration control, the
+stepper motor may also slip when it attempts to jump to a new velocity value
+causing more position errors. For some applications, these position errors may
+not matter, making simple velocity control good enough to save the trouble and
+expense of adding a separate stepper controller.
+
+Most of this library's examples use the simple velocity control mode to test the
+driver independently from a separate stepper motor controller, however in most
+real world applications a separate motor controller is needed, along with the
+TMC2209 and this library, for position and acceleration control.
 
 *** Microcontroller Stepper Motor Controller
 
@@ -228,11 +244,6 @@ void setup()
 
 The step and direction signals may be output from a microcontroller, using one
 output pin for the step signal and another output pin for the direction signal.
-
-A library such as the Arduino Stepper library may be used to control the step
-and direction output signals.
-
-[[https://www.arduino.cc/reference/en/libraries/stepper/][Arduino Stepper Library]]
 
 *** TMC429 and Microcontroller Stepper Motor Controller
 
