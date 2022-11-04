@@ -255,6 +255,15 @@ direction output signals.
 
 [[https://github.com/janelia-arduino/TMC429][Arduino TMC429 Library]]
 
+* Examples
+
+** Wiring
+
+*** Teensy 4.0
+
+[[./images/TMC2209_teensy40.png]]
+
+
 * TMC2209 Hardware Documentation
 
 ** TMC2209 Stepper Driver Integrated Circuit
