@@ -261,8 +261,7 @@ direction output signals.
 
 *** Teensy 4.0
 
-[[./images/TMC2209_teensy40.png]]
-
+[[./images/TMC2209_teensy40.svg]]
 
 * TMC2209 Hardware Documentation
 
