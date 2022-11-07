@@ -263,6 +263,10 @@ direction output signals.
 
 [[./images/TMC2209_teensy40.svg]]
 
+*** Mega 2560
+
+[[./images/TMC2209_mega2560.svg]]
+
 * TMC2209 Hardware Documentation
 
 ** TMC2209 Stepper Driver Integrated Circuit
