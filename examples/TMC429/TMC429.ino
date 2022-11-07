@@ -7,7 +7,9 @@ const int LOOP_DELAY = 1000;
 
 // Stepper driver settings
 HardwareSerial & serial_stream = Serial1;
-const int RUN_CURRENT = 40;
+// current values may need to be reduced to prevent overheating depending on
+// specific motor and power supply voltage
+const int RUN_CURRENT = 100;
 const int HOLD_CURRENT = 0;
 const int HOLD_DELAY = 0;
 const int MICROSTEPS_PER_STEP = 256;

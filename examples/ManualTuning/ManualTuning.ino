@@ -8,6 +8,8 @@ const int32_t RUN_VELOCITY = 80000;
 const int32_t STOP_VELOCITY = 0;
 const int RUN_DURATION = 500;
 const int STOP_DURATION = 1000;
+// current values may need to be reduced to prevent overheating depending on
+// specific motor and power supply voltage
 const uint8_t RUN_CURRENT_PERCENT = 100;
 const uint8_t HOLD_CURRENT_PERCENT = 0;
 const uint8_t HOLD_DELAY_PERCENT = 0;

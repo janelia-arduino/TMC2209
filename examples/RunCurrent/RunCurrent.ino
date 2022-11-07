@@ -9,6 +9,8 @@ const long SERIAL_BAUD_RATE = 115200;
 const int DELAY = 2000;
 const int32_t VELOCITY = 10000;
 const uint8_t PERCENT_MIN = 0;
+// current values may need to be reduced to prevent overheating depending on
+// specific motor and power supply voltage
 const uint8_t PERCENT_MAX = 100;
 const uint8_t PERCENT_INC = 10;
 

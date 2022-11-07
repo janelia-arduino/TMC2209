@@ -6,7 +6,9 @@ HardwareSerial & serial_stream = Serial1;
 const long SERIAL_BAUD_RATE = 115200;
 const int DELAY = 4000;
 const int32_t VELOCITY = 200;
-const uint8_t RUN_CURRENT_PERCENT = 60;
+// current values may need to be reduced to prevent overheating depending on
+// specific motor and power supply voltage
+const uint8_t RUN_CURRENT_PERCENT = 100;
 const uint8_t MICROSTEPS_PER_STEP_EXPONENT_MIN = 0;
 const uint8_t MICROSTEPS_PER_STEP_EXPONENT_MAX = 8;
 const uint8_t MICROSTEPS_PER_STEP_EXPONENT_INC = 1;

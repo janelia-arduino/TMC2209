@@ -10,7 +10,9 @@ const int32_t VELOCITY_STOPPED = 0;
 const uint8_t PERCENT_MIN = 0;
 const uint8_t PERCENT_MAX = 100;
 const uint8_t PERCENT_INC = 10;
-const uint8_t RUN_CURRENT_PERCENT = 50;
+// current values may need to be reduced to prevent overheating depending on
+// specific motor and power supply voltage
+const uint8_t RUN_CURRENT_PERCENT = 100;
 
 uint8_t hold_current_percent = PERCENT_INC;
 

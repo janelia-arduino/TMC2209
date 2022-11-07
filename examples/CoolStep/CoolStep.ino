@@ -6,7 +6,9 @@ HardwareSerial & serial_stream = Serial1;
 const long SERIAL_BAUD_RATE = 115200;
 const int DELAY = 500;
 const int32_t VELOCITY = 20000;
-const uint8_t RUN_CURRENT_PERCENT = 60;
+// current values may need to be reduced to prevent overheating depending on
+// specific motor and power supply voltage
+const uint8_t RUN_CURRENT_PERCENT = 100;
 const uint8_t LOOPS_BEFORE_TOGGLING = 3;
 const TMC2209::CurrentIncrement CURRENT_INCREMENT = TMC2209::CURRENT_INCREMENT_8;
 const TMC2209::MeasurementCount MEASUREMENT_COUNT = TMC2209::MEASUREMENT_COUNT_1;

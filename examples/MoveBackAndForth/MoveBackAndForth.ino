@@ -8,7 +8,9 @@ const int32_t RUN_VELOCITY = 20000;
 const int32_t STOP_VELOCITY = 0;
 const int RUN_DURATION = 2000;
 const int STOP_DURATION = 1000;
-const uint8_t RUN_CURRENT_PERCENT = 10;
+// current values may need to be reduced to prevent overheating depending on
+// specific motor and power supply voltage
+const uint8_t RUN_CURRENT_PERCENT = 100;
 
 
 // Instantiate TMC2209
