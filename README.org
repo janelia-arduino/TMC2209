@@ -267,6 +267,10 @@ direction output signals.
 
 [[./images/TMC2209_mega2560.svg]]
 
+*** Wiring Documentation Source
+
+[[https://github.com/janelia-kicad/trinamic_wiring]]
+
 * TMC2209 Hardware Documentation
 
 ** TMC2209 Stepper Driver Integrated Circuit
