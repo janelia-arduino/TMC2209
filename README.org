@@ -49,21 +49,36 @@ A stepper motor driver is responsible for commanding the electrical current
 through the motor coils as it changes with time to meet the requirements of the
 stepper motor controller.
 
-** TMC2209 Stepper Motor Driver
+** TMC2209 Stepper Motor Driver and Controller Combination
 
 The TMC2209 is a stepper motor driver and it needs a stepper motor controller
 communicating with it.
 
-The TMC2209 can be used independently from a stepper motor controller, but it is
-limited to simple velocity control mode only, with no direct position or
-acceleration control. Crude position control can be performed in this simple
-velocity control mode by commanding the driver to move the motor at a velocity,
-then after a given amount of time commanding it to stop, but small delays in the
-system will cause position errors. Plus without acceleration control, the
-stepper motor may also slip when it attempts to jump to a new velocity value
-causing more position errors. For some applications, these position errors may
-not matter, making simple velocity control good enough to save the trouble and
-expense of adding a separate stepper controller.
+The TMC2209 can be used as both a stepper motor driver and stepper motor
+controller combined, independent from a separate stepper motor controller, but
+it is limited to simple velocity control mode only, with no direct position or
+acceleration control.
+
+In velocity control mode, the velocity of the motor is set by the method
+moveAtVelocity(int32_t microsteps_per_period). The actual magnitude of the
+velocity depends on the TMC2209 clock frequency. The TMC2209 clock frequency
+(fclk) is normally 12 MHz if the internal clock is used, but can be between 4
+and 16 MHz if an external clock is used.
+
+In general:
+microsteps_per_second = microsteps_per_period * (fclk Hz / 2^24)
+
+Using internal 12 MHz clock (default):
+microsteps_per_second = microsteps_per_period * 0.715 Hz
+
+Crude position control can be performed in this simple velocity control mode by
+commanding the driver to move the motor at a velocity, then after a given amount
+of time commanding it to stop, but small delays in the system will cause
+position errors. Plus without acceleration control, the stepper motor may also
+slip when it attempts to jump to a new velocity value causing more position
+errors. For some applications, these position errors may not matter, making
+simple velocity control good enough to save the trouble and expense of adding a
+separate stepper controller.
 
 Most of this library's examples use the simple velocity control mode to test the
 driver independently from a separate stepper motor controller, however in most
