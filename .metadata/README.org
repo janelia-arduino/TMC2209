@@ -311,7 +311,11 @@ Use enableAutomaticGradientAdaptation() to reenable.
 
 [[https://github.com/janelia-kicad/trinamic_wiring]]
 
-* TMC2209 Hardware Documentation
+* Hardware Documentation
+
+** Datasheets
+
+[[./datasheets]]
 
 ** TMC2209 Stepper Driver Integrated Circuit
 
