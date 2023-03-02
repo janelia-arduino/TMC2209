@@ -1,6 +1,14 @@
+#+EXPORT_FILE_NAME: README.md
+#+OPTIONS: toc:1 |:t ^:nil tags:nil
 #+TITLE: TMC2209
 #+AUTHOR: Peter Polidoro
 #+EMAIL: peter@polidoro.io
+
+# Place warning at the top of the exported file
+#+BEGIN_EXAMPLE
+<!-- This file is generated automatically from metadata -->
+<!-- File edits may be overwritten! -->
+#+END_EXAMPLE
 
 * Library Information
 - Name :: TMC2209
@@ -100,7 +108,7 @@ and direction controller, such as the TMC429.
 
 [[./images/TMC429_controller_driver.png]]
 
-* TMC2209 Communication
+* Communication
 
 The TMC2209 driver has two interfaces to communicate with a stepper motor
 controller, a UART serial interface and a step and direction interface.
@@ -269,6 +277,23 @@ A library such as the Arduino TMC429 library may be used to control the step and
 direction output signals.
 
 [[https://github.com/janelia-arduino/TMC429][Arduino TMC429 Library]]
+
+* Defaults
+
+** Automatic Current Scaling
+
+Automatic current scaling is disabled by default, so a potentiometer connected
+to VREF will not set the current limit of the driver. Current settings are
+controlled by UART commands instead.
+
+Use enableAutomaticCurrentScaling() to allow VREF to set the current limit of
+the driver.
+
+** Automatic Gradient Adaptation
+
+Automatic gradient adaptation is disabled by default.
+
+Use enableAutomaticGradientAdaptation() to reenable.
 
 * Examples
 
