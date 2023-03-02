@@ -1,16 +1,16 @@
-- [Library Information](#org0f37eb1)
-- [Stepper Motors](#orgb1fffb3)
-- [Stepper Motor Controllers and Drivers](#org9efa3aa)
-- [Communication](#orgc4a52ee)
-- [Defaults](#org7bbe397)
-- [Examples](#orga47fc46)
-- [TMC2209 Hardware Documentation](#org8cf9f89)
+- [Library Information](#orgeb1cf4b)
+- [Stepper Motors](#orgcf789a5)
+- [Stepper Motor Controllers and Drivers](#org17a46e0)
+- [Communication](#org8b8ff30)
+- [Defaults](#org2662a07)
+- [Examples](#org7c421f8)
+- [TMC2209 Hardware Documentation](#org5788894)
 
     <!-- This file is generated automatically from metadata -->
     <!-- File edits may be overwritten! -->
 
 
-<a id="org0f37eb1"></a>
+<a id="orgeb1cf4b"></a>
 
 # Library Information
 
@@ -29,7 +29,7 @@ The TMC2209 is an ultra-silent motor driver IC for two phase stepper motors with
 ![img](./images/TMC2209.png)
 
 
-<a id="orgb1fffb3"></a>
+<a id="orgcf789a5"></a>
 
 # Stepper Motors
 
@@ -40,7 +40,7 @@ A stepper motor, also known as step motor or stepping motor, is a brushless DC e
 [Wikipedia - Stepper Motor](https://en.wikipedia.org/wiki/Stepper_motor)
 
 
-<a id="org9efa3aa"></a>
+<a id="org17a46e0"></a>
 
 # Stepper Motor Controllers and Drivers
 
@@ -88,7 +88,7 @@ Another controller option is to use both a microcontroller and a separate step a
 ![img](./images/TMC429_controller_driver.png)
 
 
-<a id="orgc4a52ee"></a>
+<a id="org8b8ff30"></a>
 
 # Communication
 
@@ -235,7 +235,7 @@ A library such as the Arduino TMC429 library may be used to control the step and
 [Arduino TMC429 Library](https://github.com/janelia-arduino/TMC429)
 
 
-<a id="org7bbe397"></a>
+<a id="org2662a07"></a>
 
 # Defaults
 
@@ -254,7 +254,7 @@ Automatic gradient adaptation is disabled by default.
 Use enableAutomaticGradientAdaptation() to reenable.
 
 
-<a id="orga47fc46"></a>
+<a id="org7c421f8"></a>
 
 # Examples
 
@@ -277,7 +277,7 @@ Use enableAutomaticGradientAdaptation() to reenable.
 <https://github.com/janelia-kicad/trinamic_wiring>
 
 
-<a id="org8cf9f89"></a>
+<a id="org5788894"></a>
 
 # TMC2209 Hardware Documentation
 

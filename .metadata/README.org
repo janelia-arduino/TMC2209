@@ -1,4 +1,4 @@
-#+EXPORT_FILE_NAME: README.md
+#+EXPORT_FILE_NAME: ../README.md
 #+OPTIONS: toc:1 |:t ^:nil tags:nil
 #+TITLE: TMC2209
 #+AUTHOR: Peter Polidoro
