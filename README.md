@@ -1,16 +1,16 @@
-- [Library Information](#orgffe7ded)
-- [Stepper Motors](#orgeb42446)
-- [Stepper Motor Controllers and Drivers](#org17234c4)
-- [Communication](#org36cfb8f)
-- [Defaults](#orgbb41cf2)
-- [Examples](#org3ed35d6)
-- [Hardware Documentation](#orgdb8dc67)
+- [Library Information](#org96ddff7)
+- [Stepper Motors](#orgc05b014)
+- [Stepper Motor Controllers and Drivers](#org22f0195)
+- [Communication](#org82dacdf)
+- [Defaults](#org4a7b4a1)
+- [Examples](#orga2d300a)
+- [Hardware Documentation](#org51c0040)
 
     <!-- This file is generated automatically from metadata -->
     <!-- File edits may be overwritten! -->
 
 
-<a id="orgffe7ded"></a>
+<a id="org96ddff7"></a>
 
 # Library Information
 
@@ -29,7 +29,7 @@ The TMC2209 is an ultra-silent motor driver IC for two phase stepper motors with
 ![img](./images/TMC2209.png)
 
 
-<a id="orgeb42446"></a>
+<a id="orgc05b014"></a>
 
 # Stepper Motors
 
@@ -40,7 +40,7 @@ A stepper motor, also known as step motor or stepping motor, is a brushless DC e
 [Wikipedia - Stepper Motor](https://en.wikipedia.org/wiki/Stepper_motor)
 
 
-<a id="org17234c4"></a>
+<a id="org22f0195"></a>
 
 # Stepper Motor Controllers and Drivers
 
@@ -88,7 +88,7 @@ Another controller option is to use both a microcontroller and a separate step a
 ![img](./images/TMC429_controller_driver.png)
 
 
-<a id="org36cfb8f"></a>
+<a id="org82dacdf"></a>
 
 # Communication
 
@@ -235,7 +235,7 @@ A library such as the Arduino TMC429 library may be used to control the step and
 [Arduino TMC429 Library](https://github.com/janelia-arduino/TMC429)
 
 
-<a id="orgbb41cf2"></a>
+<a id="org4a7b4a1"></a>
 
 # Defaults
 
@@ -254,7 +254,7 @@ Automatic gradient adaptation is disabled by default.
 Use enableAutomaticGradientAdaptation() to reenable.
 
 
-<a id="org3ed35d6"></a>
+<a id="orga2d300a"></a>
 
 # Examples
 
@@ -277,7 +277,7 @@ Use enableAutomaticGradientAdaptation() to reenable.
 <https://github.com/janelia-kicad/trinamic_wiring>
 
 
-<a id="orgdb8dc67"></a>
+<a id="org51c0040"></a>
 
 # Hardware Documentation
 
