@@ -1,16 +1,16 @@
-- [Library Information](#orgced035f)
-- [Stepper Motors](#orgde5f79d)
-- [Stepper Motor Controllers and Drivers](#orgc7bcd49)
-- [Communication](#orga47c9c4)
-- [Defaults](#org4b3cf24)
-- [Examples](#org2778172)
-- [Hardware Documentation](#orgc939c85)
+- [Library Information](#orgffe7ded)
+- [Stepper Motors](#orgeb42446)
+- [Stepper Motor Controllers and Drivers](#org17234c4)
+- [Communication](#org36cfb8f)
+- [Defaults](#orgbb41cf2)
+- [Examples](#org3ed35d6)
+- [Hardware Documentation](#orgdb8dc67)
 
     <!-- This file is generated automatically from metadata -->
     <!-- File edits may be overwritten! -->
 
 
-<a id="orgced035f"></a>
+<a id="orgffe7ded"></a>
 
 # Library Information
 
@@ -29,7 +29,7 @@ The TMC2209 is an ultra-silent motor driver IC for two phase stepper motors with
 ![img](./images/TMC2209.png)
 
 
-<a id="orgde5f79d"></a>
+<a id="orgeb42446"></a>
 
 # Stepper Motors
 
@@ -40,7 +40,7 @@ A stepper motor, also known as step motor or stepping motor, is a brushless DC e
 [Wikipedia - Stepper Motor](https://en.wikipedia.org/wiki/Stepper_motor)
 
 
-<a id="orgc7bcd49"></a>
+<a id="org17234c4"></a>
 
 # Stepper Motor Controllers and Drivers
 
@@ -88,7 +88,7 @@ Another controller option is to use both a microcontroller and a separate step a
 ![img](./images/TMC429_controller_driver.png)
 
 
-<a id="orga47c9c4"></a>
+<a id="org36cfb8f"></a>
 
 # Communication
 
@@ -235,7 +235,7 @@ A library such as the Arduino TMC429 library may be used to control the step and
 [Arduino TMC429 Library](https://github.com/janelia-arduino/TMC429)
 
 
-<a id="org4b3cf24"></a>
+<a id="orgbb41cf2"></a>
 
 # Defaults
 
@@ -254,7 +254,7 @@ Automatic gradient adaptation is disabled by default.
 Use enableAutomaticGradientAdaptation() to reenable.
 
 
-<a id="org2778172"></a>
+<a id="org3ed35d6"></a>
 
 # Examples
 
@@ -277,14 +277,14 @@ Use enableAutomaticGradientAdaptation() to reenable.
 <https://github.com/janelia-kicad/trinamic_wiring>
 
 
-<a id="orgc939c85"></a>
+<a id="orgdb8dc67"></a>
 
 # Hardware Documentation
 
 
 ## Datasheets
 
-<./datasheet>
+[Datasheets](./datasheet)
 
 
 ## TMC2209 Stepper Driver Integrated Circuit

@@ -315,7 +315,9 @@ Use enableAutomaticGradientAdaptation() to reenable.
 
 ** Datasheets
 
-[[./datasheet]]
+[[./datasheet/TMC2209_datasheet_rev1.08.pdf]]
+
+[[./datasheet/TMC2209_SilentStepStick_datasheet_Rev1.20.pdf]]
 
 ** TMC2209 Stepper Driver Integrated Circuit
 
