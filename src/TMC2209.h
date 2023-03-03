@@ -57,9 +57,13 @@ public:
 
   uint16_t getMicrostepsPerStep();
 
+  // range 0-100
   void setRunCurrent(uint8_t percent);
+  // range 0-100
   void setHoldCurrent(uint8_t percent);
+  // range 0-100
   void setHoldDelay(uint8_t percent);
+  // range 0-100
   void setAllCurrentValues(uint8_t run_current_percent,
     uint8_t hold_current_percent,
     uint8_t hold_delay_percent);
@@ -128,7 +132,9 @@ public:
   void disableAutomaticCurrentScaling();
   void enableAutomaticGradientAdaptation();
   void disableAutomaticGradientAdaptation();
+  // range 0-255
   void setPwmOffset(uint8_t pwm_amplitude);
+  // range 0-255
   void setPwmGradient(uint8_t pwm_amplitude);
 
   // default = 20
