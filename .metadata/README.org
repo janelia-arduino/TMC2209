@@ -301,6 +301,44 @@ to overheat and be damaged when the current is too high. The driver tends to
 protect itself and shutdown when it overheats, then reenable when the driver
 cools, which can result in odd jerky motor motion.
 
+** Driver Enable
+
+The driver is disabled by default and must be enabled before use.
+
+The driver may be disabled in two ways, either in hardware or in software, and
+the driver must be enabled in both ways in order to drive a motor.
+
+*** Hardware Enable
+
+The TMC2209 chip has an enable not input pin that switches off the power stage,
+all motor outputs floating, when the pin is driven to a high level, independent
+of software settings.
+
+The chip itself is hardware enabled by default, but many stepper driver boards
+pull the enable not input pin high, which causes the driver to be disabled by
+default.
+
+To hardware enable the driver, pull the enable not pin low, either with a jumper
+or with an output pin from the microcontroller.
+
+This library does not control an enable output, but the method
+disabledByInputPin() can be used to tell if the driver is disabled in hardware.
+
+*** Software Enable
+
+The TMC2209 may also be enabled and disabled in software, independent of the
+hardware enable pin.
+
+When the driver is disabled in software it behaves the same as being disabled by
+the hardware enable pin, the power stages are switched off and all motor outputs
+are floating.
+
+This library disables the driver in software by default.
+
+To enable the driver in software use the enable() method.
+
+To disable the driver in software use the disable() method.
+
 ** Analog Current Scaling
 
 Analog current scaling is disabled in this library by default, so a
