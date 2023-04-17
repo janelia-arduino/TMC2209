@@ -35,21 +35,6 @@ void TMC2209::setup(HardwareSerial & serial,
   }
 }
 
-bool TMC2209::isCommunicating()
-{
-  return (getVersion() == VERSION);
-}
-
-bool TMC2209::isSetupAndCommunicating()
-{
-  return serialOperationMode();
-}
-
-bool TMC2209::isCommunicatingButNotSetup()
-{
-  return (isCommunicating() && (not isSetupAndCommunicating()));
-}
-
 void TMC2209::enable()
 {
   if (blocking_)
@@ -68,18 +53,6 @@ void TMC2209::disable()
   }
   chopper_config_.toff = TOFF_DISABLE;
   writeStoredChopperConfig();
-}
-
-bool TMC2209::disabledByInputPin()
-{
-  if (blocking_)
-  {
-    return false;
-  }
-  Input input;
-  input.bytes = read(ADDRESS_IOIN);
-
-  return input.enn;
 }
 
 void TMC2209::setMicrostepsPerStep(uint16_t microsteps_per_step)
@@ -159,65 +132,6 @@ void TMC2209::setMicrostepsPerStepPowerOfTwo(uint8_t exponent)
   writeStoredChopperConfig();
 }
 
-uint16_t TMC2209::getMicrostepsPerStep()
-{
-  if (blocking_)
-  {
-    return 0;
-  }
-  uint16_t microsteps_per_step_exponent;
-  switch (chopper_config_.mres)
-  {
-    case MRES_001:
-    {
-      microsteps_per_step_exponent = 0;
-      break;
-    }
-    case MRES_002:
-    {
-      microsteps_per_step_exponent = 1;
-      break;
-    }
-    case MRES_004:
-    {
-      microsteps_per_step_exponent = 2;
-      break;
-    }
-    case MRES_008:
-    {
-      microsteps_per_step_exponent = 3;
-      break;
-    }
-    case MRES_016:
-    {
-      microsteps_per_step_exponent = 4;
-      break;
-    }
-    case MRES_032:
-    {
-      microsteps_per_step_exponent = 5;
-      break;
-    }
-    case MRES_064:
-    {
-      microsteps_per_step_exponent = 6;
-      break;
-    }
-    case MRES_128:
-    {
-      microsteps_per_step_exponent = 7;
-      break;
-    }
-    case MRES_256:
-    default:
-    {
-      microsteps_per_step_exponent = 8;
-      break;
-    }
-  }
-  return 1 << microsteps_per_step_exponent;
-}
-
 void TMC2209::setRunCurrent(uint8_t percent)
 {
   if (blocking_)
@@ -269,72 +183,6 @@ void TMC2209::setAllCurrentValues(uint8_t run_current_percent,
   driver_current_.ihold = hold_current;
   driver_current_.iholddelay = hold_delay;
   writeStoredDriverCurrent();
-}
-
-TMC2209::Settings TMC2209::getSettings()
-{
-  Settings settings;
-  settings.is_communicating = isCommunicating();
-
-  if (settings.is_communicating)
-  {
-    readAndStoreRegisters();
-
-    settings.is_setup = global_config_.pdn_disable;
-    settings.enabled = (chopper_config_.toff > TOFF_DISABLE);
-    settings.microsteps_per_step = getMicrostepsPerStep();
-    settings.inverse_motor_direction_enabled = global_config_.shaft;
-    settings.stealth_chop_enabled = not global_config_.enable_spread_cycle;
-    settings.standstill_mode = pwm_config_.freewheel;
-    settings.irun_percent = currentSettingToPercent(driver_current_.irun);
-    settings.irun_register_value = driver_current_.irun;
-    settings.ihold_percent = currentSettingToPercent(driver_current_.ihold);
-    settings.ihold_register_value = driver_current_.ihold;
-    settings.iholddelay_percent = holdDelaySettingToPercent(driver_current_.iholddelay);
-    settings.iholddelay_register_value = driver_current_.iholddelay;
-    settings.automatic_current_scaling_enabled = pwm_config_.pwm_autoscale;
-    settings.automatic_gradient_adaptation_enabled = pwm_config_.pwm_autograd;
-    settings.pwm_offset = pwm_config_.pwm_offset;
-    settings.pwm_gradient = pwm_config_.pwm_grad;
-    settings.cool_step_enabled = cool_step_enabled_;
-    settings.analog_current_scaling_enabled = global_config_.i_scale_analog;
-    settings.internal_sense_resistors_enabled = global_config_.internal_rsense;
-  }
-  else
-  {
-    settings.is_setup = false;
-    settings.enabled = false;
-    settings.microsteps_per_step = 0;
-    settings.inverse_motor_direction_enabled = false;
-    settings.stealth_chop_enabled = false;
-    settings.standstill_mode = pwm_config_.freewheel;
-    settings.irun_percent = 0;
-    settings.irun_register_value = 0;
-    settings.ihold_percent = 0;
-    settings.ihold_register_value = 0;
-    settings.iholddelay_percent = 0;
-    settings.iholddelay_register_value = 0;
-    settings.automatic_current_scaling_enabled = false;
-    settings.automatic_gradient_adaptation_enabled = false;
-    settings.pwm_offset = 0;
-    settings.pwm_gradient = 0;
-    settings.cool_step_enabled = false;
-    settings.analog_current_scaling_enabled = false;
-    settings.internal_sense_resistors_enabled = false;
-  }
-
-  return settings;
-}
-
-TMC2209::Status TMC2209::getStatus()
-{
-  DriveStatus drive_status;
-  drive_status.bytes = 0;
-  if (not blocking_)
-  {
-    drive_status.bytes = read(ADDRESS_DRV_STATUS);
-  }
-  return drive_status.status;
 }
 
 void TMC2209::enableInverseMotorDirection()
@@ -436,15 +284,6 @@ void TMC2209::setPowerDownDelay(uint8_t delay)
   write(ADDRESS_TPOWERDOWN,delay);
 }
 
-uint8_t TMC2209::getInterfaceTransmissionCounter()
-{
-  if (blocking_)
-  {
-    return 0;
-  }
-  return read(ADDRESS_IFCNT);
-}
-
 void TMC2209::moveAtVelocity(int32_t microsteps_per_period)
 {
   if (blocking_)
@@ -483,15 +322,6 @@ void TMC2209::disableStealthChop()
   writeStoredGlobalConfig();
 }
 
-uint32_t TMC2209::getInterstepDuration()
-{
-  if (blocking_)
-  {
-    return 0;
-  }
-  return read(ADDRESS_TSTEP);
-}
-
 void TMC2209::setCoolStepDurationThreshold(uint32_t duration_threshold)
 {
   if (blocking_)
@@ -510,15 +340,6 @@ void TMC2209::setStealthChopDurationThreshold(uint32_t duration_threshold)
   write(ADDRESS_TPWMTHRS,duration_threshold);
 }
 
-uint16_t TMC2209::getStallGuardResult()
-{
-  if (blocking_)
-  {
-    return 0;
-  }
-  return read(ADDRESS_SG_RESULT);
-}
-
 void TMC2209::setStallGuardThreshold(uint8_t stall_guard_threshold)
 {
   if (blocking_)
@@ -526,6 +347,273 @@ void TMC2209::setStallGuardThreshold(uint8_t stall_guard_threshold)
     return;
   }
   write(ADDRESS_SGTHRS,stall_guard_threshold);
+}
+
+void TMC2209::enableCoolStep(uint8_t lower_threshold,
+    uint8_t upper_threshold)
+{
+  if (blocking_)
+  {
+    return;
+  }
+  lower_threshold = constrain(lower_threshold,SEMIN_MIN,SEMIN_MAX);
+  cool_config_.semin = lower_threshold;
+  upper_threshold = constrain(upper_threshold,SEMAX_MIN,SEMAX_MAX);
+  cool_config_.semax = upper_threshold;
+  write(ADDRESS_COOLCONF,cool_config_.bytes);
+  cool_step_enabled_ = true;
+}
+
+void TMC2209::disableCoolStep()
+{
+  if (blocking_)
+  {
+    return;
+  }
+  cool_config_.semin = SEMIN_OFF;
+  write(ADDRESS_COOLCONF,cool_config_.bytes);
+  cool_step_enabled_ = false;
+}
+
+void TMC2209::setCoolStepCurrentIncrement(CurrentIncrement current_increment)
+{
+  if (blocking_)
+  {
+    return;
+  }
+  cool_config_.seup = current_increment;
+  write(ADDRESS_COOLCONF,cool_config_.bytes);
+}
+
+void TMC2209::setCoolStepMeasurementCount(MeasurementCount measurement_count)
+{
+  if (blocking_)
+  {
+    return;
+  }
+  cool_config_.sedn = measurement_count;
+  write(ADDRESS_COOLCONF,cool_config_.bytes);
+}
+
+void TMC2209::enableAnalogCurrentScaling()
+{
+  if (blocking_)
+  {
+    return;
+  }
+  global_config_.i_scale_analog = 1;
+  writeStoredGlobalConfig();
+}
+
+void TMC2209::disableAnalogCurrentScaling()
+{
+  if (blocking_)
+  {
+    return;
+  }
+  global_config_.i_scale_analog = 0;
+  writeStoredGlobalConfig();
+}
+
+void TMC2209::useExternalSenseResistors()
+{
+  if (blocking_)
+  {
+    return;
+  }
+  global_config_.internal_rsense = 0;
+  writeStoredGlobalConfig();
+}
+
+void TMC2209::useInternalSenseResistors()
+{
+  if (blocking_)
+  {
+    return;
+  }
+  global_config_.internal_rsense = 1;
+  writeStoredGlobalConfig();
+}
+
+// optional read methods
+
+bool TMC2209::isCommunicating()
+{
+  return (getVersion() == VERSION);
+}
+
+bool TMC2209::isSetupAndCommunicating()
+{
+  return serialOperationMode();
+}
+
+bool TMC2209::isCommunicatingButNotSetup()
+{
+  return (isCommunicating() && (not isSetupAndCommunicating()));
+}
+
+bool TMC2209::disabledByInputPin()
+{
+  if (blocking_)
+  {
+    return false;
+  }
+  Input input;
+  input.bytes = read(ADDRESS_IOIN);
+
+  return input.enn;
+}
+
+uint16_t TMC2209::getMicrostepsPerStep()
+{
+  if (blocking_)
+  {
+    return 0;
+  }
+  uint16_t microsteps_per_step_exponent;
+  switch (chopper_config_.mres)
+  {
+    case MRES_001:
+    {
+      microsteps_per_step_exponent = 0;
+      break;
+    }
+    case MRES_002:
+    {
+      microsteps_per_step_exponent = 1;
+      break;
+    }
+    case MRES_004:
+    {
+      microsteps_per_step_exponent = 2;
+      break;
+    }
+    case MRES_008:
+    {
+      microsteps_per_step_exponent = 3;
+      break;
+    }
+    case MRES_016:
+    {
+      microsteps_per_step_exponent = 4;
+      break;
+    }
+    case MRES_032:
+    {
+      microsteps_per_step_exponent = 5;
+      break;
+    }
+    case MRES_064:
+    {
+      microsteps_per_step_exponent = 6;
+      break;
+    }
+    case MRES_128:
+    {
+      microsteps_per_step_exponent = 7;
+      break;
+    }
+    case MRES_256:
+    default:
+    {
+      microsteps_per_step_exponent = 8;
+      break;
+    }
+  }
+  return 1 << microsteps_per_step_exponent;
+}
+
+TMC2209::Settings TMC2209::getSettings()
+{
+  Settings settings;
+  settings.is_communicating = isCommunicating();
+
+  if (settings.is_communicating)
+  {
+    readAndStoreRegisters();
+
+    settings.is_setup = global_config_.pdn_disable;
+    settings.enabled = (chopper_config_.toff > TOFF_DISABLE);
+    settings.microsteps_per_step = getMicrostepsPerStep();
+    settings.inverse_motor_direction_enabled = global_config_.shaft;
+    settings.stealth_chop_enabled = not global_config_.enable_spread_cycle;
+    settings.standstill_mode = pwm_config_.freewheel;
+    settings.irun_percent = currentSettingToPercent(driver_current_.irun);
+    settings.irun_register_value = driver_current_.irun;
+    settings.ihold_percent = currentSettingToPercent(driver_current_.ihold);
+    settings.ihold_register_value = driver_current_.ihold;
+    settings.iholddelay_percent = holdDelaySettingToPercent(driver_current_.iholddelay);
+    settings.iholddelay_register_value = driver_current_.iholddelay;
+    settings.automatic_current_scaling_enabled = pwm_config_.pwm_autoscale;
+    settings.automatic_gradient_adaptation_enabled = pwm_config_.pwm_autograd;
+    settings.pwm_offset = pwm_config_.pwm_offset;
+    settings.pwm_gradient = pwm_config_.pwm_grad;
+    settings.cool_step_enabled = cool_step_enabled_;
+    settings.analog_current_scaling_enabled = global_config_.i_scale_analog;
+    settings.internal_sense_resistors_enabled = global_config_.internal_rsense;
+  }
+  else
+  {
+    settings.is_setup = false;
+    settings.enabled = false;
+    settings.microsteps_per_step = 0;
+    settings.inverse_motor_direction_enabled = false;
+    settings.stealth_chop_enabled = false;
+    settings.standstill_mode = pwm_config_.freewheel;
+    settings.irun_percent = 0;
+    settings.irun_register_value = 0;
+    settings.ihold_percent = 0;
+    settings.ihold_register_value = 0;
+    settings.iholddelay_percent = 0;
+    settings.iholddelay_register_value = 0;
+    settings.automatic_current_scaling_enabled = false;
+    settings.automatic_gradient_adaptation_enabled = false;
+    settings.pwm_offset = 0;
+    settings.pwm_gradient = 0;
+    settings.cool_step_enabled = false;
+    settings.analog_current_scaling_enabled = false;
+    settings.internal_sense_resistors_enabled = false;
+  }
+
+  return settings;
+}
+
+TMC2209::Status TMC2209::getStatus()
+{
+  DriveStatus drive_status;
+  drive_status.bytes = 0;
+  if (not blocking_)
+  {
+    drive_status.bytes = read(ADDRESS_DRV_STATUS);
+  }
+  return drive_status.status;
+}
+
+uint8_t TMC2209::getInterfaceTransmissionCounter()
+{
+  if (blocking_)
+  {
+    return 0;
+  }
+  return read(ADDRESS_IFCNT);
+}
+
+uint32_t TMC2209::getInterstepDuration()
+{
+  if (blocking_)
+  {
+    return 0;
+  }
+  return read(ADDRESS_TSTEP);
+}
+
+uint16_t TMC2209::getStallGuardResult()
+{
+  if (blocking_)
+  {
+    return 0;
+  }
+  return read(ADDRESS_SG_RESULT);
 }
 
 uint8_t TMC2209::getPwmScaleSum()
@@ -576,52 +664,6 @@ uint8_t TMC2209::getPwmGradientAuto()
   return pwm_auto.pwm_gradient_auto;
 }
 
-void TMC2209::enableCoolStep(uint8_t lower_threshold,
-    uint8_t upper_threshold)
-{
-  if (blocking_)
-  {
-    return;
-  }
-  lower_threshold = constrain(lower_threshold,SEMIN_MIN,SEMIN_MAX);
-  cool_config_.semin = lower_threshold;
-  upper_threshold = constrain(upper_threshold,SEMAX_MIN,SEMAX_MAX);
-  cool_config_.semax = upper_threshold;
-  write(ADDRESS_COOLCONF,cool_config_.bytes);
-  cool_step_enabled_ = true;
-}
-
-void TMC2209::disableCoolStep()
-{
-  if (blocking_)
-  {
-    return;
-  }
-  cool_config_.semin = SEMIN_OFF;
-  write(ADDRESS_COOLCONF,cool_config_.bytes);
-  cool_step_enabled_ = false;
-}
-
-void TMC2209::setCoolStepCurrentIncrement(CurrentIncrement current_increment)
-{
-  if (blocking_)
-  {
-    return;
-  }
-  cool_config_.seup = current_increment;
-  write(ADDRESS_COOLCONF,cool_config_.bytes);
-}
-
-void TMC2209::setCoolStepMeasurementCount(MeasurementCount measurement_count)
-{
-  if (blocking_)
-  {
-    return;
-  }
-  cool_config_.sedn = measurement_count;
-  write(ADDRESS_COOLCONF,cool_config_.bytes);
-}
-
 uint16_t TMC2209::getMicrostepCounter()
 {
   if (blocking_)
@@ -629,46 +671,6 @@ uint16_t TMC2209::getMicrostepCounter()
     return 0;
   }
   return read(ADDRESS_MSCNT);
-}
-
-void TMC2209::enableAnalogCurrentScaling()
-{
-  if (blocking_)
-  {
-    return;
-  }
-  global_config_.i_scale_analog = 1;
-  writeStoredGlobalConfig();
-}
-
-void TMC2209::disableAnalogCurrentScaling()
-{
-  if (blocking_)
-  {
-    return;
-  }
-  global_config_.i_scale_analog = 0;
-  writeStoredGlobalConfig();
-}
-
-void TMC2209::useExternalSenseResistors()
-{
-  if (blocking_)
-  {
-    return;
-  }
-  global_config_.internal_rsense = 0;
-  writeStoredGlobalConfig();
-}
-
-void TMC2209::useInternalSenseResistors()
-{
-  if (blocking_)
-  {
-    return;
-  }
-  global_config_.internal_rsense = 1;
-  writeStoredGlobalConfig();
 }
 
 // private

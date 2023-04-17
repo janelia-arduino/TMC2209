@@ -23,17 +23,6 @@ void setup()
 
   stepper_driver.setup(serial_stream);
 
-  if (stepper_driver.isSetupAndCommunicating())
-  {
-    Serial.println("Stepper driver setup and communicating!");
-    Serial.println("");
-  }
-  else
-  {
-    Serial.println("Stepper driver not setup and communicating!");
-    return;
-  }
-
   stepper_driver.setRunCurrent(RUN_CURRENT_PERCENT);
   stepper_driver.enableCoolStep();
   stepper_driver.enable();
@@ -41,12 +30,6 @@ void setup()
 
 void loop()
 {
-  if (not stepper_driver.isSetupAndCommunicating())
-  {
-    Serial.println("Stepper driver not setup and communicating!");
-    return;
-  }
-
   stepper_driver.moveAtVelocity(STOP_VELOCITY);
   delay(STOP_DURATION);
   if (invert_direction)
@@ -61,39 +44,5 @@ void loop()
 
   stepper_driver.moveAtVelocity(RUN_VELOCITY);
 
-  bool disabled_by_input_pin = stepper_driver.disabledByInputPin();
-  TMC2209::Settings settings = stepper_driver.getSettings();
-  TMC2209::Status status = stepper_driver.getStatus();
-
-  if (disabled_by_input_pin)
-  {
-    Serial.println("Stepper driver is disabled by input pin!");
-  }
-  else if (not settings.enabled)
-  {
-    Serial.println("Stepper driver is disabled by firmware!");
-  }
-  else if ((not status.standstill))
-  {
-    Serial.print("Moving at velocity ");
-    if (invert_direction)
-    {
-      Serial.print("-");
-    }
-    Serial.println(RUN_VELOCITY);
-
-    uint32_t interstep_duration = stepper_driver.getInterstepDuration();
-    Serial.print("which is equal to an interstep_duration of ");
-    Serial.println(interstep_duration);
-
-    Serial.print("status.current_scaling = ");
-    Serial.println(status.current_scaling);
-  }
-  else
-  {
-    Serial.println("Not moving, something is wrong!");
-  }
-
-  Serial.println("");
   delay(RUN_DURATION);
 }

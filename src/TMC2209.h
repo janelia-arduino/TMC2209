@@ -30,23 +30,9 @@ public:
     long serial_baud_rate=115200,
     SerialAddress serial_address=SERIAL_ADDRESS_0);
 
-  // check to make sure TMC2209 is properly setup and communicating
-  bool isSetupAndCommunicating();
-
-  // if driver is not communicating, check power and communication connections
-  bool isCommunicating();
-
-  // driver may be communicating but not setup if driver power is lost then
-  // restored after setup so that defaults are loaded instead of setup options
-  bool isCommunicatingButNotSetup();
-
   // driver must be enabled before use it is disabled by default
   void enable();
   void disable();
-
-  // driver may also be disabled by the hardware enable input pin
-  // this pin must be grounded or disconnected before driver may be enabled
-  bool disabledByInputPin();
 
   // valid values = 1,2,4,8,...128,256, other values get rounded down
   void setMicrostepsPerStep(uint16_t microsteps_per_step);
@@ -54,8 +40,6 @@ public:
   // valid values = 0-8, microsteps = 2^exponent, 0=1,1=2,2=4,...8=256
   // https://en.wikipedia.org/wiki/Power_of_two
   void setMicrostepsPerStepPowerOfTwo(uint8_t exponent);
-
-  uint16_t getMicrostepsPerStep();
 
   // range 0-100
   void setRunCurrent(uint8_t percent);
@@ -67,6 +51,88 @@ public:
   void setAllCurrentValues(uint8_t run_current_percent,
     uint8_t hold_current_percent,
     uint8_t hold_delay_percent);
+
+  void enableInverseMotorDirection();
+  void disableInverseMotorDirection();
+
+  enum StandstillMode
+  {
+    NORMAL=0,
+    FREEWHEELING=1,
+    STRONG_BRAKING=2,
+    BRAKING=3,
+  };
+  void setStandstillMode(StandstillMode mode);
+
+  void enableAutomaticCurrentScaling();
+  void disableAutomaticCurrentScaling();
+  void enableAutomaticGradientAdaptation();
+  void disableAutomaticGradientAdaptation();
+  // range 0-255
+  void setPwmOffset(uint8_t pwm_amplitude);
+  // range 0-255
+  void setPwmGradient(uint8_t pwm_amplitude);
+
+  // default = 20
+  // mimimum of 2 for StealthChop auto tuning
+  void setPowerDownDelay(uint8_t delay);
+
+  void moveAtVelocity(int32_t microsteps_per_period);
+  void moveUsingStepDirInterface();
+
+  void enableStealthChop();
+  void disableStealthChop();
+
+  void setStealthChopDurationThreshold(uint32_t duration_threshold);
+
+  void setStallGuardThreshold(uint8_t stall_guard_threshold);
+
+  // lower_threshold: min = 1, max = 15
+  // upper_threshold: min = 0, max = 15, 0-2 recommended
+  void enableCoolStep(uint8_t lower_threshold=1,
+    uint8_t upper_threshold=0);
+  void disableCoolStep();
+  enum CurrentIncrement
+  {
+    CURRENT_INCREMENT_1=0,
+    CURRENT_INCREMENT_2=1,
+    CURRENT_INCREMENT_4=2,
+    CURRENT_INCREMENT_8=3,
+  };
+  void setCoolStepCurrentIncrement(CurrentIncrement current_increment);
+  enum MeasurementCount
+  {
+    MEASUREMENT_COUNT_32=0,
+    MEASUREMENT_COUNT_8=1,
+    MEASUREMENT_COUNT_2=2,
+    MEASUREMENT_COUNT_1=3,
+  };
+  void setCoolStepMeasurementCount(MeasurementCount measurement_count);
+  void setCoolStepDurationThreshold(uint32_t duration_threshold);
+
+  void enableAnalogCurrentScaling();
+  void disableAnalogCurrentScaling();
+
+  void useExternalSenseResistors();
+  void useInternalSenseResistors();
+
+  // optional read methods
+
+  // check to make sure TMC2209 is properly setup and communicating
+  bool isSetupAndCommunicating();
+
+  // if driver is not communicating, check power and communication connections
+  bool isCommunicating();
+
+  // driver may be communicating but not setup if driver power is lost then
+  // restored after setup so that defaults are loaded instead of setup options
+  bool isCommunicatingButNotSetup();
+
+  // driver may also be disabled by the hardware enable input pin
+  // this pin must be grounded or disconnected before driver may be enabled
+  bool disabledByInputPin();
+
+  uint16_t getMicrostepsPerStep();
 
   struct Settings
   {
@@ -116,80 +182,18 @@ public:
   const static uint8_t CURRENT_SCALING_MAX = 31;
   Status getStatus();
 
-  void enableInverseMotorDirection();
-  void disableInverseMotorDirection();
-
-  enum StandstillMode
-  {
-    NORMAL=0,
-    FREEWHEELING=1,
-    STRONG_BRAKING=2,
-    BRAKING=3,
-  };
-  void setStandstillMode(StandstillMode mode);
-
-  void enableAutomaticCurrentScaling();
-  void disableAutomaticCurrentScaling();
-  void enableAutomaticGradientAdaptation();
-  void disableAutomaticGradientAdaptation();
-  // range 0-255
-  void setPwmOffset(uint8_t pwm_amplitude);
-  // range 0-255
-  void setPwmGradient(uint8_t pwm_amplitude);
-
-  // default = 20
-  // mimimum of 2 for StealthChop auto tuning
-  void setPowerDownDelay(uint8_t delay);
-
   uint8_t getInterfaceTransmissionCounter();
 
-  void moveAtVelocity(int32_t microsteps_per_period);
-  void moveUsingStepDirInterface();
-
-  void enableStealthChop();
-  void disableStealthChop();
-
   uint32_t getInterstepDuration();
-  void setStealthChopDurationThreshold(uint32_t duration_threshold);
 
   uint16_t getStallGuardResult();
-  void setStallGuardThreshold(uint8_t stall_guard_threshold);
 
   uint8_t getPwmScaleSum();
   int16_t getPwmScaleAuto();
   uint8_t getPwmOffsetAuto();
   uint8_t getPwmGradientAuto();
 
-  // lower_threshold: min = 1, max = 15
-  // upper_threshold: min = 0, max = 15, 0-2 recommended
-  void enableCoolStep(uint8_t lower_threshold=1,
-    uint8_t upper_threshold=0);
-  void disableCoolStep();
-  enum CurrentIncrement
-  {
-    CURRENT_INCREMENT_1=0,
-    CURRENT_INCREMENT_2=1,
-    CURRENT_INCREMENT_4=2,
-    CURRENT_INCREMENT_8=3,
-  };
-  void setCoolStepCurrentIncrement(CurrentIncrement current_increment);
-  enum MeasurementCount
-  {
-    MEASUREMENT_COUNT_32=0,
-    MEASUREMENT_COUNT_8=1,
-    MEASUREMENT_COUNT_2=2,
-    MEASUREMENT_COUNT_1=3,
-  };
-  void setCoolStepMeasurementCount(MeasurementCount measurement_count);
-  void setCoolStepDurationThreshold(uint32_t duration_threshold);
-
   uint16_t getMicrostepCounter();
-
-  void enableAnalogCurrentScaling();
-  void disableAnalogCurrentScaling();
-
-  void useExternalSenseResistors();
-  void useInternalSenseResistors();
 
 private:
   bool blocking_;
