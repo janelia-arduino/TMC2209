@@ -24,15 +24,15 @@ void TMC2209::setup(HardwareSerial & serial,
   serial_baud_rate_ = serial_baud_rate;
   setOperationModeToSerial(serial,serial_baud_rate,serial_address);
   setRegistersToDefaults();
-  readAndStoreRegisters();
+  // readAndStoreRegisters();
   minimizeMotorCurrent();
   disable();
   disableAutomaticCurrentScaling();
   disableAutomaticGradientAdaptation();
-  if (not isSetupAndCommunicating())
-  {
-    blocking_ = true;
-  }
+  // if (not isSetupAndCommunicating())
+  // {
+  //   blocking_ = true;
+  // }
 }
 
 void TMC2209::enable()
@@ -790,6 +790,24 @@ uint8_t TMC2209::calculateCrc(Datagram & datagram,
 }
 
 template<typename Datagram>
+void TMC2209::sendDatagramNoRx(Datagram & datagram,
+  uint8_t datagram_size)
+{
+  if (not serial_ptr_)
+  {
+    return;
+  }
+
+  uint8_t byte;
+
+  for (uint8_t i=0; i<datagram_size; ++i)
+  {
+    byte = (datagram.bytes >> (i * BITS_PER_BYTE)) & BYTE_MAX_VALUE;
+    serial_ptr_->write(byte);
+  }
+}
+
+template<typename Datagram>
 void TMC2209::sendDatagram(Datagram & datagram,
   uint8_t datagram_size)
 {
@@ -846,7 +864,7 @@ void TMC2209::write(uint8_t register_address,
   write_datagram.data = reverseData(data);
   write_datagram.crc = calculateCrc(write_datagram,WRITE_READ_REPLY_DATAGRAM_SIZE);
 
-  sendDatagram(write_datagram,WRITE_READ_REPLY_DATAGRAM_SIZE);
+  sendDatagramNoRx(write_datagram,WRITE_READ_REPLY_DATAGRAM_SIZE);
 }
 
 uint32_t TMC2209::read(uint8_t register_address)

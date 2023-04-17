@@ -524,6 +524,9 @@ private:
   uint8_t calculateCrc(Datagram & datagram,
     uint8_t datagram_size);
   template<typename Datagram>
+  void sendDatagramNoRx(Datagram & datagram,
+    uint8_t datagram_size);
+  template<typename Datagram>
   void sendDatagram(Datagram & datagram,
     uint8_t datagram_size);
 
