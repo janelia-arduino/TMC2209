@@ -3,7 +3,6 @@
 
 HardwareSerial & serial_stream = Serial1;
 
-const long SERIAL_BAUD_RATE = 115200;
 const int32_t RUN_VELOCITY = 20000;
 const int32_t STOP_VELOCITY = 0;
 const int RUN_DURATION = 2000;
@@ -19,8 +18,6 @@ bool invert_direction = false;
 
 void setup()
 {
-  Serial.begin(SERIAL_BAUD_RATE);
-
   stepper_driver.setup(serial_stream);
 
   stepper_driver.setRunCurrent(RUN_CURRENT_PERCENT);

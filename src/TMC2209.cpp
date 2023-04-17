@@ -10,7 +10,7 @@
 TMC2209::TMC2209()
 {
   blocking_ = true;
-  serial_ptr_ = nullptr;
+  hardware_serial_ptr_ = nullptr;
   serial_baud_rate_ = 500000;
   serial_address_ = SERIAL_ADDRESS_0;
   cool_step_enabled_ = false;
@@ -21,14 +21,20 @@ void TMC2209::setup(HardwareSerial & serial,
   SerialAddress serial_address)
 {
   blocking_ = false;
+  hardware_serial_ = true;
   serial_baud_rate_ = serial_baud_rate;
-  setOperationModeToSerial(serial,serial_baud_rate,serial_address);
+
+  hardware_serial_ptr_ = &serial;
+  hardware_serial_ptr_->begin(serial_baud_rate);
+
+  setOperationModeToSerial(serial_address);
   setRegistersToDefaults();
-  // readAndStoreRegisters();
+
   minimizeMotorCurrent();
   disable();
   disableAutomaticCurrentScaling();
   disableAutomaticGradientAdaptation();
+
   // if (not isSetupAndCommunicating())
   // {
   //   blocking_ = true;
@@ -674,14 +680,9 @@ uint16_t TMC2209::getMicrostepCounter()
 }
 
 // private
-void TMC2209::setOperationModeToSerial(HardwareSerial & serial,
-  long serial_baud_rate,
-  SerialAddress serial_address)
+void TMC2209::setOperationModeToSerial(SerialAddress serial_address)
 {
-  serial_ptr_ = &serial;
   serial_address_ = serial_address;
-
-  serial_ptr_->begin(serial_baud_rate);
 
   global_config_.bytes = 0;
   global_config_.i_scale_analog = 0;
@@ -723,9 +724,23 @@ void TMC2209::setRegistersToDefaults()
 
 void TMC2209::readAndStoreRegisters()
 {
+  Serial.println("before readAndStoreRegisters");
+  Serial.print("global_config_ = ");
+  Serial.println(global_config_.bytes);
+  Serial.print("chopper_config_ = ");
+  Serial.println(chopper_config_.bytes);
+  Serial.print("pwm_config_ = ");
+  Serial.println(pwm_config_.bytes);
   global_config_.bytes = readGlobalConfigBytes();
   chopper_config_.bytes = readChopperConfigBytes();
   pwm_config_.bytes = readPwmConfigBytes();
+  Serial.println("after readAndStoreRegisters");
+  Serial.print("global_config_ = ");
+  Serial.println(global_config_.bytes);
+  Serial.print("chopper_config_ = ");
+  Serial.println(chopper_config_.bytes);
+  Serial.print("pwm_config_ = ");
+  Serial.println(pwm_config_.bytes);
 }
 uint8_t TMC2209::getVersion()
 {
@@ -793,7 +808,7 @@ template<typename Datagram>
 void TMC2209::sendDatagramNoRx(Datagram & datagram,
   uint8_t datagram_size)
 {
-  if (not serial_ptr_)
+  if (not hardware_serial_ptr_)
   {
     return;
   }
@@ -803,7 +818,7 @@ void TMC2209::sendDatagramNoRx(Datagram & datagram,
   for (uint8_t i=0; i<datagram_size; ++i)
   {
     byte = (datagram.bytes >> (i * BITS_PER_BYTE)) & BYTE_MAX_VALUE;
-    serial_ptr_->write(byte);
+    hardware_serial_ptr_->write(byte);
   }
 }
 
@@ -811,7 +826,7 @@ template<typename Datagram>
 void TMC2209::sendDatagram(Datagram & datagram,
   uint8_t datagram_size)
 {
-  if (not serial_ptr_)
+  if (not hardware_serial_ptr_)
   {
     return;
   }
@@ -819,20 +834,20 @@ void TMC2209::sendDatagram(Datagram & datagram,
   uint8_t byte;
 
   // clear the serial receive buffer if necessary
-  while (serial_ptr_->available() > 0)
+  while (hardware_serial_ptr_->available() > 0)
   {
-    byte = serial_ptr_->read();
+    byte = hardware_serial_ptr_->read();
   }
 
   for (uint8_t i=0; i<datagram_size; ++i)
   {
     byte = (datagram.bytes >> (i * BITS_PER_BYTE)) & BYTE_MAX_VALUE;
-    serial_ptr_->write(byte);
+    hardware_serial_ptr_->write(byte);
   }
 
   // wait for bytes sent out on TX line to be echoed on RX line
   uint32_t echo_delay = 0;
-  while ((serial_ptr_->available() < datagram_size) and
+  while ((hardware_serial_ptr_->available() < datagram_size) and
     (echo_delay < ECHO_DELAY_MAX_MICROSECONDS))
   {
     delayMicroseconds(ECHO_DELAY_INC_MICROSECONDS);
@@ -848,7 +863,7 @@ void TMC2209::sendDatagram(Datagram & datagram,
   // clear RX buffer of echo bytes
   for (uint8_t i=0; i<datagram_size; ++i)
   {
-    byte = serial_ptr_->read();
+    byte = hardware_serial_ptr_->read();
   }
 }
 
@@ -869,7 +884,7 @@ void TMC2209::write(uint8_t register_address,
 
 uint32_t TMC2209::read(uint8_t register_address)
 {
-  if (not serial_ptr_)
+  if (not hardware_serial_ptr_)
   {
     return 0;
   }
@@ -884,7 +899,7 @@ uint32_t TMC2209::read(uint8_t register_address)
   sendDatagram(read_request_datagram,READ_REQUEST_DATAGRAM_SIZE);
 
   uint32_t reply_delay = 0;
-  while ((serial_ptr_->available() < WRITE_READ_REPLY_DATAGRAM_SIZE) and
+  while ((hardware_serial_ptr_->available() < WRITE_READ_REPLY_DATAGRAM_SIZE) and
     (reply_delay < REPLY_DELAY_MAX_MICROSECONDS))
   {
     delayMicroseconds(REPLY_DELAY_INC_MICROSECONDS);
@@ -903,7 +918,7 @@ uint32_t TMC2209::read(uint8_t register_address)
   read_reply_datagram.bytes = 0;
   for (uint8_t i=0; i<WRITE_READ_REPLY_DATAGRAM_SIZE; ++i)
   {
-    byte = serial_ptr_->read();
+    byte = hardware_serial_ptr_->read();
     read_reply_datagram.bytes |= (byte << (byte_count++ * BITS_PER_BYTE));
   }
 

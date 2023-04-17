@@ -30,6 +30,7 @@ public:
     long serial_baud_rate=115200,
     SerialAddress serial_address=SERIAL_ADDRESS_0);
 
+  void readAndStoreRegisters();
   // driver must be enabled before use it is disabled by default
   void enable();
   void disable();
@@ -197,7 +198,8 @@ public:
 
 private:
   bool blocking_;
-  HardwareSerial * serial_ptr_;
+  bool hardware_serial_;
+  HardwareSerial * hardware_serial_ptr_;
   uint32_t serial_baud_rate_;
   uint8_t serial_address_;
 
@@ -507,12 +509,10 @@ private:
   };
   const static uint8_t ADDRESS_PWM_AUTO = 0x72;
 
-  void setOperationModeToSerial(HardwareSerial & serial,
-    long serial_baud_rate,
-    SerialAddress serial_address=SERIAL_ADDRESS_0);
+  void setOperationModeToSerial(SerialAddress serial_address);
 
   void setRegistersToDefaults();
-  void readAndStoreRegisters();
+  //void readAndStoreRegisters();
 
   uint8_t getVersion();
   bool serialOperationMode();
