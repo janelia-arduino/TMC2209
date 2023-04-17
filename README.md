@@ -1,21 +1,22 @@
-- [Library Information](#org0c5bb4a)
-- [Stepper Motors](#orgd18c037)
-- [Stepper Motor Controllers and Drivers](#orgb45d8b6)
-- [Communication](#org15dcadb)
-- [Settings](#org3ac14e2)
-- [Examples](#orga857c40)
-- [Hardware Documentation](#orgc90271d)
+- [Library Information](#orgffe12c3)
+- [Stepper Motors](#org269128e)
+- [Stepper Motor Controllers and Drivers](#orgb400e71)
+- [Communication](#orge6b0162)
+- [Settings](#org86465b4)
+- [Examples](#org55bd74e)
+- [Hardware Documentation](#orgf3690cc)
+- [Host Computer Setup](#org6652856)
 
     <!-- This file is generated automatically from metadata -->
     <!-- File edits may be overwritten! -->
 
 
-<a id="org0c5bb4a"></a>
+<a id="orgffe12c3"></a>
 
 # Library Information
 
 -   **Name:** TMC2209
--   **Version:** 8.0.7
+-   **Version:** 9.0.0
 -   **License:** BSD
 -   **URL:** <https://github.com/janelia-arduino/TMC2209>
 -   **Author:** Peter Polidoro
@@ -29,7 +30,7 @@ The TMC2209 is an ultra-silent motor driver IC for two phase stepper motors with
 ![img](./images/TMC2209.png)
 
 
-<a id="orgd18c037"></a>
+<a id="org269128e"></a>
 
 # Stepper Motors
 
@@ -40,7 +41,7 @@ A stepper motor, also known as step motor or stepping motor, is a brushless DC e
 [Wikipedia - Stepper Motor](https://en.wikipedia.org/wiki/Stepper_motor)
 
 
-<a id="orgb45d8b6"></a>
+<a id="orgb400e71"></a>
 
 # Stepper Motor Controllers and Drivers
 
@@ -88,7 +89,7 @@ Another controller option is to use both a microcontroller and a separate step a
 ![img](./images/TMC429_controller_driver.png)
 
 
-<a id="org15dcadb"></a>
+<a id="orge6b0162"></a>
 
 # Communication
 
@@ -235,7 +236,7 @@ A library such as the Arduino TMC429 library may be used to control the step and
 [Arduino TMC429 Library](https://github.com/janelia-arduino/TMC429)
 
 
-<a id="org3ac14e2"></a>
+<a id="org86465b4"></a>
 
 # Settings
 
@@ -388,7 +389,7 @@ In voltage control mode, the hold current scales the PWM amplitude, but the curr
 In current control mode, setting the hold current is the way to adjust the spinning motor current. The driver will measure the current and automatically adjust the voltage to maintain the hold current, even with the operating conditions change. The PWM offset may be changed to help the automatic tuning procedure, but changing the hold current alone is enough to adjust the motor current since the driver will adjust the offset automatically.
 
 
-<a id="orga857c40"></a>
+<a id="org55bd74e"></a>
 
 # Examples
 
@@ -411,7 +412,7 @@ In current control mode, setting the hold current is the way to adjust the spinn
 <https://github.com/janelia-kicad/trinamic_wiring>
 
 
-<a id="orgc90271d"></a>
+<a id="orgf3690cc"></a>
 
 # Hardware Documentation
 
@@ -444,3 +445,44 @@ In current control mode, setting the hold current is the way to adjust the spinn
 ## Janelia Stepper Driver
 
 [Janelia Stepper Driver Web Page](https://github.com/janelia-kicad/stepper_driver)
+
+
+<a id="org6652856"></a>
+
+# Host Computer Setup
+
+
+## GNU/Linux
+
+
+### Drivers
+
+GNU/Linux computers usually have all of the necessary drivers already installed, but users need the appropriate permissions to open the device and communicate with it.
+
+Udev is the GNU/Linux subsystem that detects when things are plugged into your computer.
+
+1.  Download rules into the correct directory
+
+    1.  Teensy
+    
+        ```sh
+        curl -fsSL https://www.pjrc.com/teensy/00-teensy.rules | sudo tee /etc/udev/rules.d/00-teensy.rules
+        ```
+
+2.  Restart udev management tool
+
+    ```sh
+    sudo service udev restart
+    ```
+
+3.  Ubuntu/Debian users may need to add own “username” to the “dialout” group
+
+    ```sh
+    sudo usermod -a -G dialout $USER && sudo usermod -a -G plugdev $USER
+    ```
+
+4.  After setting up rules and groups
+
+    You will need to log out and log back in again (or reboot) for the user group changes to take effect.
+    
+    After this file is installed, physically unplug and reconnect your board.
