@@ -8,6 +8,7 @@
 #ifndef TMC2209_H
 #define TMC2209_H
 #include <Arduino.h>
+#include <SoftwareSerial.h>
 
 
 class TMC2209
@@ -30,7 +31,10 @@ public:
     long serial_baud_rate=115200,
     SerialAddress serial_address=SERIAL_ADDRESS_0);
 
-  void readAndStoreRegisters();
+  void setup(SoftwareSerial & serial,
+    long serial_baud_rate=115200,
+    SerialAddress serial_address=SERIAL_ADDRESS_0);
+
   // driver must be enabled before use it is disabled by default
   void enable();
   void disable();
@@ -200,8 +204,13 @@ private:
   bool blocking_;
   bool hardware_serial_;
   HardwareSerial * hardware_serial_ptr_;
+  SoftwareSerial * software_serial_ptr_;
   uint32_t serial_baud_rate_;
   uint8_t serial_address_;
+
+  void setup(long serial_baud_rate=115200,
+    SerialAddress serial_address=SERIAL_ADDRESS_0);
+  int serialAvailable();
 
   // Serial Settings
   const static uint8_t BYTE_MAX_VALUE = 0xFF;
@@ -512,7 +521,7 @@ private:
   void setOperationModeToSerial(SerialAddress serial_address);
 
   void setRegistersToDefaults();
-  //void readAndStoreRegisters();
+  void readAndStoreRegisters();
 
   uint8_t getVersion();
   bool serialOperationMode();

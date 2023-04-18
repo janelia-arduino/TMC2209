@@ -11,6 +11,7 @@ TMC2209::TMC2209()
 {
   blocking_ = true;
   hardware_serial_ptr_ = nullptr;
+  software_serial_ptr_ = nullptr;
   serial_baud_rate_ = 500000;
   serial_address_ = SERIAL_ADDRESS_0;
   cool_step_enabled_ = false;
@@ -20,25 +21,22 @@ void TMC2209::setup(HardwareSerial & serial,
   long serial_baud_rate,
   SerialAddress serial_address)
 {
-  blocking_ = false;
   hardware_serial_ = true;
-  serial_baud_rate_ = serial_baud_rate;
-
   hardware_serial_ptr_ = &serial;
   hardware_serial_ptr_->begin(serial_baud_rate);
 
-  setOperationModeToSerial(serial_address);
-  setRegistersToDefaults();
+  setup(serial_baud_rate, serial_address);
+}
 
-  minimizeMotorCurrent();
-  disable();
-  disableAutomaticCurrentScaling();
-  disableAutomaticGradientAdaptation();
+void TMC2209::setup(SoftwareSerial & serial,
+  long serial_baud_rate,
+  SerialAddress serial_address)
+{
+  hardware_serial_ = false;
+  software_serial_ptr_ = &serial;
+  software_serial_ptr_->begin(serial_baud_rate);
 
-  // if (not isSetupAndCommunicating())
-  // {
-  //   blocking_ = true;
-  // }
+  setup(serial_baud_rate, serial_address);
 }
 
 void TMC2209::enable()
@@ -680,6 +678,21 @@ uint16_t TMC2209::getMicrostepCounter()
 }
 
 // private
+void TMC2209::setup(long serial_baud_rate,
+  SerialAddress serial_address)
+{
+  blocking_ = false;
+  serial_baud_rate_ = serial_baud_rate;
+
+  setOperationModeToSerial(serial_address);
+  setRegistersToDefaults();
+
+  minimizeMotorCurrent();
+  disable();
+  disableAutomaticCurrentScaling();
+  disableAutomaticGradientAdaptation();
+}
+
 void TMC2209::setOperationModeToSerial(SerialAddress serial_address)
 {
   serial_address_ = serial_address;
@@ -808,11 +821,6 @@ template<typename Datagram>
 void TMC2209::sendDatagramNoRx(Datagram & datagram,
   uint8_t datagram_size)
 {
-  if (not hardware_serial_ptr_)
-  {
-    return;
-  }
-
   uint8_t byte;
 
   for (uint8_t i=0; i<datagram_size; ++i)
@@ -826,11 +834,6 @@ template<typename Datagram>
 void TMC2209::sendDatagram(Datagram & datagram,
   uint8_t datagram_size)
 {
-  if (not hardware_serial_ptr_)
-  {
-    return;
-  }
-
   uint8_t byte;
 
   // clear the serial receive buffer if necessary
@@ -884,10 +887,6 @@ void TMC2209::write(uint8_t register_address,
 
 uint32_t TMC2209::read(uint8_t register_address)
 {
-  if (not hardware_serial_ptr_)
-  {
-    return 0;
-  }
   ReadRequestDatagram read_request_datagram;
   read_request_datagram.bytes = 0;
   read_request_datagram.sync = SYNC;
