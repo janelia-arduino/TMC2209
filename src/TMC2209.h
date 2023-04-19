@@ -201,7 +201,6 @@ public:
   uint16_t getMicrostepCounter();
 
 private:
-  bool blocking_;
   bool hardware_serial_;
   HardwareSerial * hardware_serial_ptr_;
   SoftwareSerial * software_serial_ptr_;
