@@ -1,5 +1,7 @@
 #include <Arduino.h>
 #include <TMC2209.h>
+#include <SoftwareSerial.h>
+
 
 const uint8_t RX_PIN = 0;
 const uint8_t TX_PIN = 1;

@@ -11,7 +11,7 @@ TMC2209::TMC2209()
 {
   hardware_serial_ptr_ = nullptr;
   software_serial_ptr_ = nullptr;
-  serial_baud_rate_ = 500000;
+  serial_baud_rate_ = 115200;
   serial_address_ = SERIAL_ADDRESS_0;
   cool_step_enabled_ = false;
 }
@@ -20,7 +20,6 @@ void TMC2209::setup(HardwareSerial & serial,
   long serial_baud_rate,
   SerialAddress serial_address)
 {
-  hardware_serial_ = true;
   hardware_serial_ptr_ = &serial;
   hardware_serial_ptr_->begin(serial_baud_rate);
 
@@ -31,12 +30,13 @@ void TMC2209::setup(SoftwareSerial & serial,
   long serial_baud_rate,
   SerialAddress serial_address)
 {
-  hardware_serial_ = false;
   software_serial_ptr_ = &serial;
   software_serial_ptr_->begin(serial_baud_rate);
 
   setup(serial_baud_rate, serial_address);
 }
+
+// unidirectional methods
 
 void TMC2209::enable()
 {
@@ -306,7 +306,7 @@ void TMC2209::useInternalSenseResistors()
   writeStoredGlobalConfig();
 }
 
-// optional read methods
+// bidirectional methods
 
 bool TMC2209::isCommunicating()
 {
@@ -516,6 +516,45 @@ void TMC2209::setup(long serial_baud_rate,
   disableAutomaticGradientAdaptation();
 }
 
+int TMC2209::serialAvailable()
+{
+  if (hardware_serial_ptr_ != nullptr)
+  {
+    return hardware_serial_ptr_->available();
+  }
+  else if (software_serial_ptr_ != nullptr)
+  {
+    return software_serial_ptr_->available();
+  }
+  return 0;
+}
+
+size_t TMC2209::serialWrite(uint8_t c)
+{
+  if (hardware_serial_ptr_ != nullptr)
+  {
+    return hardware_serial_ptr_->write(c);
+  }
+  else if (software_serial_ptr_ != nullptr)
+  {
+    return software_serial_ptr_->write(c);
+  }
+  return 0;
+}
+
+int TMC2209::serialRead()
+{
+  if (hardware_serial_ptr_ != nullptr)
+  {
+    return hardware_serial_ptr_->read();
+  }
+  else if (software_serial_ptr_ != nullptr)
+  {
+    return software_serial_ptr_->read();
+  }
+  return 0;
+}
+
 void TMC2209::setOperationModeToSerial(SerialAddress serial_address)
 {
   serial_address_ = serial_address;
@@ -641,7 +680,7 @@ uint8_t TMC2209::calculateCrc(Datagram & datagram,
 }
 
 template<typename Datagram>
-void TMC2209::sendDatagramNoRx(Datagram & datagram,
+void TMC2209::sendDatagramUnidirectional(Datagram & datagram,
   uint8_t datagram_size)
 {
   uint8_t byte;
@@ -649,31 +688,31 @@ void TMC2209::sendDatagramNoRx(Datagram & datagram,
   for (uint8_t i=0; i<datagram_size; ++i)
   {
     byte = (datagram.bytes >> (i * BITS_PER_BYTE)) & BYTE_MAX_VALUE;
-    hardware_serial_ptr_->write(byte);
+    serialWrite(byte);
   }
 }
 
 template<typename Datagram>
-void TMC2209::sendDatagram(Datagram & datagram,
+void TMC2209::sendDatagramBidirectional(Datagram & datagram,
   uint8_t datagram_size)
 {
   uint8_t byte;
 
   // clear the serial receive buffer if necessary
-  while (hardware_serial_ptr_->available() > 0)
+  while (serialAvailable() > 0)
   {
-    byte = hardware_serial_ptr_->read();
+    byte = serialRead();
   }
 
   for (uint8_t i=0; i<datagram_size; ++i)
   {
     byte = (datagram.bytes >> (i * BITS_PER_BYTE)) & BYTE_MAX_VALUE;
-    hardware_serial_ptr_->write(byte);
+    serialWrite(byte);
   }
 
   // wait for bytes sent out on TX line to be echoed on RX line
   uint32_t echo_delay = 0;
-  while ((hardware_serial_ptr_->available() < datagram_size) and
+  while ((serialAvailable() < datagram_size) and
     (echo_delay < ECHO_DELAY_MAX_MICROSECONDS))
   {
     delayMicroseconds(ECHO_DELAY_INC_MICROSECONDS);
@@ -688,7 +727,7 @@ void TMC2209::sendDatagram(Datagram & datagram,
   // clear RX buffer of echo bytes
   for (uint8_t i=0; i<datagram_size; ++i)
   {
-    byte = hardware_serial_ptr_->read();
+    byte = serialRead();
   }
 }
 
@@ -704,7 +743,7 @@ void TMC2209::write(uint8_t register_address,
   write_datagram.data = reverseData(data);
   write_datagram.crc = calculateCrc(write_datagram,WRITE_READ_REPLY_DATAGRAM_SIZE);
 
-  sendDatagramNoRx(write_datagram,WRITE_READ_REPLY_DATAGRAM_SIZE);
+  sendDatagramUnidirectional(write_datagram,WRITE_READ_REPLY_DATAGRAM_SIZE);
 }
 
 uint32_t TMC2209::read(uint8_t register_address)
@@ -717,10 +756,10 @@ uint32_t TMC2209::read(uint8_t register_address)
   read_request_datagram.rw = RW_READ;
   read_request_datagram.crc = calculateCrc(read_request_datagram,READ_REQUEST_DATAGRAM_SIZE);
 
-  sendDatagram(read_request_datagram,READ_REQUEST_DATAGRAM_SIZE);
+  sendDatagramBidirectional(read_request_datagram,READ_REQUEST_DATAGRAM_SIZE);
 
   uint32_t reply_delay = 0;
-  while ((hardware_serial_ptr_->available() < WRITE_READ_REPLY_DATAGRAM_SIZE) and
+  while ((serialAvailable() < WRITE_READ_REPLY_DATAGRAM_SIZE) and
     (reply_delay < REPLY_DELAY_MAX_MICROSECONDS))
   {
     delayMicroseconds(REPLY_DELAY_INC_MICROSECONDS);
@@ -738,7 +777,7 @@ uint32_t TMC2209::read(uint8_t register_address)
   read_reply_datagram.bytes = 0;
   for (uint8_t i=0; i<WRITE_READ_REPLY_DATAGRAM_SIZE; ++i)
   {
-    byte = hardware_serial_ptr_->read();
+    byte = serialRead();
     read_reply_datagram.bytes |= (byte << (byte_count++ * BITS_PER_BYTE));
   }
 

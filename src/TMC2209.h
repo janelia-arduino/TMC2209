@@ -30,10 +30,11 @@ public:
   void setup(HardwareSerial & serial,
     long serial_baud_rate=115200,
     SerialAddress serial_address=SERIAL_ADDRESS_0);
-
   void setup(SoftwareSerial & serial,
-    long serial_baud_rate=115200,
+    long serial_baud_rate=9600,
     SerialAddress serial_address=SERIAL_ADDRESS_0);
+
+  // unidirectional methods
 
   // driver must be enabled before use it is disabled by default
   void enable();
@@ -121,7 +122,7 @@ public:
   void useExternalSenseResistors();
   void useInternalSenseResistors();
 
-  // optional read methods
+  // bidirectional methods
 
   // check to make sure TMC2209 is properly setup and communicating
   bool isSetupAndCommunicating();
@@ -201,7 +202,6 @@ public:
   uint16_t getMicrostepCounter();
 
 private:
-  bool hardware_serial_;
   HardwareSerial * hardware_serial_ptr_;
   SoftwareSerial * software_serial_ptr_;
   uint32_t serial_baud_rate_;
@@ -210,6 +210,8 @@ private:
   void setup(long serial_baud_rate=115200,
     SerialAddress serial_address=SERIAL_ADDRESS_0);
   int serialAvailable();
+  size_t serialWrite(uint8_t c);
+  int serialRead();
 
   // Serial Settings
   const static uint8_t BYTE_MAX_VALUE = 0xFF;
@@ -532,10 +534,10 @@ private:
   uint8_t calculateCrc(Datagram & datagram,
     uint8_t datagram_size);
   template<typename Datagram>
-  void sendDatagramNoRx(Datagram & datagram,
+  void sendDatagramUnidirectional(Datagram & datagram,
     uint8_t datagram_size);
   template<typename Datagram>
-  void sendDatagram(Datagram & datagram,
+  void sendDatagramBidirectional(Datagram & datagram,
     uint8_t datagram_size);
 
   void write(uint8_t register_address,
