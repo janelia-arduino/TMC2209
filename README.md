@@ -1,17 +1,17 @@
-- [Library Information](#orgffe12c3)
-- [Stepper Motors](#org269128e)
-- [Stepper Motor Controllers and Drivers](#orgb400e71)
-- [Communication](#orge6b0162)
-- [Settings](#org86465b4)
-- [Examples](#org55bd74e)
-- [Hardware Documentation](#orgf3690cc)
-- [Host Computer Setup](#org6652856)
+- [Library Information](#org57aff62)
+- [Stepper Motors](#orgb2940e9)
+- [Stepper Motor Controllers and Drivers](#org237292b)
+- [Communication](#org991b5f4)
+- [Settings](#orgfd12cce)
+- [Examples](#org2e471b1)
+- [Hardware Documentation](#org854ad13)
+- [Host Computer Setup](#orgb29dd49)
 
     <!-- This file is generated automatically from metadata -->
     <!-- File edits may be overwritten! -->
 
 
-<a id="orgffe12c3"></a>
+<a id="org57aff62"></a>
 
 # Library Information
 
@@ -30,7 +30,7 @@ The TMC2209 is an ultra-silent motor driver IC for two phase stepper motors with
 ![img](./images/TMC2209.png)
 
 
-<a id="org269128e"></a>
+<a id="orgb2940e9"></a>
 
 # Stepper Motors
 
@@ -41,7 +41,7 @@ A stepper motor, also known as step motor or stepping motor, is a brushless DC e
 [Wikipedia - Stepper Motor](https://en.wikipedia.org/wiki/Stepper_motor)
 
 
-<a id="orgb400e71"></a>
+<a id="org237292b"></a>
 
 # Stepper Motor Controllers and Drivers
 
@@ -89,7 +89,7 @@ Another controller option is to use both a microcontroller and a separate step a
 ![img](./images/TMC429_controller_driver.png)
 
 
-<a id="orge6b0162"></a>
+<a id="org991b5f4"></a>
 
 # Communication
 
@@ -104,13 +104,30 @@ The step and direction interface may be used for real-time position, velocity, a
 
 [Wikipedia - UART](https://en.wikipedia.org/wiki/Universal_asynchronous_receiver-transmitter)
 
-The TMC2209 communicates over a UART serial port using a single wire interface, allowing bi-directional operation for full control and diagnostics. It can be driven by any standard microcontroller UART or even by bit banging in software.
+The TMC2209 communicates over a UART serial port using a single wire interface, allowing either unidirectional communication, for parameter setting only, or for bidirectional communication allowing full control and diagnostics. It can be driven by any standard microcontroller UART or even by bit banging in software.
 
-The UART single wire interface allows control of the TMC2209 with any set of microcontroller UART serial TX and RX pins. The single serial signal is connected to both the TX pin and the RX pin, with a 1k resistor between the TX pin and the RX pin to separate them.
+
+### Unidirectional Communication
+
+TMC2209 parameters may be set using unidirectional communication from a microcontroller UART serial TX pin to the TMC2209 PDN\_UART pin. Responses from the TMC2209 to the microcontroller are ignored.
+
+![img](./images/TMC2209_unidirectional.png)
+
+
+### Bidirectional Communication
+
+The UART single wire interface allows control of the TMC2209 with any set of microcontroller UART serial TX and RX pins.
+
+1.  Coupled
+
+    The simpliest way to connect the single TMC2209 serial signal to both the microcontroller TX pin and RX pin is to use a 1k resistor between the TX pin and the RX pin to separate them.
+    
+    ![img](./images/TMC2209_bidirectional_coupled.png)
+
+
+### Example
 
 The microcontroller serial port must be specified during the TMC2209 setup.
-
-For example:
 
 ```cpp
 
@@ -127,8 +144,6 @@ void setup()
 }
 
 ```
-
-![img](./images/TMC2209_serial.png)
 
 
 ### Arduino Serial
@@ -236,7 +251,7 @@ A library such as the Arduino TMC429 library may be used to control the step and
 [Arduino TMC429 Library](https://github.com/janelia-arduino/TMC429)
 
 
-<a id="org86465b4"></a>
+<a id="orgfd12cce"></a>
 
 # Settings
 
@@ -389,7 +404,7 @@ In voltage control mode, the hold current scales the PWM amplitude, but the curr
 In current control mode, setting the hold current is the way to adjust the spinning motor current. The driver will measure the current and automatically adjust the voltage to maintain the hold current, even with the operating conditions change. The PWM offset may be changed to help the automatic tuning procedure, but changing the hold current alone is enough to adjust the motor current since the driver will adjust the offset automatically.
 
 
-<a id="org55bd74e"></a>
+<a id="org2e471b1"></a>
 
 # Examples
 
@@ -412,7 +427,7 @@ In current control mode, setting the hold current is the way to adjust the spinn
 <https://github.com/janelia-kicad/trinamic_wiring>
 
 
-<a id="orgf3690cc"></a>
+<a id="org854ad13"></a>
 
 # Hardware Documentation
 
@@ -447,7 +462,7 @@ In current control mode, setting the hold current is the way to adjust the spinn
 [Janelia Stepper Driver Web Page](https://github.com/janelia-kicad/stepper_driver)
 
 
-<a id="org6652856"></a>
+<a id="orgb29dd49"></a>
 
 # Host Computer Setup
 

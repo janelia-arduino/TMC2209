@@ -126,17 +126,34 @@ multi-axis motion.
 [[https://en.wikipedia.org/wiki/Universal_asynchronous_receiver-transmitter][Wikipedia - UART]]
 
 The TMC2209 communicates over a UART serial port using a single wire interface,
-allowing bi-directional operation for full control and diagnostics. It can be
+allowing either unidirectional communication, for parameter setting only, or for
+bidirectional communication allowing full control and diagnostics. It can be
 driven by any standard microcontroller UART or even by bit banging in software.
 
+*** Unidirectional Communication
+
+TMC2209 parameters may be set using unidirectional communication from a
+microcontroller UART serial TX pin to the TMC2209 PDN_UART pin. Responses from
+the TMC2209 to the microcontroller are ignored.
+
+[[./images/TMC2209_unidirectional.png]]
+
+*** Bidirectional Communication
+
 The UART single wire interface allows control of the TMC2209 with any set of
-microcontroller UART serial TX and RX pins. The single serial signal is
-connected to both the TX pin and the RX pin, with a 1k resistor between the TX
-pin and the RX pin to separate them.
+microcontroller UART serial TX and RX pins.
+
+**** Coupled
+
+The simpliest way to connect the single TMC2209 serial signal to both the
+microcontroller TX pin and RX pin is to use a 1k resistor between the TX pin and
+the RX pin to separate them.
+
+[[./images/TMC2209_bidirectional_coupled.png]]
+
+*** Example
 
 The microcontroller serial port must be specified during the TMC2209 setup.
-
-For example:
 
 #+BEGIN_SRC cpp
 
@@ -153,8 +170,6 @@ void setup()
 }
 
 #+END_SRC
-
-[[./images/TMC2209_serial.png]]
 
 *** Arduino Serial
 
