@@ -37,6 +37,7 @@ public:
   // unidirectional methods
 
   // driver must be enabled before use it is disabled by default
+  void setHardwareEnablePin(uint8_t hardware_enable_pin);
   void enable();
   void disable();
 
@@ -206,6 +207,7 @@ private:
   SoftwareSerial * software_serial_ptr_;
   uint32_t serial_baud_rate_;
   uint8_t serial_address_;
+  int16_t hardware_enable_pin_;
 
   void setup(long serial_baud_rate=115200,
     SerialAddress serial_address=SERIAL_ADDRESS_0);

@@ -13,6 +13,7 @@ TMC2209::TMC2209()
   software_serial_ptr_ = nullptr;
   serial_baud_rate_ = 115200;
   serial_address_ = SERIAL_ADDRESS_0;
+  hardware_enable_pin_ = -1;
   cool_step_enabled_ = false;
 }
 
@@ -38,14 +39,29 @@ void TMC2209::setup(SoftwareSerial & serial,
 
 // unidirectional methods
 
+void TMC2209::setHardwareEnablePin(uint8_t hardware_enable_pin)
+{
+  hardware_enable_pin_ = hardware_enable_pin;
+  pinMode(hardware_enable_pin_, OUTPUT);
+  digitalWrite(hardware_enable_pin_, HIGH);
+}
+
 void TMC2209::enable()
 {
+  if (hardware_enable_pin_ >= 0)
+  {
+    digitalWrite(hardware_enable_pin_, LOW);
+  }
   chopper_config_.toff = toff_;
   writeStoredChopperConfig();
 }
 
 void TMC2209::disable()
 {
+  if (hardware_enable_pin_ >= 0)
+  {
+    digitalWrite(hardware_enable_pin_, HIGH);
+  }
   chopper_config_.toff = TOFF_DISABLE;
   writeStoredChopperConfig();
 }

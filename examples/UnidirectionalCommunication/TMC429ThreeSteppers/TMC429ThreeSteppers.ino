@@ -16,7 +16,7 @@ HardwareSerial * serial_stream_ptrs[MOTOR_COUNT] =
 };
 // current values may need to be reduced to prevent overheating depending on
 // specific motor and power supply voltage
-const int RUN_CURRENT_PERCENT = 40;
+const int RUN_CURRENT_PERCENT = 100;
 const int MICROSTEPS_PER_STEP = 256;
 
 // Instantiate stepper drivers
