@@ -412,7 +412,7 @@ TMC2209::Settings TMC2209::getSettings()
     readAndStoreRegisters();
 
     settings.is_setup = global_config_.pdn_disable;
-    settings.enabled = (chopper_config_.toff > TOFF_DISABLE);
+    settings.software_enabled = (chopper_config_.toff > TOFF_DISABLE);
     settings.microsteps_per_step = getMicrostepsPerStep();
     settings.inverse_motor_direction_enabled = global_config_.shaft;
     settings.stealth_chop_enabled = not global_config_.enable_spread_cycle;
@@ -434,7 +434,7 @@ TMC2209::Settings TMC2209::getSettings()
   else
   {
     settings.is_setup = false;
-    settings.enabled = false;
+    settings.software_enabled = false;
     settings.microsteps_per_step = 0;
     settings.inverse_motor_direction_enabled = false;
     settings.stealth_chop_enabled = false;
@@ -615,23 +615,9 @@ void TMC2209::setRegistersToDefaults()
 
 void TMC2209::readAndStoreRegisters()
 {
-  Serial.println("before readAndStoreRegisters");
-  Serial.print("global_config_ = ");
-  Serial.println(global_config_.bytes);
-  Serial.print("chopper_config_ = ");
-  Serial.println(chopper_config_.bytes);
-  Serial.print("pwm_config_ = ");
-  Serial.println(pwm_config_.bytes);
   global_config_.bytes = readGlobalConfigBytes();
   chopper_config_.bytes = readChopperConfigBytes();
   pwm_config_.bytes = readPwmConfigBytes();
-  Serial.println("after readAndStoreRegisters");
-  Serial.print("global_config_ = ");
-  Serial.println(global_config_.bytes);
-  Serial.print("chopper_config_ = ");
-  Serial.println(chopper_config_.bytes);
-  Serial.print("pwm_config_ = ");
-  Serial.println(pwm_config_.bytes);
 }
 uint8_t TMC2209::getVersion()
 {
@@ -715,16 +701,29 @@ void TMC2209::sendDatagramBidirectional(Datagram & datagram,
   uint8_t byte;
 
   // clear the serial receive buffer if necessary
+  // Serial.println("**************************************");
+  // Serial.println("clear the serial receive buffer if necessary...");
   while (serialAvailable() > 0)
   {
     byte = serialRead();
+    // Serial.print("serialRead: ");
+    // Serial.println(byte, HEX);
   }
+  // Serial.println("**************************************");
+  // Serial.println();
 
+  // write datagram
+  // Serial.println("**************************************");
+  // Serial.println("write datagram...");
   for (uint8_t i=0; i<datagram_size; ++i)
   {
     byte = (datagram.bytes >> (i * BITS_PER_BYTE)) & BYTE_MAX_VALUE;
     serialWrite(byte);
+    // Serial.print("serialWrite: ");
+    // Serial.println(byte, HEX);
   }
+  // Serial.println("**************************************");
+  // Serial.println();
 
   // wait for bytes sent out on TX line to be echoed on RX line
   uint32_t echo_delay = 0;
@@ -741,10 +740,16 @@ void TMC2209::sendDatagramBidirectional(Datagram & datagram,
   }
 
   // clear RX buffer of echo bytes
+  // Serial.println("**************************************");
+  // Serial.println("clear RX buffer of echo bytes");
   for (uint8_t i=0; i<datagram_size; ++i)
   {
     byte = serialRead();
+    // Serial.print("serialRead: ");
+    // Serial.println(byte, HEX);
   }
+  // Serial.println("**************************************");
+  // Serial.println();
 }
 
 void TMC2209::write(uint8_t register_address,

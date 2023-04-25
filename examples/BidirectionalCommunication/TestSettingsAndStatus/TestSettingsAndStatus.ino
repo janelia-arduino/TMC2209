@@ -20,14 +20,14 @@ void setup()
 void loop()
 {
   Serial.println("*************************");
-
+  Serial.println("getSettings()");
   TMC2209::Settings settings = stepper_driver.getSettings();
   Serial.print("settings.is_communicating = ");
   Serial.println(settings.is_communicating);
   Serial.print("settings.is_setup = ");
   Serial.println(settings.is_setup);
-  Serial.print("settings.enabled = ");
-  Serial.println(settings.enabled);
+  Serial.print("settings.software_enabled = ");
+  Serial.println(settings.software_enabled);
   Serial.print("settings.microsteps_per_step = ");
   Serial.println(settings.microsteps_per_step);
   Serial.print("settings.inverse_motor_direction_enabled = ");
@@ -76,13 +76,19 @@ void loop()
   Serial.println(settings.analog_current_scaling_enabled);
   Serial.print("settings.internal_sense_resistors_enabled = ");
   Serial.println(settings.internal_sense_resistors_enabled);
-  Serial.println("");
+  Serial.println("*************************");
+  Serial.println();
 
-  bool disabled_by_input_pin = stepper_driver.disabledByInputPin();
-  Serial.print("disabled_by_input_pin = ");
-  Serial.println(disabled_by_input_pin);
-  Serial.println("");
+  Serial.println("*************************");
+  Serial.println("hardwareDisabled()");
+  bool hardware_disabled = stepper_driver.hardwareDisabled();
+  Serial.print("hardware_disabled = ");
+  Serial.println(hardware_disabled);
+  Serial.println("*************************");
+  Serial.println();
 
+  Serial.println("*************************");
+  Serial.println("getStatus()");
   TMC2209::Status status = stepper_driver.getStatus();
   Serial.print("status.over_temperature_warning = ");
   Serial.println(status.over_temperature_warning);
@@ -114,9 +120,9 @@ void loop()
   Serial.println(status.stealth_chop_mode);
   Serial.print("status.standstill = ");
   Serial.println(status.standstill);
-  Serial.println("");
-
   Serial.println("*************************");
-  Serial.println("");
+  Serial.println();
+
+  Serial.println();
   delay(DELAY);
 }

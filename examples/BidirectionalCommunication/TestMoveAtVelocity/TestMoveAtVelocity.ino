@@ -45,17 +45,17 @@ void loop()
     return;
   }
 
-  bool disabled_by_input_pin = stepper_driver.disabledByInputPin();
+  bool hardware_disabled = stepper_driver.hardwareDisabled();
   TMC2209::Settings settings = stepper_driver.getSettings();
   TMC2209::Status status = stepper_driver.getStatus();
 
-  if (disabled_by_input_pin)
+  if (hardware_disabled)
   {
-    Serial.println("Stepper driver is disabled by input pin!");
+    Serial.println("Stepper driver is hardware disabled!");
   }
-  else if (not settings.enabled)
+  else if (not settings.software_enabled)
   {
-    Serial.println("Stepper driver is disabled by firmware!");
+    Serial.println("Stepper driver is software disabled!");
   }
   else if ((not status.standstill))
   {

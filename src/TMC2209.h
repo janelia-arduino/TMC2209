@@ -145,7 +145,7 @@ public:
   {
     bool is_communicating;
     bool is_setup;
-    bool enabled;
+    bool software_enabled;
     uint16_t microsteps_per_step;
     bool inverse_motor_direction_enabled;
     bool stealth_chop_enabled;
