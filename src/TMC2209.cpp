@@ -339,7 +339,7 @@ bool TMC2209::isCommunicatingButNotSetup()
   return (isCommunicating() && (not isSetupAndCommunicating()));
 }
 
-bool TMC2209::disabledByInputPin()
+bool TMC2209::hardwareDisabled()
 {
   Input input;
   input.bytes = read(ADDRESS_IOIN);

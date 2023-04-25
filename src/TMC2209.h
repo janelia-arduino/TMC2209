@@ -137,7 +137,7 @@ public:
 
   // driver may also be disabled by the hardware enable input pin
   // this pin must be grounded or disconnected before driver may be enabled
-  bool disabledByInputPin();
+  bool hardwareDisabled();
 
   uint16_t getMicrostepsPerStep();
 

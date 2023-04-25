@@ -323,21 +323,30 @@ The driver is disabled by default and must be enabled before use.
 The driver may be disabled in two ways, either in hardware or in software, and
 the driver must be enabled in both ways in order to drive a motor.
 
+To enable the driver in software, or optionally in both hardware and software,
+use the enable() method.
+
+To disable the driver in software, or optionally in both hardware and software,
+use the disable() method.
+
 *** Hardware Enable
 
-The TMC2209 chip has an enable not input pin that switches off the power stage,
+The TMC2209 chip has an enable input pin that switches off the power stage,
 all motor outputs floating, when the pin is driven to a high level, independent
 of software settings.
 
 The chip itself is hardware enabled by default, but many stepper driver boards
-pull the enable not input pin high, which causes the driver to be disabled by
+pull the enable input pin high, which causes the driver to be disabled by
 default.
 
-To hardware enable the driver, pull the enable not pin low, either with a jumper
-or with an output pin from the microcontroller.
+To hardware enable the driver using this library, use the setHardwareEnablePin
+method to assign a microcontroller pin to contol the TMC2209 enable line.
 
-This library does not control an enable output, but the method
-disabledByInputPin() can be used to tell if the driver is disabled in hardware.
+To hardware enable the driver without using this library, pull the enable pin
+low, either with a jumper or with an output pin from the microcontroller.
+
+The method hardwareDisabled() can be used to tell if the driver is disabled in
+hardware.
 
 *** Software Enable
 
@@ -349,10 +358,6 @@ the hardware enable pin, the power stages are switched off and all motor outputs
 are floating.
 
 This library disables the driver in software by default.
-
-To enable the driver in software use the enable() method.
-
-To disable the driver in software use the disable() method.
 
 ** Analog Current Scaling
 

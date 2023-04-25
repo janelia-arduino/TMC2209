@@ -1,17 +1,17 @@
-- [Library Information](#org57aff62)
-- [Stepper Motors](#orgb2940e9)
-- [Stepper Motor Controllers and Drivers](#org237292b)
-- [Communication](#org991b5f4)
-- [Settings](#orgfd12cce)
-- [Examples](#org2e471b1)
-- [Hardware Documentation](#org854ad13)
-- [Host Computer Setup](#orgb29dd49)
+- [Library Information](#org99cca19)
+- [Stepper Motors](#org50a08e1)
+- [Stepper Motor Controllers and Drivers](#org6411125)
+- [Communication](#org7cfdb37)
+- [Settings](#orgf8beb6d)
+- [Examples](#orgafbda5c)
+- [Hardware Documentation](#org179420f)
+- [Host Computer Setup](#org2d6e2b3)
 
     <!-- This file is generated automatically from metadata -->
     <!-- File edits may be overwritten! -->
 
 
-<a id="org57aff62"></a>
+<a id="org99cca19"></a>
 
 # Library Information
 
@@ -30,7 +30,7 @@ The TMC2209 is an ultra-silent motor driver IC for two phase stepper motors with
 ![img](./images/TMC2209.png)
 
 
-<a id="orgb2940e9"></a>
+<a id="org50a08e1"></a>
 
 # Stepper Motors
 
@@ -41,7 +41,7 @@ A stepper motor, also known as step motor or stepping motor, is a brushless DC e
 [Wikipedia - Stepper Motor](https://en.wikipedia.org/wiki/Stepper_motor)
 
 
-<a id="org237292b"></a>
+<a id="org6411125"></a>
 
 # Stepper Motor Controllers and Drivers
 
@@ -89,7 +89,7 @@ Another controller option is to use both a microcontroller and a separate step a
 ![img](./images/TMC429_controller_driver.png)
 
 
-<a id="org991b5f4"></a>
+<a id="org7cfdb37"></a>
 
 # Communication
 
@@ -251,7 +251,7 @@ A library such as the Arduino TMC429 library may be used to control the step and
 [Arduino TMC429 Library](https://github.com/janelia-arduino/TMC429)
 
 
-<a id="orgfd12cce"></a>
+<a id="orgf8beb6d"></a>
 
 # Settings
 
@@ -272,16 +272,22 @@ The driver is disabled by default and must be enabled before use.
 
 The driver may be disabled in two ways, either in hardware or in software, and the driver must be enabled in both ways in order to drive a motor.
 
+To enable the driver in software, or optionally in both hardware and software, use the enable() method.
+
+To disable the driver in software, or optionally in both hardware and software, use the disable() method.
+
 
 ### Hardware Enable
 
-The TMC2209 chip has an enable not input pin that switches off the power stage, all motor outputs floating, when the pin is driven to a high level, independent of software settings.
+The TMC2209 chip has an enable input pin that switches off the power stage, all motor outputs floating, when the pin is driven to a high level, independent of software settings.
 
-The chip itself is hardware enabled by default, but many stepper driver boards pull the enable not input pin high, which causes the driver to be disabled by default.
+The chip itself is hardware enabled by default, but many stepper driver boards pull the enable input pin high, which causes the driver to be disabled by default.
 
-To hardware enable the driver, pull the enable not pin low, either with a jumper or with an output pin from the microcontroller.
+To hardware enable the driver using this library, use the setHardwareEnablePin method to assign a microcontroller pin to contol the TMC2209 enable line.
 
-This library does not control an enable output, but the method disabledByInputPin() can be used to tell if the driver is disabled in hardware.
+To hardware enable the driver without using this library, pull the enable pin low, either with a jumper or with an output pin from the microcontroller.
+
+The method hardwareDisabled() can be used to tell if the driver is disabled in hardware.
 
 
 ### Software Enable
@@ -291,10 +297,6 @@ The TMC2209 may also be enabled and disabled in software, independent of the har
 When the driver is disabled in software it behaves the same as being disabled by the hardware enable pin, the power stages are switched off and all motor outputs are floating.
 
 This library disables the driver in software by default.
-
-To enable the driver in software use the enable() method.
-
-To disable the driver in software use the disable() method.
 
 
 ## Analog Current Scaling
@@ -404,7 +406,7 @@ In voltage control mode, the hold current scales the PWM amplitude, but the curr
 In current control mode, setting the hold current is the way to adjust the spinning motor current. The driver will measure the current and automatically adjust the voltage to maintain the hold current, even with the operating conditions change. The PWM offset may be changed to help the automatic tuning procedure, but changing the hold current alone is enough to adjust the motor current since the driver will adjust the offset automatically.
 
 
-<a id="org2e471b1"></a>
+<a id="orgafbda5c"></a>
 
 # Examples
 
@@ -427,7 +429,7 @@ In current control mode, setting the hold current is the way to adjust the spinn
 <https://github.com/janelia-kicad/trinamic_wiring>
 
 
-<a id="org854ad13"></a>
+<a id="org179420f"></a>
 
 # Hardware Documentation
 
@@ -462,7 +464,7 @@ In current control mode, setting the hold current is the way to adjust the spinn
 [Janelia Stepper Driver Web Page](https://github.com/janelia-kicad/stepper_driver)
 
 
-<a id="orgb29dd49"></a>
+<a id="org2d6e2b3"></a>
 
 # Host Computer Setup
 
