@@ -30,6 +30,10 @@ public:
   void setup(HardwareSerial & serial,
     long serial_baud_rate=115200,
     SerialAddress serial_address=SERIAL_ADDRESS_0);
+
+  // Software serial ports should only be used for unidirectional communication
+  // The RX pin does not need to be connected, but it must be specified when
+  // creating an instance of a SoftwareSerial object
   void setup(SoftwareSerial & serial,
     long serial_baud_rate=9600,
     SerialAddress serial_address=SERIAL_ADDRESS_0);

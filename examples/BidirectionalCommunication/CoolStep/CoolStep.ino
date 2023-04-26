@@ -30,17 +30,6 @@ void setup()
 
   stepper_driver.setup(serial_stream);
 
-  if (stepper_driver.isSetupAndCommunicating())
-  {
-    Serial.println("Stepper driver setup and communicating!");
-    Serial.println("");
-  }
-  else
-  {
-    Serial.println("Stepper driver not setup and communicating!");
-    return;
-  }
-
   stepper_driver.setRunCurrent(RUN_CURRENT_PERCENT);
   stepper_driver.setCoolStepCurrentIncrement(CURRENT_INCREMENT);
   stepper_driver.setCoolStepMeasurementCount(MEASUREMENT_COUNT);

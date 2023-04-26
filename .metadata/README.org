@@ -88,7 +88,7 @@ errors. For some applications, these position errors may not matter, making
 simple velocity control good enough to save the trouble and expense of adding a
 separate stepper controller.
 
-Most of this library's examples use the simple velocity control mode to test the
+Many of this library's examples use the simple velocity control mode to test the
 driver independently from a separate stepper motor controller, however in most
 real world applications a separate motor controller is needed, along with the
 TMC2209 and this library, for position and acceleration control.
@@ -118,7 +118,7 @@ diagnostics, and for simple velocity commands.
 
 The step and direction interface may be used for real-time position, velocity,
 and acceleration commands. The step and direction signals may be synchronized
-with the step and direction signals to other TMC2209 chips for coordinated
+with the step and direction signals to other stepper drivers for coordinated
 multi-axis motion.
 
 ** UART Serial Interface
@@ -149,24 +149,80 @@ The simpliest way to connect the single TMC2209 serial signal to both the
 microcontroller TX pin and RX pin is to use a 1k resistor between the TX pin and
 the RX pin to separate them.
 
+Coupling the TX and RX lines together has the disadvantage of echoing all of the
+TX commands from the microcontroller to the TMC2209 on the microcontroller RX
+line. These echos need to be removed by this library in order to properly read
+responses from the TMC2209.
+
+Another disadvantage to coupling the TX and RX lines together is that it limits
+the length of wire between the microcontroller and the TMC2209. The TMC2209
+performs a CRC (cyclic redundancy check) which helps increase interface
+distances while decreasing the risk of wrong or missed commands even in the
+event of electromagnetic disturbances.
+
 [[./images/TMC2209_bidirectional_coupled.png]]
 
-*** Example
+*** Serial Setup
 
 The microcontroller serial port must be specified during the TMC2209 setup.
+
+Microcontroller serial ports may either be implemented in hardware or software.
+
+Hardware serial ports use dedicated hardware on the microcontroller to perform
+serial UART communication.
+
+Software serial ports allow serial communication on other microcontroller
+digital pins that do not have dedicated UART hardware by replicating the
+functionality in software.
+
+Hardware serial ports should always be preferred over software serial ports.
+Software serial ports have many performance limitations, such as not allowing
+transmitting and receiving data at the same time, lower baud rates, and using
+software serial ports may affect performance of other code running on the
+microcontroller.
+
+**** Hardware Serial Setup
 
 #+BEGIN_SRC cpp
 
 #include <Arduino.h>
 #include <TMC2209.h>
 
+
 // Instantiate TMC2209
 TMC2209 stepper_driver;
+
 HardwareSerial & serial_stream = Serial1;
 
 void setup()
 {
   stepper_driver.setup(serial_stream);
+}
+
+#+END_SRC
+
+**** Software Serial Setup
+
+#+BEGIN_SRC cpp
+
+#include <Arduino.h>
+#include <TMC2209.h>
+#include <SoftwareSerial.h>
+
+
+// Instantiate TMC2209
+TMC2209 stepper_driver;
+
+// Software serial ports should only be used for unidirectional communication
+// The RX pin does not need to be connected, but it must be specified when
+// creating an instance of a SoftwareSerial object
+const uint8_t RX_PIN = 0;
+const uint8_t TX_PIN = 1;
+SoftwareSerial soft_serial(RX_PIN, TX_PIN);
+
+void setup()
+{
+  stepper_driver.setup(soft_serial);
 }
 
 #+END_SRC
@@ -181,8 +237,8 @@ and 1 cannot be used on these boards to communicate with the TMC2209. Connecting
 anything to these pins can interfere with that communication, including causing
 failed uploads to the board.
 
-Arduino boards with additional serial ports, such as "Serial1" and "Serial2",
-can use those ports to communicate with the TMC2209.
+Arduino boards with additional hardware serial ports, such as "Serial1" and
+"Serial2", can use those ports to communicate with the TMC2209.
 
 *** Teeny Serial
 
@@ -200,10 +256,11 @@ Unlike Arduino boards, the Teensy USB serial interface is not connected to pins
 The serial baud rate is the speed of communication in bits per second of the
 UART serial port connected to the TMC2209.
 
-In theory, baud rates from 9600 Baud to 500000 Baud or even higher (when using an
-external clock) may be used. No baud rate configuration on the chip is required,
-as the TMC2209 automatically adapts to the baud rate. In practice, it was found
-that the baud rate may range from 19200 to 500000 without errors.
+In theory, baud rates from 9600 Baud to 500000 Baud or even higher (when using
+an external clock) may be used. No baud rate configuration on the chip is
+required, as the TMC2209 automatically adapts to the baud rate. In practice, it
+was found that the baud rate may range from 19200 to 500000 without errors when
+using hardware serial ports. Software serial ports use a default baud rate of 9600.
 
 The higher the baud rate the better, but microcontrollers have various UART
 serial abilities and limitations which affects the maximum baud allowed. The
@@ -212,9 +269,10 @@ baud rate may be specified when setting up the stepper driver.
 **** Arduino
 
 The maximum serial baud rate on typical Arduino boards is 115200, so that is the
-default, but other values as low as 19200 may be used.
+default when using hardware serial ports, but other values as low as 19200 may
+be used.
 
-[[https://www.arduino.cc/en/Reference/SoftwareSerialBegin][Arduino Serial Baud Rate Web Page]]
+[[https://www.arduino.cc/reference/en/language/functions/communication/serial/]]
 
 **** Teensy
 
