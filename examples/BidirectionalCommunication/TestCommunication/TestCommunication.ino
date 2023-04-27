@@ -35,6 +35,6 @@ void loop()
     Serial.println("Stepper driver is not communicating!");
     Serial.println("Try turning driver power on to see what happens.");
   }
-  Serial.println("");
+  Serial.println();
   delay(DELAY);
 }

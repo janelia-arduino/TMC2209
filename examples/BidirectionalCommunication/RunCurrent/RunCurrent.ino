@@ -48,7 +48,7 @@ void loop()
   TMC2209::Status status = stepper_driver.getStatus();
   Serial.print("status.current_scaling = ");
   Serial.println(status.current_scaling);
-  Serial.println("");
+  Serial.println();
 
   if (run_current_percent == PERCENT_MAX)
   {

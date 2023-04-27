@@ -226,19 +226,31 @@ void TMC2209::setPwmGradient(uint8_t pwm_amplitude)
   writeStoredPwmConfig();
 }
 
-void TMC2209::setPowerDownDelay(uint8_t delay)
+void TMC2209::setPowerDownDelay(uint8_t power_down_delay)
 {
-  write(ADDRESS_TPOWERDOWN,delay);
+  write(ADDRESS_TPOWERDOWN, power_down_delay);
+}
+
+void TMC2209::setReplyDelay(uint8_t reply_delay)
+{
+  if (reply_delay > REPLY_DELAY_MAX)
+  {
+    reply_delay = REPLY_DELAY_MAX;
+  }
+  ReplyDelay reply_delay_data;
+  reply_delay_data.bytes = 0;
+  reply_delay_data.replydelay = reply_delay;
+  write(ADDRESS_REPLYDELAY, reply_delay_data.bytes);
 }
 
 void TMC2209::moveAtVelocity(int32_t microsteps_per_period)
 {
-  write(ADDRESS_VACTUAL,microsteps_per_period);
+  write(ADDRESS_VACTUAL, microsteps_per_period);
 }
 
 void TMC2209::moveUsingStepDirInterface()
 {
-  write(ADDRESS_VACTUAL,VACTUAL_STEP_DIR_INTERFACE);
+  write(ADDRESS_VACTUAL, VACTUAL_STEP_DIR_INTERFACE);
 }
 
 void TMC2209::enableStealthChop()
@@ -255,47 +267,47 @@ void TMC2209::disableStealthChop()
 
 void TMC2209::setCoolStepDurationThreshold(uint32_t duration_threshold)
 {
-  write(ADDRESS_TCOOLTHRS,duration_threshold);
+  write(ADDRESS_TCOOLTHRS, duration_threshold);
 }
 
 void TMC2209::setStealthChopDurationThreshold(uint32_t duration_threshold)
 {
-  write(ADDRESS_TPWMTHRS,duration_threshold);
+  write(ADDRESS_TPWMTHRS, duration_threshold);
 }
 
 void TMC2209::setStallGuardThreshold(uint8_t stall_guard_threshold)
 {
-  write(ADDRESS_SGTHRS,stall_guard_threshold);
+  write(ADDRESS_SGTHRS, stall_guard_threshold);
 }
 
 void TMC2209::enableCoolStep(uint8_t lower_threshold,
     uint8_t upper_threshold)
 {
-  lower_threshold = constrain(lower_threshold,SEMIN_MIN,SEMIN_MAX);
+  lower_threshold = constrain(lower_threshold, SEMIN_MIN, SEMIN_MAX);
   cool_config_.semin = lower_threshold;
-  upper_threshold = constrain(upper_threshold,SEMAX_MIN,SEMAX_MAX);
+  upper_threshold = constrain(upper_threshold, SEMAX_MIN, SEMAX_MAX);
   cool_config_.semax = upper_threshold;
-  write(ADDRESS_COOLCONF,cool_config_.bytes);
+  write(ADDRESS_COOLCONF, cool_config_.bytes);
   cool_step_enabled_ = true;
 }
 
 void TMC2209::disableCoolStep()
 {
   cool_config_.semin = SEMIN_OFF;
-  write(ADDRESS_COOLCONF,cool_config_.bytes);
+  write(ADDRESS_COOLCONF, cool_config_.bytes);
   cool_step_enabled_ = false;
 }
 
 void TMC2209::setCoolStepCurrentIncrement(CurrentIncrement current_increment)
 {
   cool_config_.seup = current_increment;
-  write(ADDRESS_COOLCONF,cool_config_.bytes);
+  write(ADDRESS_COOLCONF, cool_config_.bytes);
 }
 
 void TMC2209::setCoolStepMeasurementCount(MeasurementCount measurement_count)
 {
   cool_config_.sedn = measurement_count;
-  write(ADDRESS_COOLCONF,cool_config_.bytes);
+  write(ADDRESS_COOLCONF, cool_config_.bytes);
 }
 
 void TMC2209::enableAnalogCurrentScaling()
@@ -590,27 +602,27 @@ void TMC2209::setRegistersToDefaults()
   driver_current_.ihold = IHOLD_DEFAULT;
   driver_current_.irun = IRUN_DEFAULT;
   driver_current_.iholddelay = IHOLDDELAY_DEFAULT;
-  write(ADDRESS_IHOLD_IRUN,driver_current_.bytes);
+  write(ADDRESS_IHOLD_IRUN, driver_current_.bytes);
 
   chopper_config_.bytes = CHOPPER_CONFIG_DEFAULT;
   chopper_config_.tbl = TBL_DEFAULT;
   chopper_config_.hend = HEND_DEFAULT;
   chopper_config_.hstart = HSTART_DEFAULT;
   chopper_config_.toff = TOFF_DEFAULT;
-  write(ADDRESS_CHOPCONF,chopper_config_.bytes);
+  write(ADDRESS_CHOPCONF, chopper_config_.bytes);
 
   pwm_config_.bytes = PWM_CONFIG_DEFAULT;
-  write(ADDRESS_PWMCONF,pwm_config_.bytes);
+  write(ADDRESS_PWMCONF, pwm_config_.bytes);
 
   cool_config_.bytes = COOLCONF_DEFAULT;
-  write(ADDRESS_COOLCONF,cool_config_.bytes);
+  write(ADDRESS_COOLCONF, cool_config_.bytes);
 
-  write(ADDRESS_TPOWERDOWN,TPOWERDOWN_DEFAULT);
-  write(ADDRESS_TPWMTHRS,TPWMTHRS_DEFAULT);
-  write(ADDRESS_VACTUAL,VACTUAL_DEFAULT);
-  write(ADDRESS_TCOOLTHRS,TCOOLTHRS_DEFAULT);
-  write(ADDRESS_SGTHRS,SGTHRS_DEFAULT);
-  write(ADDRESS_COOLCONF,COOLCONF_DEFAULT);
+  write(ADDRESS_TPOWERDOWN, TPOWERDOWN_DEFAULT);
+  write(ADDRESS_TPWMTHRS, TPWMTHRS_DEFAULT);
+  write(ADDRESS_VACTUAL, VACTUAL_DEFAULT);
+  write(ADDRESS_TCOOLTHRS, TCOOLTHRS_DEFAULT);
+  write(ADDRESS_SGTHRS, SGTHRS_DEFAULT);
+  write(ADDRESS_COOLCONF, COOLCONF_DEFAULT);
 }
 
 void TMC2209::readAndStoreRegisters()
@@ -762,9 +774,9 @@ void TMC2209::write(uint8_t register_address,
   write_datagram.register_address = register_address;
   write_datagram.rw = RW_WRITE;
   write_datagram.data = reverseData(data);
-  write_datagram.crc = calculateCrc(write_datagram,WRITE_READ_REPLY_DATAGRAM_SIZE);
+  write_datagram.crc = calculateCrc(write_datagram, WRITE_READ_REPLY_DATAGRAM_SIZE);
 
-  sendDatagramUnidirectional(write_datagram,WRITE_READ_REPLY_DATAGRAM_SIZE);
+  sendDatagramUnidirectional(write_datagram, WRITE_READ_REPLY_DATAGRAM_SIZE);
 }
 
 uint32_t TMC2209::read(uint8_t register_address)
@@ -775,9 +787,9 @@ uint32_t TMC2209::read(uint8_t register_address)
   read_request_datagram.serial_address = serial_address_;
   read_request_datagram.register_address = register_address;
   read_request_datagram.rw = RW_READ;
-  read_request_datagram.crc = calculateCrc(read_request_datagram,READ_REQUEST_DATAGRAM_SIZE);
+  read_request_datagram.crc = calculateCrc(read_request_datagram, READ_REQUEST_DATAGRAM_SIZE);
 
-  sendDatagramBidirectional(read_request_datagram,READ_REQUEST_DATAGRAM_SIZE);
+  sendDatagramBidirectional(read_request_datagram, READ_REQUEST_DATAGRAM_SIZE);
 
   uint32_t reply_delay = 0;
   while ((serialAvailable() < WRITE_READ_REPLY_DATAGRAM_SIZE) and
@@ -859,7 +871,7 @@ uint8_t TMC2209::holdDelaySettingToPercent(uint8_t hold_delay_setting)
 
 void TMC2209::writeStoredGlobalConfig()
 {
-  write(ADDRESS_GCONF,global_config_.bytes);
+  write(ADDRESS_GCONF, global_config_.bytes);
 }
 
 uint32_t TMC2209::readGlobalConfigBytes()
@@ -869,7 +881,7 @@ uint32_t TMC2209::readGlobalConfigBytes()
 
 void TMC2209::writeStoredDriverCurrent()
 {
-  write(ADDRESS_IHOLD_IRUN,driver_current_.bytes);
+  write(ADDRESS_IHOLD_IRUN, driver_current_.bytes);
 
   if (driver_current_.irun >= SEIMIN_UPPER_CURRENT_LIMIT)
   {
@@ -881,13 +893,13 @@ void TMC2209::writeStoredDriverCurrent()
   }
   if (cool_step_enabled_)
   {
-    write(ADDRESS_COOLCONF,cool_config_.bytes);
+    write(ADDRESS_COOLCONF, cool_config_.bytes);
   }
 }
 
 void TMC2209::writeStoredChopperConfig()
 {
-  write(ADDRESS_CHOPCONF,chopper_config_.bytes);
+  write(ADDRESS_CHOPCONF, chopper_config_.bytes);
 }
 
 uint32_t TMC2209::readChopperConfigBytes()
@@ -897,7 +909,7 @@ uint32_t TMC2209::readChopperConfigBytes()
 
 void TMC2209::writeStoredPwmConfig()
 {
-  write(ADDRESS_PWMCONF,pwm_config_.bytes);
+  write(ADDRESS_PWMCONF, pwm_config_.bytes);
 }
 
 uint32_t TMC2209::readPwmConfigBytes()

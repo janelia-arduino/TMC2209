@@ -46,7 +46,7 @@ void loop()
   Serial.print("stall_guard_result = ");
   Serial.println(stall_guard_result);
 
-  Serial.println("");
+  Serial.println();
   delay(DELAY);
 
 }

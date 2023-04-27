@@ -62,6 +62,6 @@ void loop()
     Serial.println("Not moving, something is wrong!");
   }
 
-  Serial.println("");
+  Serial.println();
   delay(DELAY);
 }

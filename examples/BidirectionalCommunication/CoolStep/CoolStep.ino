@@ -93,7 +93,7 @@ void loop()
   Serial.print("settings.irun_register_value = ");
   Serial.println(settings.irun_register_value);
 
-  Serial.println("");
+  Serial.println();
 
   if (++loop_count == LOOPS_BEFORE_TOGGLING)
   {

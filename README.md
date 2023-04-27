@@ -1,17 +1,17 @@
-- [Library Information](#org7e9c6a2)
-- [Stepper Motors](#org14dd499)
-- [Stepper Motor Controllers and Drivers](#orga258b71)
-- [Communication](#org3bc5045)
-- [Settings](#orgee1b81b)
-- [Examples](#orgf749b97)
-- [Hardware Documentation](#orgf342d8b)
-- [Host Computer Setup](#org1943754)
+- [Library Information](#orgba00aad)
+- [Stepper Motors](#org623bbf9)
+- [Stepper Motor Controllers and Drivers](#org52c4b86)
+- [Communication](#org6eecf56)
+- [Settings](#org38aa135)
+- [Examples](#org1ebdcc3)
+- [Hardware Documentation](#org73db554)
+- [Host Computer Setup](#org6bc76d4)
 
     <!-- This file is generated automatically from metadata -->
     <!-- File edits may be overwritten! -->
 
 
-<a id="org7e9c6a2"></a>
+<a id="orgba00aad"></a>
 
 # Library Information
 
@@ -30,7 +30,7 @@ The TMC2209 is an ultra-silent motor driver IC for two phase stepper motors with
 ![img](./images/TMC2209.png)
 
 
-<a id="org14dd499"></a>
+<a id="org623bbf9"></a>
 
 # Stepper Motors
 
@@ -41,7 +41,7 @@ A stepper motor, also known as step motor or stepping motor, is a brushless DC e
 [Wikipedia - Stepper Motor](https://en.wikipedia.org/wiki/Stepper_motor)
 
 
-<a id="orga258b71"></a>
+<a id="org52c4b86"></a>
 
 # Stepper Motor Controllers and Drivers
 
@@ -89,7 +89,7 @@ Another controller option is to use both a microcontroller and a separate step a
 ![img](./images/TMC429_controller_driver.png)
 
 
-<a id="org3bc5045"></a>
+<a id="org6eecf56"></a>
 
 # Communication
 
@@ -144,7 +144,6 @@ Hardware serial ports should always be preferred over software serial ports. Sof
 1.  Hardware Serial Setup
 
     ```cpp
-    
     #include <Arduino.h>
     #include <TMC2209.h>
     
@@ -158,13 +157,11 @@ Hardware serial ports should always be preferred over software serial ports. Sof
     {
       stepper_driver.setup(serial_stream);
     }
-    
     ```
 
 2.  Software Serial Setup
 
     ```cpp
-    
     #include <Arduino.h>
     #include <TMC2209.h>
     #include <SoftwareSerial.h>
@@ -184,7 +181,6 @@ Hardware serial ports should always be preferred over software serial ports. Sof
     {
       stepper_driver.setup(soft_serial);
     }
-    
     ```
 
 
@@ -227,7 +223,6 @@ The higher the baud rate the better, but microcontrollers have various UART seri
     [Teensy Serial Baud Rate Web Page](https://www.pjrc.com/teensy/td_uart.html)
     
     ```cpp
-    
     #include <Arduino.h>
     #include <TMC2209.h>
     
@@ -240,40 +235,84 @@ The higher the baud rate the better, but microcontrollers have various UART seri
     {
       stepper_driver.setup(Serial1,SERIAL1_BAUD_RATE);
     }
-    
     ```
 
 
-### Serial Addresses
+### Connecting multiple TMC2209 chips to the same serial line
 
-More than one TMC2209 may be connected to a single serial port, if each TMC2209 is assigned a unique serial address. The default serial address is "SERIAL\_ADDRESS\_0". The serial address may be changed from "SERIAL\_ADDRESS\_0" using the TMC2209 hardware input pins MS1 and MS2, to "SERIAL\_ADDRESS\_1", "SERIAL\_ADDRESS\_2", or "SERIAL\_ADDRESS\_3".
+1.  Unidirectional communication with all chips using identical settings
 
-The TMC2209 serial address must be specified during the TMC2209 setup, if it is not equal to the default of "SERIAL\_ADDRESS\_0".
+    If only unidirectional communication is desired and all TMC2209 chips connected to the same serial line will have identical settings, then no serial addressing is required. All chips can be programmed in parallel like a single device.
+    
+    ```cpp
+    #include <Arduino.h>
+    #include <TMC2209.h>
+    
+    // Instantiate the two TMC2209
+    TMC2209 stepper_drivers;
+    
+    void setup()
+    {
+      stepper_drivers.setup(Serial1);
+    }
+    ```
+    
+    ![img](./images/TMC2209_unidirectional_multiple.png)
 
-For example:
+2.  Unidirectional communication with needing different settings
 
-```cpp
+    ```cpp
+    #include <Arduino.h>
+    #include <TMC2209.h>
+    
+    // Instantiate the two TMC2209
+    TMC2209 stepper_driver_0;
+    const TMC2209::SerialAddress SERIAL_ADDRESS_0 = TMC2209::SERIAL_ADDRESS_0;
+    TMC2209 stepper_driver_1;
+    const TMC2209::SerialAddress SERIAL_ADDRESS_1 = TMC2209::SERIAL_ADDRESS_1;
+    const long SERIAL_BAUD_RATE = 115200;
+    
+    void setup()
+    {
+      // TMC2209::SERIAL_ADDRESS_0 is used by default if not specified
+      stepper_driver_0.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_0);
+      stepper_driver_1.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_1);
+    }
+    ```
+    
+    ![img](./images/TMC2209_unidirectional_serial_address.png)
 
-#include <Arduino.h>
-#include <TMC2209.h>
+3.  Bidirectional communication with chips needing different settings
 
-// Instantiate the two TMC2209
-TMC2209 stepper_driver_0;
-const TMC2209::SerialAddress SERIAL_ADDRESS_0 = TMC2209::SERIAL_ADDRESS_0;
-TMC2209 stepper_driver_1;
-const TMC2209::SerialAddress SERIAL_ADDRESS_1 = TMC2209::SERIAL_ADDRESS_1;
-const long SERIAL_BAUD_RATE = 115200;
-
-void setup()
-{
-  // TMC2209::SERIAL_ADDRESS_0 is used by default if not specified
-  stepper_driver_0.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_0);
-  stepper_driver_1.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_1);
-}
-
-```
-
-![img](./images/TMC2209_serial_address.png)
+    More than one TMC2209 may be connected to a single serial port, if each TMC2209 is assigned a unique serial address. The default serial address is "SERIAL\_ADDRESS\_0". The serial address may be changed from "SERIAL\_ADDRESS\_0" using the TMC2209 hardware input pins MS1 and MS2, to "SERIAL\_ADDRESS\_1", "SERIAL\_ADDRESS\_2", or "SERIAL\_ADDRESS\_3".
+    
+    The TMC2209 serial address must be specified during the TMC2209 setup, if it is not equal to the default of "SERIAL\_ADDRESS\_0".
+    
+    When multiple TMC2209 chips are connected to the same serial line with multiple addresses then the reply delay value should be increased, otherwise a non-addressed chip might detect a transmission error upon read access to a different chip.
+    
+    ```cpp
+    #include <Arduino.h>
+    #include <TMC2209.h>
+    
+    // Instantiate the two TMC2209
+    TMC2209 stepper_driver_0;
+    const TMC2209::SerialAddress SERIAL_ADDRESS_0 = TMC2209::SERIAL_ADDRESS_0;
+    TMC2209 stepper_driver_1;
+    const TMC2209::SerialAddress SERIAL_ADDRESS_1 = TMC2209::SERIAL_ADDRESS_1;
+    const uint8_t REPLY_DELAY = 4;
+    const long SERIAL_BAUD_RATE = 115200;
+    
+    void setup()
+    {
+      // TMC2209::SERIAL_ADDRESS_0 is used by default if not specified
+      stepper_driver_0.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_0);
+      stepper_driver_0.setReplyDelay(REPLY_DELAY);
+      stepper_driver_1.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_1);
+      stepper_driver_0.setReplyDelay(REPLY_DELAY);
+    }
+    ```
+    
+    ![img](./images/TMC2209_bidirectional_coupled_serial_address.png)
 
 
 ## Step and Direction Interface
@@ -293,7 +332,7 @@ A library such as the Arduino TMC429 library may be used to control the step and
 [Arduino TMC429 Library](https://github.com/janelia-arduino/TMC429)
 
 
-<a id="orgee1b81b"></a>
+<a id="org38aa135"></a>
 
 # Settings
 
@@ -448,7 +487,7 @@ In voltage control mode, the hold current scales the PWM amplitude, but the curr
 In current control mode, setting the hold current is the way to adjust the spinning motor current. The driver will measure the current and automatically adjust the voltage to maintain the hold current, even with the operating conditions change. The PWM offset may be changed to help the automatic tuning procedure, but changing the hold current alone is enough to adjust the motor current since the driver will adjust the offset automatically.
 
 
-<a id="orgf749b97"></a>
+<a id="org1ebdcc3"></a>
 
 # Examples
 
@@ -471,7 +510,7 @@ In current control mode, setting the hold current is the way to adjust the spinn
 <https://github.com/janelia-kicad/trinamic_wiring>
 
 
-<a id="orgf342d8b"></a>
+<a id="org73db554"></a>
 
 # Hardware Documentation
 
@@ -506,7 +545,7 @@ In current control mode, setting the hold current is the way to adjust the spinn
 [Janelia Stepper Driver Web Page](https://github.com/janelia-kicad/stepper_driver)
 
 
-<a id="org1943754"></a>
+<a id="org6bc76d4"></a>
 
 # Host Computer Setup
 

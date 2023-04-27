@@ -59,7 +59,7 @@ void loop()
 
   stepper_driver.disable();
   Serial.println("disable");
-  Serial.println("");
+  Serial.println();
   delay(DELAY);
 
   if (hold_current_percent == PERCENT_MAX)

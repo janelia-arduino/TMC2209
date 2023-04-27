@@ -184,7 +184,6 @@ microcontroller.
 **** Hardware Serial Setup
 
 #+BEGIN_SRC cpp
-
 #include <Arduino.h>
 #include <TMC2209.h>
 
@@ -198,13 +197,11 @@ void setup()
 {
   stepper_driver.setup(serial_stream);
 }
-
 #+END_SRC
 
 **** Software Serial Setup
 
 #+BEGIN_SRC cpp
-
 #include <Arduino.h>
 #include <TMC2209.h>
 #include <SoftwareSerial.h>
@@ -224,7 +221,6 @@ void setup()
 {
   stepper_driver.setup(soft_serial);
 }
-
 #+END_SRC
 
 *** Arduino Serial
@@ -282,7 +278,6 @@ is a good setting to use, but other values as low as 19200 may be used.
 [[https://www.pjrc.com/teensy/td_uart.html][Teensy Serial Baud Rate Web Page]]
 
 #+BEGIN_SRC cpp
-
 #include <Arduino.h>
 #include <TMC2209.h>
 
@@ -295,24 +290,34 @@ void setup()
 {
   stepper_driver.setup(Serial1,SERIAL1_BAUD_RATE);
 }
-
 #+END_SRC
 
-*** Serial Addresses
+*** Connecting multiple TMC2209 chips to the same serial line
 
-More than one TMC2209 may be connected to a single serial port, if each TMC2209
-is assigned a unique serial address. The default serial address is
-"SERIAL_ADDRESS_0". The serial address may be changed from "SERIAL_ADDRESS_0"
-using the TMC2209 hardware input pins MS1 and MS2, to "SERIAL_ADDRESS_1",
-"SERIAL_ADDRESS_2", or "SERIAL_ADDRESS_3".
+**** Unidirectional communication with all chips using identical settings
 
-The TMC2209 serial address must be specified during the TMC2209 setup, if it is
-not equal to the default of "SERIAL_ADDRESS_0".
-
-For example:
+If only unidirectional communication is desired and all TMC2209 chips connected
+to the same serial line will have identical settings, then no serial addressing
+is required. All chips can be programmed in parallel like a single device.
 
 #+BEGIN_SRC cpp
+#include <Arduino.h>
+#include <TMC2209.h>
 
+// Instantiate the two TMC2209
+TMC2209 stepper_drivers;
+
+void setup()
+{
+  stepper_drivers.setup(Serial1);
+}
+#+END_SRC
+
+[[./images/TMC2209_unidirectional_multiple.png]]
+
+**** Unidirectional communication with needing different settings
+
+#+BEGIN_SRC cpp
 #include <Arduino.h>
 #include <TMC2209.h>
 
@@ -329,10 +334,49 @@ void setup()
   stepper_driver_0.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_0);
   stepper_driver_1.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_1);
 }
-
 #+END_SRC
 
-[[./images/TMC2209_serial_address.png]]
+[[./images/TMC2209_unidirectional_serial_address.png]]
+
+**** Bidirectional communication with chips needing different settings
+
+More than one TMC2209 may be connected to a single serial port, if each TMC2209
+is assigned a unique serial address. The default serial address is
+"SERIAL_ADDRESS_0". The serial address may be changed from "SERIAL_ADDRESS_0"
+using the TMC2209 hardware input pins MS1 and MS2, to "SERIAL_ADDRESS_1",
+"SERIAL_ADDRESS_2", or "SERIAL_ADDRESS_3".
+
+The TMC2209 serial address must be specified during the TMC2209 setup, if it is
+not equal to the default of "SERIAL_ADDRESS_0".
+
+When multiple TMC2209 chips are connected to the same serial line with multiple
+addresses then the reply delay value should be increased, otherwise a
+non-addressed chip might detect a transmission error upon read access to a
+different chip.
+
+#+BEGIN_SRC cpp
+#include <Arduino.h>
+#include <TMC2209.h>
+
+// Instantiate the two TMC2209
+TMC2209 stepper_driver_0;
+const TMC2209::SerialAddress SERIAL_ADDRESS_0 = TMC2209::SERIAL_ADDRESS_0;
+TMC2209 stepper_driver_1;
+const TMC2209::SerialAddress SERIAL_ADDRESS_1 = TMC2209::SERIAL_ADDRESS_1;
+const uint8_t REPLY_DELAY = 4;
+const long SERIAL_BAUD_RATE = 115200;
+
+void setup()
+{
+  // TMC2209::SERIAL_ADDRESS_0 is used by default if not specified
+  stepper_driver_0.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_0);
+  stepper_driver_0.setReplyDelay(REPLY_DELAY);
+  stepper_driver_1.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_1);
+  stepper_driver_0.setReplyDelay(REPLY_DELAY);
+}
+#+END_SRC
+
+[[./images/TMC2209_bidirectional_coupled_serial_address.png]]
 
 ** Step and Direction Interface
 

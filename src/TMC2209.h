@@ -86,7 +86,12 @@ public:
 
   // default = 20
   // mimimum of 2 for StealthChop auto tuning
-  void setPowerDownDelay(uint8_t delay);
+  void setPowerDownDelay(uint8_t power_down_delay);
+
+  // mimimum of 2 when using multiple serial addresses
+  // in bidirectional communication
+  const static uint8_t REPLY_DELAY_MAX = 15;
+  void setReplyDelay(uint8_t delay);
 
   void moveAtVelocity(int32_t microsteps_per_period);
   void moveUsingStepDirInterface();
@@ -308,14 +313,14 @@ private:
 
   const static uint8_t ADDRESS_IFCNT = 0x02;
 
-  const static uint8_t ADDRESS_SENDDELAY = 0x03;
-  union SendDelay
+  const static uint8_t ADDRESS_REPLYDELAY = 0x03;
+  union ReplyDelay
   {
     struct
     {
       uint32_t reserved_0 : 8;
-      uint32_t senddelay : 8;
-      uint32_t reserved_1 : 16;
+      uint32_t replydelay : 4;
+      uint32_t reserved_1 : 20;
     };
     uint32_t bytes;
   };

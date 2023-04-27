@@ -51,7 +51,7 @@ void loop()
   uint32_t interstep_duration = stepper_driver.getInterstepDuration();
   Serial.print("interstep_duration = ");
   Serial.println(interstep_duration);
-  Serial.println("");
+  Serial.println();
 
   microsteps_per_step_exponent += MICROSTEPS_PER_STEP_EXPONENT_INC;
   if (microsteps_per_step_exponent > MICROSTEPS_PER_STEP_EXPONENT_MAX)

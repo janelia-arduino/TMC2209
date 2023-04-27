@@ -43,5 +43,5 @@ void loop()
   stepper_driver.setStandstillMode(stepper_driver.BRAKING);
   delay(DELAY);
 
-  Serial.println("");
+  Serial.println();
 }

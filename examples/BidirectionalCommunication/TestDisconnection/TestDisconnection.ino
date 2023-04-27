@@ -40,7 +40,7 @@ void runTestLoop(DriverFunction driver_function)
   Serial.print(" times and took ");
   Serial.print(time_end - time_begin);
   Serial.println(" milliseconds");
-  Serial.println("");
+  Serial.println();
 }
 
 void runTestLoops()
@@ -80,6 +80,6 @@ void loop()
     runTestLoops();
     Serial.println("Try turning driver power on to see what happens.");
   }
-  Serial.println("");
+  Serial.println();
   delay(DELAY);
 }
