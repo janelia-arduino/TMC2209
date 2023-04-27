@@ -1,17 +1,17 @@
-- [Library Information](#org99cca19)
-- [Stepper Motors](#org50a08e1)
-- [Stepper Motor Controllers and Drivers](#org6411125)
-- [Communication](#org7cfdb37)
-- [Settings](#orgf8beb6d)
-- [Examples](#orgafbda5c)
-- [Hardware Documentation](#org179420f)
-- [Host Computer Setup](#org2d6e2b3)
+- [Library Information](#org79bc69a)
+- [Stepper Motors](#orgaaff7f1)
+- [Stepper Motor Controllers and Drivers](#org9be59b3)
+- [Communication](#org68c4d97)
+- [Settings](#org54cebfc)
+- [Examples](#orgfffc2e3)
+- [Hardware Documentation](#org7c88d41)
+- [Host Computer Setup](#orge276178)
 
     <!-- This file is generated automatically from metadata -->
     <!-- File edits may be overwritten! -->
 
 
-<a id="org99cca19"></a>
+<a id="org79bc69a"></a>
 
 # Library Information
 
@@ -30,7 +30,7 @@ The TMC2209 is an ultra-silent motor driver IC for two phase stepper motors with
 ![img](./images/TMC2209.png)
 
 
-<a id="org50a08e1"></a>
+<a id="orgaaff7f1"></a>
 
 # Stepper Motors
 
@@ -41,7 +41,7 @@ A stepper motor, also known as step motor or stepping motor, is a brushless DC e
 [Wikipedia - Stepper Motor](https://en.wikipedia.org/wiki/Stepper_motor)
 
 
-<a id="org6411125"></a>
+<a id="org9be59b3"></a>
 
 # Stepper Motor Controllers and Drivers
 
@@ -72,7 +72,7 @@ Using internal 12 MHz clock (default): microsteps\_per\_second = microsteps\_per
 
 Crude position control can be performed in this simple velocity control mode by commanding the driver to move the motor at a velocity, then after a given amount of time commanding it to stop, but small delays in the system will cause position errors. Plus without acceleration control, the stepper motor may also slip when it attempts to jump to a new velocity value causing more position errors. For some applications, these position errors may not matter, making simple velocity control good enough to save the trouble and expense of adding a separate stepper controller.
 
-Most of this library's examples use the simple velocity control mode to test the driver independently from a separate stepper motor controller, however in most real world applications a separate motor controller is needed, along with the TMC2209 and this library, for position and acceleration control.
+Many of this library's examples use the simple velocity control mode to test the driver independently from a separate stepper motor controller, however in most real world applications a separate motor controller is needed, along with the TMC2209 and this library, for position and acceleration control.
 
 
 ### Microcontroller Stepper Motor Controller
@@ -89,7 +89,7 @@ Another controller option is to use both a microcontroller and a separate step a
 ![img](./images/TMC429_controller_driver.png)
 
 
-<a id="org7cfdb37"></a>
+<a id="org68c4d97"></a>
 
 # Communication
 
@@ -97,7 +97,7 @@ The TMC2209 driver has two interfaces to communicate with a stepper motor contro
 
 The UART serial interface may be used for tuning and control options, for diagnostics, and for simple velocity commands.
 
-The step and direction interface may be used for real-time position, velocity, and acceleration commands. The step and direction signals may be synchronized with the step and direction signals to other TMC2209 chips for coordinated multi-axis motion.
+The step and direction interface may be used for real-time position, velocity, and acceleration commands. The step and direction signals may be synchronized with the step and direction signals to other stepper drivers for coordinated multi-axis motion.
 
 
 ## UART Serial Interface
@@ -122,28 +122,70 @@ The UART single wire interface allows control of the TMC2209 with any set of mic
 
     The simpliest way to connect the single TMC2209 serial signal to both the microcontroller TX pin and RX pin is to use a 1k resistor between the TX pin and the RX pin to separate them.
     
+    Coupling the TX and RX lines together has the disadvantage of echoing all of the TX commands from the microcontroller to the TMC2209 on the microcontroller RX line. These echos need to be removed by this library in order to properly read responses from the TMC2209.
+    
+    Another disadvantage to coupling the TX and RX lines together is that it limits the length of wire between the microcontroller and the TMC2209. The TMC2209 performs a CRC (cyclic redundancy check) which helps increase interface distances while decreasing the risk of wrong or missed commands even in the event of electromagnetic disturbances.
+    
     ![img](./images/TMC2209_bidirectional_coupled.png)
 
 
-### Example
+### Serial Setup
 
 The microcontroller serial port must be specified during the TMC2209 setup.
 
-```cpp
+Microcontroller serial ports may either be implemented in hardware or software.
 
-#include <Arduino.h>
-#include <TMC2209.h>
+Hardware serial ports use dedicated hardware on the microcontroller to perform serial UART communication.
 
-// Instantiate TMC2209
-TMC2209 stepper_driver;
-HardwareSerial & serial_stream = Serial1;
+Software serial ports allow serial communication on other microcontroller digital pins that do not have dedicated UART hardware by replicating the functionality in software.
 
-void setup()
-{
-  stepper_driver.setup(serial_stream);
-}
+Hardware serial ports should always be preferred over software serial ports. Software serial ports have many performance limitations, such as not allowing transmitting and receiving data at the same time, lower baud rates, and using software serial ports may affect performance of other code running on the microcontroller.
 
-```
+1.  Hardware Serial Setup
+
+    ```cpp
+    
+    #include <Arduino.h>
+    #include <TMC2209.h>
+    
+    
+    // Instantiate TMC2209
+    TMC2209 stepper_driver;
+    
+    HardwareSerial & serial_stream = Serial1;
+    
+    void setup()
+    {
+      stepper_driver.setup(serial_stream);
+    }
+    
+    ```
+
+2.  Software Serial Setup
+
+    ```cpp
+    
+    #include <Arduino.h>
+    #include <TMC2209.h>
+    #include <SoftwareSerial.h>
+    
+    
+    // Instantiate TMC2209
+    TMC2209 stepper_driver;
+    
+    // Software serial ports should only be used for unidirectional communication
+    // The RX pin does not need to be connected, but it must be specified when
+    // creating an instance of a SoftwareSerial object
+    const uint8_t RX_PIN = 0;
+    const uint8_t TX_PIN = 1;
+    SoftwareSerial soft_serial(RX_PIN, TX_PIN);
+    
+    void setup()
+    {
+      stepper_driver.setup(soft_serial);
+    }
+    
+    ```
 
 
 ### Arduino Serial
@@ -152,7 +194,7 @@ void setup()
 
 On some Arduino boards (e.g. Uno, Nano, Mini, and Mega) pins 0 and 1 are used for communication with the computer on the serial port named "Serial". Pins 0 and 1 cannot be used on these boards to communicate with the TMC2209. Connecting anything to these pins can interfere with that communication, including causing failed uploads to the board.
 
-Arduino boards with additional serial ports, such as "Serial1" and "Serial2", can use those ports to communicate with the TMC2209.
+Arduino boards with additional hardware serial ports, such as "Serial1" and "Serial2", can use those ports to communicate with the TMC2209.
 
 
 ### Teeny Serial
@@ -168,15 +210,15 @@ Unlike Arduino boards, the Teensy USB serial interface is not connected to pins 
 
 The serial baud rate is the speed of communication in bits per second of the UART serial port connected to the TMC2209.
 
-In theory, baud rates from 9600 Baud to 500000 Baud or even higher (when using an external clock) may be used. No baud rate configuration on the chip is required, as the TMC2209 automatically adapts to the baud rate. In practice, it was found that the baud rate may range from 19200 to 500000 without errors.
+In theory, baud rates from 9600 Baud to 500000 Baud or even higher (when using an external clock) may be used. No baud rate configuration on the chip is required, as the TMC2209 automatically adapts to the baud rate. In practice, it was found that the baud rate may range from 19200 to 500000 without errors when using hardware serial ports. Software serial ports use a default baud rate of 9600.
 
 The higher the baud rate the better, but microcontrollers have various UART serial abilities and limitations which affects the maximum baud allowed. The baud rate may be specified when setting up the stepper driver.
 
 1.  Arduino
 
-    The maximum serial baud rate on typical Arduino boards is 115200, so that is the default, but other values as low as 19200 may be used.
+    The maximum serial baud rate on typical Arduino boards is 115200, so that is the default when using hardware serial ports, but other values as low as 19200 may be used.
     
-    [Arduino Serial Baud Rate Web Page](https://www.arduino.cc/en/Reference/SoftwareSerialBegin)
+    <https://www.arduino.cc/reference/en/language/functions/communication/serial/>
 
 2.  Teensy
 
@@ -251,7 +293,7 @@ A library such as the Arduino TMC429 library may be used to control the step and
 [Arduino TMC429 Library](https://github.com/janelia-arduino/TMC429)
 
 
-<a id="orgf8beb6d"></a>
+<a id="org54cebfc"></a>
 
 # Settings
 
@@ -406,7 +448,7 @@ In voltage control mode, the hold current scales the PWM amplitude, but the curr
 In current control mode, setting the hold current is the way to adjust the spinning motor current. The driver will measure the current and automatically adjust the voltage to maintain the hold current, even with the operating conditions change. The PWM offset may be changed to help the automatic tuning procedure, but changing the hold current alone is enough to adjust the motor current since the driver will adjust the offset automatically.
 
 
-<a id="orgafbda5c"></a>
+<a id="orgfffc2e3"></a>
 
 # Examples
 
@@ -416,12 +458,12 @@ In current control mode, setting the hold current is the way to adjust the spinn
 
 ### Teensy 4.0
 
-![img](./images/TMC2209_teensy40.svg)
+![img](./images/TMC2209_teensy40.png)
 
 
 ### Mega 2560
 
-![img](./images/TMC2209_mega2560.svg)
+![img](./images/TMC2209_mega2560.png)
 
 
 ### Wiring Documentation Source
@@ -429,7 +471,7 @@ In current control mode, setting the hold current is the way to adjust the spinn
 <https://github.com/janelia-kicad/trinamic_wiring>
 
 
-<a id="org179420f"></a>
+<a id="org7c88d41"></a>
 
 # Hardware Documentation
 
@@ -464,7 +506,7 @@ In current control mode, setting the hold current is the way to adjust the spinn
 [Janelia Stepper Driver Web Page](https://github.com/janelia-kicad/stepper_driver)
 
 
-<a id="org2d6e2b3"></a>
+<a id="orge276178"></a>
 
 # Host Computer Setup
 

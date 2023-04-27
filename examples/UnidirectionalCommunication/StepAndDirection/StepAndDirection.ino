@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <TMC2209.h>
 
-HardwareSerial & serial_stream = Serial1;
+HardwareSerial & serial_stream = Serial3;
 
 const uint8_t STEP_PIN = 2;
 const uint8_t DIRECTION_PIN = 3;

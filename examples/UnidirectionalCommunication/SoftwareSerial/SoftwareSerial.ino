@@ -6,8 +6,8 @@
 // Software serial ports should only be used for unidirectional communication
 // The RX pin does not need to be connected, but it must be specified when
 // creating an instance of a SoftwareSerial object
-const uint8_t RX_PIN = 0;
-const uint8_t TX_PIN = 1;
+const uint8_t RX_PIN = 15;
+const uint8_t TX_PIN = 14;
 SoftwareSerial soft_serial(RX_PIN, TX_PIN);
 
 const int32_t RUN_VELOCITY = 20000;

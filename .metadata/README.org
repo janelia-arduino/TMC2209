@@ -586,11 +586,11 @@ current since the driver will adjust the offset automatically.
 
 *** Teensy 4.0
 
-[[./images/TMC2209_teensy40.svg]]
+[[./images/TMC2209_teensy40.png]]
 
 *** Mega 2560
 
-[[./images/TMC2209_mega2560.svg]]
+[[./images/TMC2209_mega2560.png]]
 
 *** Wiring Documentation Source
 

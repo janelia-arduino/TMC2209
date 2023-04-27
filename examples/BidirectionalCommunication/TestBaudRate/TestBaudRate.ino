@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <TMC2209.h>
 
-HardwareSerial & serial_stream = Serial1;
+HardwareSerial & serial_stream = Serial3;
 
 const long SERIAL_BAUD_RATE = 115200;
 const long SERIAL1_BAUD_RATE_COUNT = 10;

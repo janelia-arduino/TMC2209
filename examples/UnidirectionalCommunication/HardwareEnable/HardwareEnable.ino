@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <TMC2209.h>
 
-HardwareSerial & serial_stream = Serial1;
+HardwareSerial & serial_stream = Serial3;
 const uint8_t HARDWARE_ENABLE_PIN = 4;
 
 const int32_t RUN_VELOCITY = 20000;
@@ -44,7 +44,7 @@ void loop()
 
   stepper_driver.moveAtVelocity(RUN_VELOCITY);
 
-  for (uint8_t run; run<RUN_COUNT; ++run)
+  for (uint8_t run=0; run<RUN_COUNT; ++run)
   {
     if ((run % 2) == 0)
     {
