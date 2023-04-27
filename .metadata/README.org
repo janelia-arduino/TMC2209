@@ -321,13 +321,13 @@ TMC2209 stepper_driver_0;
 const TMC2209::SerialAddress SERIAL_ADDRESS_0 = TMC2209::SERIAL_ADDRESS_0;
 TMC2209 stepper_driver_1;
 const TMC2209::SerialAddress SERIAL_ADDRESS_1 = TMC2209::SERIAL_ADDRESS_1;
-const long SERIALX_BAUD_RATE = 115200;
+const long SERIAL_BAUD_RATE = 115200;
 
 void setup()
 {
   // TMC2209::SERIAL_ADDRESS_0 is used by default if not specified
-  stepper_driver_0.setup(Serial1,SERIALX_BAUD_RATE,SERIAL_ADDRESS_0);
-  stepper_driver_1.setup(Serial1,SERIALX_BAUD_RATE,SERIAL_ADDRESS_1);
+  stepper_driver_0.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_0);
+  stepper_driver_1.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_1);
 }
 
 #+END_SRC
