@@ -304,7 +304,7 @@ is required. All chips can be programmed in parallel like a single device.
 #include <Arduino.h>
 #include <TMC2209.h>
 
-// Instantiate the two TMC2209
+// Instantiate a single TMC2209 to talk to multiple chips
 TMC2209 stepper_drivers;
 
 void setup()
