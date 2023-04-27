@@ -315,7 +315,7 @@ void setup()
 
 [[./images/TMC2209_unidirectional_multiple.png]]
 
-**** Unidirectional communication with needing different settings
+**** Unidirectional communication with chips needing different settings
 
 #+BEGIN_SRC cpp
 #include <Arduino.h>
