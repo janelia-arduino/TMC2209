@@ -12,7 +12,7 @@
 
 * Library Information
 - Name :: TMC2209
-- Version :: 8.0.7
+- Version :: 9.0.0
 - License :: BSD
 - URL :: https://github.com/janelia-arduino/TMC2209
 - Author :: Peter Polidoro
@@ -88,7 +88,7 @@ errors. For some applications, these position errors may not matter, making
 simple velocity control good enough to save the trouble and expense of adding a
 separate stepper controller.
 
-Most of this library's examples use the simple velocity control mode to test the
+Many of this library's examples use the simple velocity control mode to test the
 driver independently from a separate stepper motor controller, however in most
 real world applications a separate motor controller is needed, along with the
 TMC2209 and this library, for position and acceleration control.
@@ -118,7 +118,7 @@ diagnostics, and for simple velocity commands.
 
 The step and direction interface may be used for real-time position, velocity,
 and acceleration commands. The step and direction signals may be synchronized
-with the step and direction signals to other TMC2209 chips for coordinated
+with the step and direction signals to other stepper drivers for coordinated
 multi-axis motion.
 
 ** UART Serial Interface
@@ -126,35 +126,126 @@ multi-axis motion.
 [[https://en.wikipedia.org/wiki/Universal_asynchronous_receiver-transmitter][Wikipedia - UART]]
 
 The TMC2209 communicates over a UART serial port using a single wire interface,
-allowing bi-directional operation for full control and diagnostics. It can be
+allowing either unidirectional communication, for parameter setting only, or for
+bidirectional communication allowing full control and diagnostics. It can be
 driven by any standard microcontroller UART or even by bit banging in software.
 
+*** Unidirectional Communication
+
+TMC2209 parameters may be set using unidirectional communication from a
+microcontroller UART serial TX pin to the TMC2209 PDN_UART pin. Responses from
+the TMC2209 to the microcontroller are ignored.
+
+[[./images/TMC2209_unidirectional.png]]
+
+*** Bidirectional Communication
+
 The UART single wire interface allows control of the TMC2209 with any set of
-microcontroller UART serial TX and RX pins. The single serial signal is
-connected to both the TX pin and the RX pin, with a 1k resistor between the TX
-pin and the RX pin to separate them.
+microcontroller UART serial TX and RX pins.
+
+**** Coupled
+
+The simpliest way to connect the single TMC2209 serial signal to both the
+microcontroller TX pin and RX pin is to use a 1k resistor between the TX pin and
+the RX pin to separate them.
+
+Coupling the TX and RX lines together has the disadvantage of echoing all of the
+TX commands from the microcontroller to the TMC2209 on the microcontroller RX
+line. These echos need to be removed by this library in order to properly read
+responses from the TMC2209.
+
+Another disadvantage to coupling the TX and RX lines together is that it limits
+the length of wire between the microcontroller and the TMC2209. The TMC2209
+performs a CRC (cyclic redundancy check) which helps increase interface
+distances while decreasing the risk of wrong or missed commands even in the
+event of electromagnetic disturbances.
+
+[[./images/TMC2209_bidirectional_coupled.png]]
+
+*** Serial Setup
 
 The microcontroller serial port must be specified during the TMC2209 setup.
 
-For example:
+Microcontroller serial ports may either be implemented in hardware or software.
+
+Hardware serial ports use dedicated hardware on the microcontroller to perform
+serial UART communication.
+
+Software serial ports allow serial communication on other microcontroller
+digital pins that do not have dedicated UART hardware by replicating the
+functionality in software.
+
+Hardware serial ports should always be preferred over software serial ports.
+Software serial ports have many performance limitations, such as not allowing
+transmitting and receiving data at the same time, lower baud rates, and using
+software serial ports may affect performance of other code running on the
+microcontroller.
+
+**** Hardware Serial Setup
 
 #+BEGIN_SRC cpp
-
 #include <Arduino.h>
 #include <TMC2209.h>
 
+
 // Instantiate TMC2209
 TMC2209 stepper_driver;
+
 HardwareSerial & serial_stream = Serial1;
 
 void setup()
 {
   stepper_driver.setup(serial_stream);
 }
-
 #+END_SRC
 
-[[./images/TMC2209_serial.png]]
+**** Hardware Serial Setup with Alternate RX and TX pins
+
+Some microcontrollers (e.g. ESP32) allow alternative hardware serial RX and TX
+pins.
+
+#+BEGIN_SRC cpp
+#include <Arduino.h>
+#include <TMC2209.h>
+
+
+// Instantiate TMC2209
+TMC2209 stepper_driver;
+
+HardwareSerial & serial_stream = Serial1;
+const long SERIAL_BAUD_RATE = 115200;
+const int RX_PIN = 5;
+const int TX_PIN = 26;
+
+void setup()
+{
+  stepper_driver.setup(serial_stream, SERIAL_BAUD_RATE, TMC2209::SERIAL_ADDRESS_0, RX_PIN, TX_PIN);
+}
+#+END_SRC
+
+**** Software Serial Setup
+
+#+BEGIN_SRC cpp
+#include <Arduino.h>
+#include <TMC2209.h>
+#include <SoftwareSerial.h>
+
+
+// Instantiate TMC2209
+TMC2209 stepper_driver;
+
+// Software serial ports should only be used for unidirectional communication
+// The RX pin does not need to be connected, but it must be specified when
+// creating an instance of a SoftwareSerial object
+const int RX_PIN = 0;
+const int TX_PIN = 1;
+SoftwareSerial soft_serial(RX_PIN, TX_PIN);
+
+void setup()
+{
+  stepper_driver.setup(soft_serial);
+}
+#+END_SRC
 
 *** Arduino Serial
 
@@ -166,8 +257,8 @@ and 1 cannot be used on these boards to communicate with the TMC2209. Connecting
 anything to these pins can interfere with that communication, including causing
 failed uploads to the board.
 
-Arduino boards with additional serial ports, such as "Serial1" and "Serial2",
-can use those ports to communicate with the TMC2209.
+Arduino boards with additional hardware serial ports, such as "Serial1" and
+"Serial2", can use those ports to communicate with the TMC2209.
 
 *** Teeny Serial
 
@@ -185,10 +276,11 @@ Unlike Arduino boards, the Teensy USB serial interface is not connected to pins
 The serial baud rate is the speed of communication in bits per second of the
 UART serial port connected to the TMC2209.
 
-In theory, baud rates from 9600 Baud to 500000 Baud or even higher (when using an
-external clock) may be used. No baud rate configuration on the chip is required,
-as the TMC2209 automatically adapts to the baud rate. In practice, it was found
-that the baud rate may range from 19200 to 500000 without errors.
+In theory, baud rates from 9600 Baud to 500000 Baud or even higher (when using
+an external clock) may be used. No baud rate configuration on the chip is
+required, as the TMC2209 automatically adapts to the baud rate. In practice, it
+was found that the baud rate may range from 19200 to 500000 without errors when
+using hardware serial ports. Software serial ports use a default baud rate of 9600.
 
 The higher the baud rate the better, but microcontrollers have various UART
 serial abilities and limitations which affects the maximum baud allowed. The
@@ -197,9 +289,10 @@ baud rate may be specified when setting up the stepper driver.
 **** Arduino
 
 The maximum serial baud rate on typical Arduino boards is 115200, so that is the
-default, but other values as low as 19200 may be used.
+default when using hardware serial ports, but other values as low as 19200 may
+be used.
 
-[[https://www.arduino.cc/en/Reference/SoftwareSerialBegin][Arduino Serial Baud Rate Web Page]]
+[[https://www.arduino.cc/reference/en/language/functions/communication/serial/]]
 
 **** Teensy
 
@@ -209,7 +302,6 @@ is a good setting to use, but other values as low as 19200 may be used.
 [[https://www.pjrc.com/teensy/td_uart.html][Teensy Serial Baud Rate Web Page]]
 
 #+BEGIN_SRC cpp
-
 #include <Arduino.h>
 #include <TMC2209.h>
 
@@ -222,10 +314,55 @@ void setup()
 {
   stepper_driver.setup(Serial1,SERIAL1_BAUD_RATE);
 }
-
 #+END_SRC
 
-*** Serial Addresses
+*** Connecting multiple TMC2209 chips to the same serial line
+
+**** Unidirectional communication with all chips using identical settings
+
+If only unidirectional communication is desired and all TMC2209 chips connected
+to the same serial line will have identical settings, then no serial addressing
+is required. All chips can be programmed in parallel like a single device.
+
+#+BEGIN_SRC cpp
+#include <Arduino.h>
+#include <TMC2209.h>
+
+// Instantiate a single TMC2209 to talk to multiple chips
+TMC2209 stepper_drivers;
+
+void setup()
+{
+  stepper_drivers.setup(Serial1);
+}
+#+END_SRC
+
+[[./images/TMC2209_unidirectional_multiple.png]]
+
+**** Unidirectional communication with chips needing different settings
+
+#+BEGIN_SRC cpp
+#include <Arduino.h>
+#include <TMC2209.h>
+
+// Instantiate the two TMC2209
+TMC2209 stepper_driver_0;
+const TMC2209::SerialAddress SERIAL_ADDRESS_0 = TMC2209::SERIAL_ADDRESS_0;
+TMC2209 stepper_driver_1;
+const TMC2209::SerialAddress SERIAL_ADDRESS_1 = TMC2209::SERIAL_ADDRESS_1;
+const long SERIAL_BAUD_RATE = 115200;
+
+void setup()
+{
+  // TMC2209::SERIAL_ADDRESS_0 is used by default if not specified
+  stepper_driver_0.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_0);
+  stepper_driver_1.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_1);
+}
+#+END_SRC
+
+[[./images/TMC2209_unidirectional_serial_address.png]]
+
+**** Bidirectional communication with chips needing different settings
 
 More than one TMC2209 may be connected to a single serial port, if each TMC2209
 is assigned a unique serial address. The default serial address is
@@ -236,10 +373,12 @@ using the TMC2209 hardware input pins MS1 and MS2, to "SERIAL_ADDRESS_1",
 The TMC2209 serial address must be specified during the TMC2209 setup, if it is
 not equal to the default of "SERIAL_ADDRESS_0".
 
-For example:
+When multiple TMC2209 chips are connected to the same serial line with multiple
+addresses then the reply delay value should be increased, otherwise a
+non-addressed chip might detect a transmission error upon read access to a
+different chip.
 
 #+BEGIN_SRC cpp
-
 #include <Arduino.h>
 #include <TMC2209.h>
 
@@ -248,18 +387,20 @@ TMC2209 stepper_driver_0;
 const TMC2209::SerialAddress SERIAL_ADDRESS_0 = TMC2209::SERIAL_ADDRESS_0;
 TMC2209 stepper_driver_1;
 const TMC2209::SerialAddress SERIAL_ADDRESS_1 = TMC2209::SERIAL_ADDRESS_1;
-const long SERIALX_BAUD_RATE = 115200;
+const uint8_t REPLY_DELAY = 4;
+const long SERIAL_BAUD_RATE = 115200;
 
 void setup()
 {
   // TMC2209::SERIAL_ADDRESS_0 is used by default if not specified
-  stepper_driver_0.setup(Serial1,SERIALX_BAUD_RATE,SERIAL_ADDRESS_0);
-  stepper_driver_1.setup(Serial1,SERIALX_BAUD_RATE,SERIAL_ADDRESS_1);
+  stepper_driver_0.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_0);
+  stepper_driver_0.setReplyDelay(REPLY_DELAY);
+  stepper_driver_1.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_1);
+  stepper_driver_0.setReplyDelay(REPLY_DELAY);
 }
-
 #+END_SRC
 
-[[./images/TMC2209_serial_address.png]]
+[[./images/TMC2209_bidirectional_coupled_serial_address.png]]
 
 ** Step and Direction Interface
 
@@ -308,21 +449,30 @@ The driver is disabled by default and must be enabled before use.
 The driver may be disabled in two ways, either in hardware or in software, and
 the driver must be enabled in both ways in order to drive a motor.
 
+To enable the driver in software, or optionally in both hardware and software,
+use the enable() method.
+
+To disable the driver in software, or optionally in both hardware and software,
+use the disable() method.
+
 *** Hardware Enable
 
-The TMC2209 chip has an enable not input pin that switches off the power stage,
+The TMC2209 chip has an enable input pin that switches off the power stage,
 all motor outputs floating, when the pin is driven to a high level, independent
 of software settings.
 
 The chip itself is hardware enabled by default, but many stepper driver boards
-pull the enable not input pin high, which causes the driver to be disabled by
+pull the enable input pin high, which causes the driver to be disabled by
 default.
 
-To hardware enable the driver, pull the enable not pin low, either with a jumper
-or with an output pin from the microcontroller.
+To hardware enable the driver using this library, use the setHardwareEnablePin
+method to assign a microcontroller pin to contol the TMC2209 enable line.
 
-This library does not control an enable output, but the method
-disabledByInputPin() can be used to tell if the driver is disabled in hardware.
+To hardware enable the driver without using this library, pull the enable pin
+low, either with a jumper or with an output pin from the microcontroller.
+
+The method hardwareDisabled() can be used to tell if the driver is disabled in
+hardware.
 
 *** Software Enable
 
@@ -334,10 +484,6 @@ the hardware enable pin, the power stages are switched off and all motor outputs
 are floating.
 
 This library disables the driver in software by default.
-
-To enable the driver in software use the enable() method.
-
-To disable the driver in software use the disable() method.
 
 ** Analog Current Scaling
 
@@ -508,11 +654,11 @@ current since the driver will adjust the offset automatically.
 
 *** Teensy 4.0
 
-[[./images/TMC2209_teensy40.svg]]
+[[./images/TMC2209_teensy40.png]]
 
 *** Mega 2560
 
-[[./images/TMC2209_mega2560.svg]]
+[[./images/TMC2209_mega2560.png]]
 
 *** Wiring Documentation Source
 
@@ -543,3 +689,44 @@ current since the driver will adjust the offset automatically.
 ** Janelia Stepper Driver
 
 [[https://github.com/janelia-kicad/stepper_driver][Janelia Stepper Driver Web Page]]
+
+* Host Computer Setup
+
+** GNU/Linux
+
+*** Drivers
+
+GNU/Linux computers usually have all of the necessary drivers already installed,
+but users need the appropriate permissions to open the device and communicate
+with it.
+
+Udev is the GNU/Linux subsystem that detects when things are plugged into your
+computer.
+
+**** Download rules into the correct directory
+
+***** Teensy
+
+#+BEGIN_SRC sh :noweb yes
+curl -fsSL https://www.pjrc.com/teensy/00-teensy.rules | sudo tee /etc/udev/rules.d/00-teensy.rules
+#+END_SRC
+
+**** Restart udev management tool
+
+#+BEGIN_SRC sh :noweb yes
+sudo service udev restart
+#+END_SRC
+
+**** Ubuntu/Debian users may need to add own “username” to the “dialout” group
+
+#+BEGIN_SRC sh :noweb yes
+sudo usermod -a -G dialout $USER && sudo usermod -a -G plugdev $USER
+#+END_SRC
+
+**** After setting up rules and groups
+
+You will need to log out and log back in again (or reboot) for the user group changes to take effect.
+
+After this file is installed, physically unplug and reconnect your board.
+
+

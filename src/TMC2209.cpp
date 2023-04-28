@@ -9,10 +9,11 @@
 
 TMC2209::TMC2209()
 {
-  blocking_ = true;
-  serial_ptr_ = nullptr;
-  serial_baud_rate_ = 500000;
+  hardware_serial_ptr_ = nullptr;
+  software_serial_ptr_ = nullptr;
+  serial_baud_rate_ = 115200;
   serial_address_ = SERIAL_ADDRESS_0;
+  hardware_enable_pin_ = -1;
   cool_step_enabled_ = false;
 }
 
@@ -20,41 +21,57 @@ void TMC2209::setup(HardwareSerial & serial,
   long serial_baud_rate,
   SerialAddress serial_address)
 {
-  blocking_ = false;
-  serial_baud_rate_ = serial_baud_rate;
-  setOperationModeToSerial(serial,serial_baud_rate,serial_address);
-  setRegistersToDefaults();
-  readAndStoreRegisters();
-  minimizeMotorCurrent();
-  disable();
-  disableAutomaticCurrentScaling();
-  disableAutomaticGradientAdaptation();
-  if (not isSetupAndCommunicating())
+  hardware_serial_ptr_ = &serial;
+  hardware_serial_ptr_->begin(serial_baud_rate);
+
+  setup(serial_baud_rate, serial_address);
+}
+
+#ifdef ESP32
+void TMC2209::setup(HardwareSerial & serial,
+  long serial_baud_rate,
+  SerialAddress serial_address,
+  int16_t alternate_rx_pin,
+  int16_t alternate_tx_pin)
+{
+  hardware_serial_ptr_ = &serial;
+  if ((alternate_rx_pin < 0) || (alternate_tx_pin < 0))
   {
-    blocking_ = true;
+    hardware_serial_ptr_->begin(serial_baud_rate);
   }
+  else
+  {
+    hardware_serial_ptr_->begin(serial_baud_rate, SERIAL_8N1, alternate_rx_pin, alternate_tx_pin);
+  }
+
+  setup(serial_baud_rate, serial_address);
+}
+#endif
+
+void TMC2209::setup(SoftwareSerial & serial,
+  long serial_baud_rate,
+  SerialAddress serial_address)
+{
+  software_serial_ptr_ = &serial;
+  software_serial_ptr_->begin(serial_baud_rate);
+
+  setup(serial_baud_rate, serial_address);
 }
 
-bool TMC2209::isCommunicating()
-{
-  return (getVersion() == VERSION);
-}
+// unidirectional methods
 
-bool TMC2209::isSetupAndCommunicating()
+void TMC2209::setHardwareEnablePin(uint8_t hardware_enable_pin)
 {
-  return serialOperationMode();
-}
-
-bool TMC2209::isCommunicatingButNotSetup()
-{
-  return (isCommunicating() && (not isSetupAndCommunicating()));
+  hardware_enable_pin_ = hardware_enable_pin;
+  pinMode(hardware_enable_pin_, OUTPUT);
+  digitalWrite(hardware_enable_pin_, HIGH);
 }
 
 void TMC2209::enable()
 {
-  if (blocking_)
+  if (hardware_enable_pin_ >= 0)
   {
-    return;
+    digitalWrite(hardware_enable_pin_, LOW);
   }
   chopper_config_.toff = toff_;
   writeStoredChopperConfig();
@@ -62,32 +79,16 @@ void TMC2209::enable()
 
 void TMC2209::disable()
 {
-  if (blocking_)
+  if (hardware_enable_pin_ >= 0)
   {
-    return;
+    digitalWrite(hardware_enable_pin_, HIGH);
   }
   chopper_config_.toff = TOFF_DISABLE;
   writeStoredChopperConfig();
 }
 
-bool TMC2209::disabledByInputPin()
-{
-  if (blocking_)
-  {
-    return false;
-  }
-  Input input;
-  input.bytes = read(ADDRESS_IOIN);
-
-  return input.enn;
-}
-
 void TMC2209::setMicrostepsPerStep(uint16_t microsteps_per_step)
 {
-  if (blocking_)
-  {
-    return;
-  }
   uint16_t microsteps_per_step_shifted = constrain(microsteps_per_step,
     MICROSTEPS_PER_STEP_MIN,
     MICROSTEPS_PER_STEP_MAX);
@@ -103,10 +104,6 @@ void TMC2209::setMicrostepsPerStep(uint16_t microsteps_per_step)
 
 void TMC2209::setMicrostepsPerStepPowerOfTwo(uint8_t exponent)
 {
-  if (blocking_)
-  {
-    return;
-  }
   switch (exponent)
   {
     case 0:
@@ -159,12 +156,232 @@ void TMC2209::setMicrostepsPerStepPowerOfTwo(uint8_t exponent)
   writeStoredChopperConfig();
 }
 
+void TMC2209::setRunCurrent(uint8_t percent)
+{
+  uint8_t run_current = percentToCurrentSetting(percent);
+  driver_current_.irun = run_current;
+  writeStoredDriverCurrent();
+}
+
+void TMC2209::setHoldCurrent(uint8_t percent)
+{
+  uint8_t hold_current = percentToCurrentSetting(percent);
+
+  driver_current_.ihold = hold_current;
+  writeStoredDriverCurrent();
+}
+
+void TMC2209::setHoldDelay(uint8_t percent)
+{
+  uint8_t hold_delay = percentToHoldDelaySetting(percent);
+
+  driver_current_.iholddelay = hold_delay;
+  writeStoredDriverCurrent();
+}
+
+void TMC2209::setAllCurrentValues(uint8_t run_current_percent,
+  uint8_t hold_current_percent,
+  uint8_t hold_delay_percent)
+{
+  uint8_t run_current = percentToCurrentSetting(run_current_percent);
+  uint8_t hold_current = percentToCurrentSetting(hold_current_percent);
+  uint8_t hold_delay = percentToHoldDelaySetting(hold_delay_percent);
+
+  driver_current_.irun = run_current;
+  driver_current_.ihold = hold_current;
+  driver_current_.iholddelay = hold_delay;
+  writeStoredDriverCurrent();
+}
+
+void TMC2209::enableInverseMotorDirection()
+{
+  global_config_.shaft = 1;
+  writeStoredGlobalConfig();
+}
+
+void TMC2209::disableInverseMotorDirection()
+{
+  global_config_.shaft = 0;
+  writeStoredGlobalConfig();
+}
+
+void TMC2209::setStandstillMode(TMC2209::StandstillMode mode)
+{
+  pwm_config_.freewheel = mode;
+  writeStoredPwmConfig();
+}
+
+void TMC2209::enableAutomaticCurrentScaling()
+{
+  pwm_config_.pwm_autoscale = STEPPER_DRIVER_FEATURE_ON;
+  writeStoredPwmConfig();
+}
+
+void TMC2209::disableAutomaticCurrentScaling()
+{
+  pwm_config_.pwm_autoscale = STEPPER_DRIVER_FEATURE_OFF;
+  writeStoredPwmConfig();
+}
+
+void TMC2209::enableAutomaticGradientAdaptation()
+{
+  pwm_config_.pwm_autograd = STEPPER_DRIVER_FEATURE_ON;
+  writeStoredPwmConfig();
+}
+
+void TMC2209::disableAutomaticGradientAdaptation()
+{
+  pwm_config_.pwm_autograd = STEPPER_DRIVER_FEATURE_OFF;
+  writeStoredPwmConfig();
+}
+
+void TMC2209::setPwmOffset(uint8_t pwm_amplitude)
+{
+  pwm_config_.pwm_offset = pwm_amplitude;
+  writeStoredPwmConfig();
+}
+
+void TMC2209::setPwmGradient(uint8_t pwm_amplitude)
+{
+  pwm_config_.pwm_grad = pwm_amplitude;
+  writeStoredPwmConfig();
+}
+
+void TMC2209::setPowerDownDelay(uint8_t power_down_delay)
+{
+  write(ADDRESS_TPOWERDOWN, power_down_delay);
+}
+
+void TMC2209::setReplyDelay(uint8_t reply_delay)
+{
+  if (reply_delay > REPLY_DELAY_MAX)
+  {
+    reply_delay = REPLY_DELAY_MAX;
+  }
+  ReplyDelay reply_delay_data;
+  reply_delay_data.bytes = 0;
+  reply_delay_data.replydelay = reply_delay;
+  write(ADDRESS_REPLYDELAY, reply_delay_data.bytes);
+}
+
+void TMC2209::moveAtVelocity(int32_t microsteps_per_period)
+{
+  write(ADDRESS_VACTUAL, microsteps_per_period);
+}
+
+void TMC2209::moveUsingStepDirInterface()
+{
+  write(ADDRESS_VACTUAL, VACTUAL_STEP_DIR_INTERFACE);
+}
+
+void TMC2209::enableStealthChop()
+{
+  global_config_.enable_spread_cycle = 0;
+  writeStoredGlobalConfig();
+}
+
+void TMC2209::disableStealthChop()
+{
+  global_config_.enable_spread_cycle = 1;
+  writeStoredGlobalConfig();
+}
+
+void TMC2209::setCoolStepDurationThreshold(uint32_t duration_threshold)
+{
+  write(ADDRESS_TCOOLTHRS, duration_threshold);
+}
+
+void TMC2209::setStealthChopDurationThreshold(uint32_t duration_threshold)
+{
+  write(ADDRESS_TPWMTHRS, duration_threshold);
+}
+
+void TMC2209::setStallGuardThreshold(uint8_t stall_guard_threshold)
+{
+  write(ADDRESS_SGTHRS, stall_guard_threshold);
+}
+
+void TMC2209::enableCoolStep(uint8_t lower_threshold,
+    uint8_t upper_threshold)
+{
+  lower_threshold = constrain(lower_threshold, SEMIN_MIN, SEMIN_MAX);
+  cool_config_.semin = lower_threshold;
+  upper_threshold = constrain(upper_threshold, SEMAX_MIN, SEMAX_MAX);
+  cool_config_.semax = upper_threshold;
+  write(ADDRESS_COOLCONF, cool_config_.bytes);
+  cool_step_enabled_ = true;
+}
+
+void TMC2209::disableCoolStep()
+{
+  cool_config_.semin = SEMIN_OFF;
+  write(ADDRESS_COOLCONF, cool_config_.bytes);
+  cool_step_enabled_ = false;
+}
+
+void TMC2209::setCoolStepCurrentIncrement(CurrentIncrement current_increment)
+{
+  cool_config_.seup = current_increment;
+  write(ADDRESS_COOLCONF, cool_config_.bytes);
+}
+
+void TMC2209::setCoolStepMeasurementCount(MeasurementCount measurement_count)
+{
+  cool_config_.sedn = measurement_count;
+  write(ADDRESS_COOLCONF, cool_config_.bytes);
+}
+
+void TMC2209::enableAnalogCurrentScaling()
+{
+  global_config_.i_scale_analog = 1;
+  writeStoredGlobalConfig();
+}
+
+void TMC2209::disableAnalogCurrentScaling()
+{
+  global_config_.i_scale_analog = 0;
+  writeStoredGlobalConfig();
+}
+
+void TMC2209::useExternalSenseResistors()
+{
+  global_config_.internal_rsense = 0;
+  writeStoredGlobalConfig();
+}
+
+void TMC2209::useInternalSenseResistors()
+{
+  global_config_.internal_rsense = 1;
+  writeStoredGlobalConfig();
+}
+
+// bidirectional methods
+
+bool TMC2209::isCommunicating()
+{
+  return (getVersion() == VERSION);
+}
+
+bool TMC2209::isSetupAndCommunicating()
+{
+  return serialOperationMode();
+}
+
+bool TMC2209::isCommunicatingButNotSetup()
+{
+  return (isCommunicating() && (not isSetupAndCommunicating()));
+}
+
+bool TMC2209::hardwareDisabled()
+{
+  Input input;
+  input.bytes = read(ADDRESS_IOIN);
+
+  return input.enn;
+}
+
 uint16_t TMC2209::getMicrostepsPerStep()
 {
-  if (blocking_)
-  {
-    return 0;
-  }
   uint16_t microsteps_per_step_exponent;
   switch (chopper_config_.mres)
   {
@@ -218,59 +435,6 @@ uint16_t TMC2209::getMicrostepsPerStep()
   return 1 << microsteps_per_step_exponent;
 }
 
-void TMC2209::setRunCurrent(uint8_t percent)
-{
-  if (blocking_)
-  {
-    return;
-  }
-  uint8_t run_current = percentToCurrentSetting(percent);
-  driver_current_.irun = run_current;
-  writeStoredDriverCurrent();
-}
-
-void TMC2209::setHoldCurrent(uint8_t percent)
-{
-  if (blocking_)
-  {
-    return;
-  }
-  uint8_t hold_current = percentToCurrentSetting(percent);
-
-  driver_current_.ihold = hold_current;
-  writeStoredDriverCurrent();
-}
-
-void TMC2209::setHoldDelay(uint8_t percent)
-{
-  if (blocking_)
-  {
-    return;
-  }
-  uint8_t hold_delay = percentToHoldDelaySetting(percent);
-
-  driver_current_.iholddelay = hold_delay;
-  writeStoredDriverCurrent();
-}
-
-void TMC2209::setAllCurrentValues(uint8_t run_current_percent,
-  uint8_t hold_current_percent,
-  uint8_t hold_delay_percent)
-{
-  if (blocking_)
-  {
-    return;
-  }
-  uint8_t run_current = percentToCurrentSetting(run_current_percent);
-  uint8_t hold_current = percentToCurrentSetting(hold_current_percent);
-  uint8_t hold_delay = percentToHoldDelaySetting(hold_delay_percent);
-
-  driver_current_.irun = run_current;
-  driver_current_.ihold = hold_current;
-  driver_current_.iholddelay = hold_delay;
-  writeStoredDriverCurrent();
-}
-
 TMC2209::Settings TMC2209::getSettings()
 {
   Settings settings;
@@ -281,7 +445,7 @@ TMC2209::Settings TMC2209::getSettings()
     readAndStoreRegisters();
 
     settings.is_setup = global_config_.pdn_disable;
-    settings.enabled = (chopper_config_.toff > TOFF_DISABLE);
+    settings.software_enabled = (chopper_config_.toff > TOFF_DISABLE);
     settings.microsteps_per_step = getMicrostepsPerStep();
     settings.inverse_motor_direction_enabled = global_config_.shaft;
     settings.stealth_chop_enabled = not global_config_.enable_spread_cycle;
@@ -303,7 +467,7 @@ TMC2209::Settings TMC2209::getSettings()
   else
   {
     settings.is_setup = false;
-    settings.enabled = false;
+    settings.software_enabled = false;
     settings.microsteps_per_step = 0;
     settings.inverse_motor_direction_enabled = false;
     settings.stealth_chop_enabled = false;
@@ -330,210 +494,27 @@ TMC2209::Status TMC2209::getStatus()
 {
   DriveStatus drive_status;
   drive_status.bytes = 0;
-  if (not blocking_)
-  {
-    drive_status.bytes = read(ADDRESS_DRV_STATUS);
-  }
+  drive_status.bytes = read(ADDRESS_DRV_STATUS);
   return drive_status.status;
-}
-
-void TMC2209::enableInverseMotorDirection()
-{
-  if (blocking_)
-  {
-    return;
-  }
-  global_config_.shaft = 1;
-  writeStoredGlobalConfig();
-}
-
-void TMC2209::disableInverseMotorDirection()
-{
-  if (blocking_)
-  {
-    return;
-  }
-  global_config_.shaft = 0;
-  writeStoredGlobalConfig();
-}
-
-void TMC2209::setStandstillMode(TMC2209::StandstillMode mode)
-{
-  if (blocking_)
-  {
-    return;
-  }
-  pwm_config_.freewheel = mode;
-  writeStoredPwmConfig();
-}
-
-void TMC2209::enableAutomaticCurrentScaling()
-{
-  if (blocking_)
-  {
-    return;
-  }
-  pwm_config_.pwm_autoscale = STEPPER_DRIVER_FEATURE_ON;
-  writeStoredPwmConfig();
-}
-
-void TMC2209::disableAutomaticCurrentScaling()
-{
-  if (blocking_)
-  {
-    return;
-  }
-  pwm_config_.pwm_autoscale = STEPPER_DRIVER_FEATURE_OFF;
-  writeStoredPwmConfig();
-}
-
-void TMC2209::enableAutomaticGradientAdaptation()
-{
-  if (blocking_)
-  {
-    return;
-  }
-  pwm_config_.pwm_autograd = STEPPER_DRIVER_FEATURE_ON;
-  writeStoredPwmConfig();
-}
-
-void TMC2209::disableAutomaticGradientAdaptation()
-{
-  if (blocking_)
-  {
-    return;
-  }
-  pwm_config_.pwm_autograd = STEPPER_DRIVER_FEATURE_OFF;
-  writeStoredPwmConfig();
-}
-
-void TMC2209::setPwmOffset(uint8_t pwm_amplitude)
-{
-  if (blocking_)
-  {
-    return;
-  }
-  pwm_config_.pwm_offset = pwm_amplitude;
-  writeStoredPwmConfig();
-}
-
-void TMC2209::setPwmGradient(uint8_t pwm_amplitude)
-{
-  if (blocking_)
-  {
-    return;
-  }
-  pwm_config_.pwm_grad = pwm_amplitude;
-  writeStoredPwmConfig();
-}
-
-void TMC2209::setPowerDownDelay(uint8_t delay)
-{
-  if (blocking_)
-  {
-    return;
-  }
-  write(ADDRESS_TPOWERDOWN,delay);
 }
 
 uint8_t TMC2209::getInterfaceTransmissionCounter()
 {
-  if (blocking_)
-  {
-    return 0;
-  }
   return read(ADDRESS_IFCNT);
-}
-
-void TMC2209::moveAtVelocity(int32_t microsteps_per_period)
-{
-  if (blocking_)
-  {
-    return;
-  }
-  write(ADDRESS_VACTUAL,microsteps_per_period);
-}
-
-void TMC2209::moveUsingStepDirInterface()
-{
-  if (blocking_)
-  {
-    return;
-  }
-  write(ADDRESS_VACTUAL,VACTUAL_STEP_DIR_INTERFACE);
-}
-
-void TMC2209::enableStealthChop()
-{
-  if (blocking_)
-  {
-    return;
-  }
-  global_config_.enable_spread_cycle = 0;
-  writeStoredGlobalConfig();
-}
-
-void TMC2209::disableStealthChop()
-{
-  if (blocking_)
-  {
-    return;
-  }
-  global_config_.enable_spread_cycle = 1;
-  writeStoredGlobalConfig();
 }
 
 uint32_t TMC2209::getInterstepDuration()
 {
-  if (blocking_)
-  {
-    return 0;
-  }
   return read(ADDRESS_TSTEP);
-}
-
-void TMC2209::setCoolStepDurationThreshold(uint32_t duration_threshold)
-{
-  if (blocking_)
-  {
-    return;
-  }
-  write(ADDRESS_TCOOLTHRS,duration_threshold);
-}
-
-void TMC2209::setStealthChopDurationThreshold(uint32_t duration_threshold)
-{
-  if (blocking_)
-  {
-    return;
-  }
-  write(ADDRESS_TPWMTHRS,duration_threshold);
 }
 
 uint16_t TMC2209::getStallGuardResult()
 {
-  if (blocking_)
-  {
-    return 0;
-  }
   return read(ADDRESS_SG_RESULT);
-}
-
-void TMC2209::setStallGuardThreshold(uint8_t stall_guard_threshold)
-{
-  if (blocking_)
-  {
-    return;
-  }
-  write(ADDRESS_SGTHRS,stall_guard_threshold);
 }
 
 uint8_t TMC2209::getPwmScaleSum()
 {
-  if (blocking_)
-  {
-    return 0;
-  }
   PwmScale pwm_scale;
   pwm_scale.bytes = read(ADDRESS_PWM_SCALE);
 
@@ -542,10 +523,6 @@ uint8_t TMC2209::getPwmScaleSum()
 
 int16_t TMC2209::getPwmScaleAuto()
 {
-  if (blocking_)
-  {
-    return 0;
-  }
   PwmScale pwm_scale;
   pwm_scale.bytes = read(ADDRESS_PWM_SCALE);
 
@@ -554,10 +531,6 @@ int16_t TMC2209::getPwmScaleAuto()
 
 uint8_t TMC2209::getPwmOffsetAuto()
 {
-  if (blocking_)
-  {
-    return 0;
-  }
   PwmAuto pwm_auto;
   pwm_auto.bytes = read(ADDRESS_PWM_AUTO);
 
@@ -566,120 +539,74 @@ uint8_t TMC2209::getPwmOffsetAuto()
 
 uint8_t TMC2209::getPwmGradientAuto()
 {
-  if (blocking_)
-  {
-    return 0;
-  }
   PwmAuto pwm_auto;
   pwm_auto.bytes = read(ADDRESS_PWM_AUTO);
 
   return pwm_auto.pwm_gradient_auto;
 }
 
-void TMC2209::enableCoolStep(uint8_t lower_threshold,
-    uint8_t upper_threshold)
-{
-  if (blocking_)
-  {
-    return;
-  }
-  lower_threshold = constrain(lower_threshold,SEMIN_MIN,SEMIN_MAX);
-  cool_config_.semin = lower_threshold;
-  upper_threshold = constrain(upper_threshold,SEMAX_MIN,SEMAX_MAX);
-  cool_config_.semax = upper_threshold;
-  write(ADDRESS_COOLCONF,cool_config_.bytes);
-  cool_step_enabled_ = true;
-}
-
-void TMC2209::disableCoolStep()
-{
-  if (blocking_)
-  {
-    return;
-  }
-  cool_config_.semin = SEMIN_OFF;
-  write(ADDRESS_COOLCONF,cool_config_.bytes);
-  cool_step_enabled_ = false;
-}
-
-void TMC2209::setCoolStepCurrentIncrement(CurrentIncrement current_increment)
-{
-  if (blocking_)
-  {
-    return;
-  }
-  cool_config_.seup = current_increment;
-  write(ADDRESS_COOLCONF,cool_config_.bytes);
-}
-
-void TMC2209::setCoolStepMeasurementCount(MeasurementCount measurement_count)
-{
-  if (blocking_)
-  {
-    return;
-  }
-  cool_config_.sedn = measurement_count;
-  write(ADDRESS_COOLCONF,cool_config_.bytes);
-}
-
 uint16_t TMC2209::getMicrostepCounter()
 {
-  if (blocking_)
-  {
-    return 0;
-  }
   return read(ADDRESS_MSCNT);
 }
 
-void TMC2209::enableAnalogCurrentScaling()
-{
-  if (blocking_)
-  {
-    return;
-  }
-  global_config_.i_scale_analog = 1;
-  writeStoredGlobalConfig();
-}
-
-void TMC2209::disableAnalogCurrentScaling()
-{
-  if (blocking_)
-  {
-    return;
-  }
-  global_config_.i_scale_analog = 0;
-  writeStoredGlobalConfig();
-}
-
-void TMC2209::useExternalSenseResistors()
-{
-  if (blocking_)
-  {
-    return;
-  }
-  global_config_.internal_rsense = 0;
-  writeStoredGlobalConfig();
-}
-
-void TMC2209::useInternalSenseResistors()
-{
-  if (blocking_)
-  {
-    return;
-  }
-  global_config_.internal_rsense = 1;
-  writeStoredGlobalConfig();
-}
-
 // private
-void TMC2209::setOperationModeToSerial(HardwareSerial & serial,
-  long serial_baud_rate,
+void TMC2209::setup(long serial_baud_rate,
   SerialAddress serial_address)
 {
-  serial_ptr_ = &serial;
-  serial_address_ = serial_address;
+  serial_baud_rate_ = serial_baud_rate;
 
-  serial_ptr_->begin(serial_baud_rate);
+  setOperationModeToSerial(serial_address);
+  setRegistersToDefaults();
+
+  minimizeMotorCurrent();
+  disable();
+  disableAutomaticCurrentScaling();
+  disableAutomaticGradientAdaptation();
+}
+
+int TMC2209::serialAvailable()
+{
+  if (hardware_serial_ptr_ != nullptr)
+  {
+    return hardware_serial_ptr_->available();
+  }
+  else if (software_serial_ptr_ != nullptr)
+  {
+    return software_serial_ptr_->available();
+  }
+  return 0;
+}
+
+size_t TMC2209::serialWrite(uint8_t c)
+{
+  if (hardware_serial_ptr_ != nullptr)
+  {
+    return hardware_serial_ptr_->write(c);
+  }
+  else if (software_serial_ptr_ != nullptr)
+  {
+    return software_serial_ptr_->write(c);
+  }
+  return 0;
+}
+
+int TMC2209::serialRead()
+{
+  if (hardware_serial_ptr_ != nullptr)
+  {
+    return hardware_serial_ptr_->read();
+  }
+  else if (software_serial_ptr_ != nullptr)
+  {
+    return software_serial_ptr_->read();
+  }
+  return 0;
+}
+
+void TMC2209::setOperationModeToSerial(SerialAddress serial_address)
+{
+  serial_address_ = serial_address;
 
   global_config_.bytes = 0;
   global_config_.i_scale_analog = 0;
@@ -696,27 +623,27 @@ void TMC2209::setRegistersToDefaults()
   driver_current_.ihold = IHOLD_DEFAULT;
   driver_current_.irun = IRUN_DEFAULT;
   driver_current_.iholddelay = IHOLDDELAY_DEFAULT;
-  write(ADDRESS_IHOLD_IRUN,driver_current_.bytes);
+  write(ADDRESS_IHOLD_IRUN, driver_current_.bytes);
 
   chopper_config_.bytes = CHOPPER_CONFIG_DEFAULT;
   chopper_config_.tbl = TBL_DEFAULT;
   chopper_config_.hend = HEND_DEFAULT;
   chopper_config_.hstart = HSTART_DEFAULT;
   chopper_config_.toff = TOFF_DEFAULT;
-  write(ADDRESS_CHOPCONF,chopper_config_.bytes);
+  write(ADDRESS_CHOPCONF, chopper_config_.bytes);
 
   pwm_config_.bytes = PWM_CONFIG_DEFAULT;
-  write(ADDRESS_PWMCONF,pwm_config_.bytes);
+  write(ADDRESS_PWMCONF, pwm_config_.bytes);
 
   cool_config_.bytes = COOLCONF_DEFAULT;
-  write(ADDRESS_COOLCONF,cool_config_.bytes);
+  write(ADDRESS_COOLCONF, cool_config_.bytes);
 
-  write(ADDRESS_TPOWERDOWN,TPOWERDOWN_DEFAULT);
-  write(ADDRESS_TPWMTHRS,TPWMTHRS_DEFAULT);
-  write(ADDRESS_VACTUAL,VACTUAL_DEFAULT);
-  write(ADDRESS_TCOOLTHRS,TCOOLTHRS_DEFAULT);
-  write(ADDRESS_SGTHRS,SGTHRS_DEFAULT);
-  write(ADDRESS_COOLCONF,COOLCONF_DEFAULT);
+  write(ADDRESS_TPOWERDOWN, TPOWERDOWN_DEFAULT);
+  write(ADDRESS_TPWMTHRS, TPWMTHRS_DEFAULT);
+  write(ADDRESS_VACTUAL, VACTUAL_DEFAULT);
+  write(ADDRESS_TCOOLTHRS, TCOOLTHRS_DEFAULT);
+  write(ADDRESS_SGTHRS, SGTHRS_DEFAULT);
+  write(ADDRESS_COOLCONF, COOLCONF_DEFAULT);
 }
 
 void TMC2209::readAndStoreRegisters()
@@ -788,31 +715,52 @@ uint8_t TMC2209::calculateCrc(Datagram & datagram,
 }
 
 template<typename Datagram>
-void TMC2209::sendDatagram(Datagram & datagram,
+void TMC2209::sendDatagramUnidirectional(Datagram & datagram,
   uint8_t datagram_size)
 {
-  if (not serial_ptr_)
-  {
-    return;
-  }
-
   uint8_t byte;
-
-  // clear the serial receive buffer if necessary
-  while (serial_ptr_->available() > 0)
-  {
-    byte = serial_ptr_->read();
-  }
 
   for (uint8_t i=0; i<datagram_size; ++i)
   {
     byte = (datagram.bytes >> (i * BITS_PER_BYTE)) & BYTE_MAX_VALUE;
-    serial_ptr_->write(byte);
+    serialWrite(byte);
   }
+}
+
+template<typename Datagram>
+void TMC2209::sendDatagramBidirectional(Datagram & datagram,
+  uint8_t datagram_size)
+{
+  uint8_t byte;
+
+  // clear the serial receive buffer if necessary
+  // Serial.println("**************************************");
+  // Serial.println("clear the serial receive buffer if necessary...");
+  while (serialAvailable() > 0)
+  {
+    byte = serialRead();
+    // Serial.print("serialRead: ");
+    // Serial.println(byte, HEX);
+  }
+  // Serial.println("**************************************");
+  // Serial.println();
+
+  // write datagram
+  // Serial.println("**************************************");
+  // Serial.println("write datagram...");
+  for (uint8_t i=0; i<datagram_size; ++i)
+  {
+    byte = (datagram.bytes >> (i * BITS_PER_BYTE)) & BYTE_MAX_VALUE;
+    serialWrite(byte);
+    // Serial.print("serialWrite: ");
+    // Serial.println(byte, HEX);
+  }
+  // Serial.println("**************************************");
+  // Serial.println();
 
   // wait for bytes sent out on TX line to be echoed on RX line
   uint32_t echo_delay = 0;
-  while ((serial_ptr_->available() < datagram_size) and
+  while ((serialAvailable() < datagram_size) and
     (echo_delay < ECHO_DELAY_MAX_MICROSECONDS))
   {
     delayMicroseconds(ECHO_DELAY_INC_MICROSECONDS);
@@ -821,15 +769,20 @@ void TMC2209::sendDatagram(Datagram & datagram,
 
   if (echo_delay >= ECHO_DELAY_MAX_MICROSECONDS)
   {
-    blocking_ = true;
     return;
   }
 
   // clear RX buffer of echo bytes
+  // Serial.println("**************************************");
+  // Serial.println("clear RX buffer of echo bytes");
   for (uint8_t i=0; i<datagram_size; ++i)
   {
-    byte = serial_ptr_->read();
+    byte = serialRead();
+    // Serial.print("serialRead: ");
+    // Serial.println(byte, HEX);
   }
+  // Serial.println("**************************************");
+  // Serial.println();
 }
 
 void TMC2209::write(uint8_t register_address,
@@ -842,29 +795,25 @@ void TMC2209::write(uint8_t register_address,
   write_datagram.register_address = register_address;
   write_datagram.rw = RW_WRITE;
   write_datagram.data = reverseData(data);
-  write_datagram.crc = calculateCrc(write_datagram,WRITE_READ_REPLY_DATAGRAM_SIZE);
+  write_datagram.crc = calculateCrc(write_datagram, WRITE_READ_REPLY_DATAGRAM_SIZE);
 
-  sendDatagram(write_datagram,WRITE_READ_REPLY_DATAGRAM_SIZE);
+  sendDatagramUnidirectional(write_datagram, WRITE_READ_REPLY_DATAGRAM_SIZE);
 }
 
 uint32_t TMC2209::read(uint8_t register_address)
 {
-  if (not serial_ptr_)
-  {
-    return 0;
-  }
   ReadRequestDatagram read_request_datagram;
   read_request_datagram.bytes = 0;
   read_request_datagram.sync = SYNC;
   read_request_datagram.serial_address = serial_address_;
   read_request_datagram.register_address = register_address;
   read_request_datagram.rw = RW_READ;
-  read_request_datagram.crc = calculateCrc(read_request_datagram,READ_REQUEST_DATAGRAM_SIZE);
+  read_request_datagram.crc = calculateCrc(read_request_datagram, READ_REQUEST_DATAGRAM_SIZE);
 
-  sendDatagram(read_request_datagram,READ_REQUEST_DATAGRAM_SIZE);
+  sendDatagramBidirectional(read_request_datagram, READ_REQUEST_DATAGRAM_SIZE);
 
   uint32_t reply_delay = 0;
-  while ((serial_ptr_->available() < WRITE_READ_REPLY_DATAGRAM_SIZE) and
+  while ((serialAvailable() < WRITE_READ_REPLY_DATAGRAM_SIZE) and
     (reply_delay < REPLY_DELAY_MAX_MICROSECONDS))
   {
     delayMicroseconds(REPLY_DELAY_INC_MICROSECONDS);
@@ -873,7 +822,6 @@ uint32_t TMC2209::read(uint8_t register_address)
 
   if (reply_delay >= REPLY_DELAY_MAX_MICROSECONDS)
   {
-    blocking_ = true;
     return 0;
   }
 
@@ -883,7 +831,7 @@ uint32_t TMC2209::read(uint8_t register_address)
   read_reply_datagram.bytes = 0;
   for (uint8_t i=0; i<WRITE_READ_REPLY_DATAGRAM_SIZE; ++i)
   {
-    byte = serial_ptr_->read();
+    byte = serialRead();
     read_reply_datagram.bytes |= (byte << (byte_count++ * BITS_PER_BYTE));
   }
 
@@ -944,7 +892,7 @@ uint8_t TMC2209::holdDelaySettingToPercent(uint8_t hold_delay_setting)
 
 void TMC2209::writeStoredGlobalConfig()
 {
-  write(ADDRESS_GCONF,global_config_.bytes);
+  write(ADDRESS_GCONF, global_config_.bytes);
 }
 
 uint32_t TMC2209::readGlobalConfigBytes()
@@ -954,7 +902,7 @@ uint32_t TMC2209::readGlobalConfigBytes()
 
 void TMC2209::writeStoredDriverCurrent()
 {
-  write(ADDRESS_IHOLD_IRUN,driver_current_.bytes);
+  write(ADDRESS_IHOLD_IRUN, driver_current_.bytes);
 
   if (driver_current_.irun >= SEIMIN_UPPER_CURRENT_LIMIT)
   {
@@ -966,13 +914,13 @@ void TMC2209::writeStoredDriverCurrent()
   }
   if (cool_step_enabled_)
   {
-    write(ADDRESS_COOLCONF,cool_config_.bytes);
+    write(ADDRESS_COOLCONF, cool_config_.bytes);
   }
 }
 
 void TMC2209::writeStoredChopperConfig()
 {
-  write(ADDRESS_CHOPCONF,chopper_config_.bytes);
+  write(ADDRESS_CHOPCONF, chopper_config_.bytes);
 }
 
 uint32_t TMC2209::readChopperConfigBytes()
@@ -982,7 +930,7 @@ uint32_t TMC2209::readChopperConfigBytes()
 
 void TMC2209::writeStoredPwmConfig()
 {
-  write(ADDRESS_PWMCONF,pwm_config_.bytes);
+  write(ADDRESS_PWMCONF, pwm_config_.bytes);
 }
 
 uint32_t TMC2209::readPwmConfigBytes()
