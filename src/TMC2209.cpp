@@ -27,6 +27,27 @@ void TMC2209::setup(HardwareSerial & serial,
   setup(serial_baud_rate, serial_address);
 }
 
+#ifdef ESP32
+void TMC2209::setup(HardwareSerial & serial,
+  long serial_baud_rate,
+  SerialAddress serial_address,
+  int16_t alternate_rx_pin,
+  int16_t alternate_tx_pin)
+{
+  hardware_serial_ptr_ = &serial;
+  if ((alternate_rx_pin < 0) || (alternate_tx_pin < 0))
+  {
+    hardware_serial_ptr_->begin(serial_baud_rate);
+  }
+  else
+  {
+    hardware_serial_ptr_->begin(serial_baud_rate, SERIAL_8N1, alternate_rx_pin, alternate_tx_pin);
+  }
+
+  setup(serial_baud_rate, serial_address);
+}
+#endif
+
 void TMC2209::setup(SoftwareSerial & serial,
   long serial_baud_rate,
   SerialAddress serial_address)

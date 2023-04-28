@@ -1,17 +1,17 @@
-- [Library Information](#org02a490e)
-- [Stepper Motors](#org4e82ee2)
-- [Stepper Motor Controllers and Drivers](#org86efd4d)
-- [Communication](#org92360c9)
-- [Settings](#org153bf0e)
-- [Examples](#orge55a115)
-- [Hardware Documentation](#org9cd9d2e)
-- [Host Computer Setup](#orgeff8270)
+- [Library Information](#org5d8eb87)
+- [Stepper Motors](#org67d7a5f)
+- [Stepper Motor Controllers and Drivers](#org783d2dc)
+- [Communication](#orga4781f6)
+- [Settings](#org09575ab)
+- [Examples](#orgd88ffc3)
+- [Hardware Documentation](#org0e3cab7)
+- [Host Computer Setup](#org9bff560)
 
     <!-- This file is generated automatically from metadata -->
     <!-- File edits may be overwritten! -->
 
 
-<a id="org02a490e"></a>
+<a id="org5d8eb87"></a>
 
 # Library Information
 
@@ -30,7 +30,7 @@ The TMC2209 is an ultra-silent motor driver IC for two phase stepper motors with
 ![img](./images/TMC2209.png)
 
 
-<a id="org4e82ee2"></a>
+<a id="org67d7a5f"></a>
 
 # Stepper Motors
 
@@ -41,7 +41,7 @@ A stepper motor, also known as step motor or stepping motor, is a brushless DC e
 [Wikipedia - Stepper Motor](https://en.wikipedia.org/wiki/Stepper_motor)
 
 
-<a id="org86efd4d"></a>
+<a id="org783d2dc"></a>
 
 # Stepper Motor Controllers and Drivers
 
@@ -89,7 +89,7 @@ Another controller option is to use both a microcontroller and a separate step a
 ![img](./images/TMC429_controller_driver.png)
 
 
-<a id="org92360c9"></a>
+<a id="orga4781f6"></a>
 
 # Communication
 
@@ -159,7 +159,30 @@ Hardware serial ports should always be preferred over software serial ports. Sof
     }
     ```
 
-2.  Software Serial Setup
+2.  Hardware Serial Setup with Alternate RX and TX pins
+
+    Some microcontrollers (e.g. ESP32) allow alternative hardware serial RX and TX pins.
+    
+    ```cpp
+    #include <Arduino.h>
+    #include <TMC2209.h>
+    
+    
+    // Instantiate TMC2209
+    TMC2209 stepper_driver;
+    
+    HardwareSerial & serial_stream = Serial1;
+    const long SERIAL_BAUD_RATE = 115200;
+    const int RX_PIN = 5;
+    const int TX_PIN = 26;
+    
+    void setup()
+    {
+      stepper_driver.setup(serial_stream, SERIAL_BAUD_RATE, TMC2209::SERIAL_ADDRESS_0, RX_PIN, TX_PIN);
+    }
+    ```
+
+3.  Software Serial Setup
 
     ```cpp
     #include <Arduino.h>
@@ -173,8 +196,8 @@ Hardware serial ports should always be preferred over software serial ports. Sof
     // Software serial ports should only be used for unidirectional communication
     // The RX pin does not need to be connected, but it must be specified when
     // creating an instance of a SoftwareSerial object
-    const uint8_t RX_PIN = 0;
-    const uint8_t TX_PIN = 1;
+    const int RX_PIN = 0;
+    const int TX_PIN = 1;
     SoftwareSerial soft_serial(RX_PIN, TX_PIN);
     
     void setup()
@@ -332,7 +355,7 @@ A library such as the Arduino TMC429 library may be used to control the step and
 [Arduino TMC429 Library](https://github.com/janelia-arduino/TMC429)
 
 
-<a id="org153bf0e"></a>
+<a id="org09575ab"></a>
 
 # Settings
 
@@ -487,7 +510,7 @@ In voltage control mode, the hold current scales the PWM amplitude, but the curr
 In current control mode, setting the hold current is the way to adjust the spinning motor current. The driver will measure the current and automatically adjust the voltage to maintain the hold current, even with the operating conditions change. The PWM offset may be changed to help the automatic tuning procedure, but changing the hold current alone is enough to adjust the motor current since the driver will adjust the offset automatically.
 
 
-<a id="orge55a115"></a>
+<a id="orgd88ffc3"></a>
 
 # Examples
 
@@ -510,7 +533,7 @@ In current control mode, setting the hold current is the way to adjust the spinn
 <https://github.com/janelia-kicad/trinamic_wiring>
 
 
-<a id="org9cd9d2e"></a>
+<a id="org0e3cab7"></a>
 
 # Hardware Documentation
 
@@ -545,7 +568,7 @@ In current control mode, setting the hold current is the way to adjust the spinn
 [Janelia Stepper Driver Web Page](https://github.com/janelia-kicad/stepper_driver)
 
 
-<a id="orgeff8270"></a>
+<a id="org9bff560"></a>
 
 # Host Computer Setup
 
