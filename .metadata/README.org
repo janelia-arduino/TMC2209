@@ -12,7 +12,7 @@
 
 * Library Information
 - Name :: TMC2209
-- Version :: 9.0.0
+- Version :: 9.0.1
 - License :: BSD
 - URL :: https://github.com/janelia-arduino/TMC2209
 - Author :: Peter Polidoro
@@ -180,6 +180,10 @@ Software serial ports have many performance limitations, such as not allowing
 transmitting and receiving data at the same time, lower baud rates, and using
 software serial ports may affect performance of other code running on the
 microcontroller.
+
+Not all platforms implement SoftwareSerial, for example ESP32 and SAMD_SERIES.
+If any other platforms fail to compile because SoftwareSerial cannot be found,
+please submit an issue saying which platform fails.
 
 **** Hardware Serial Setup
 
@@ -649,6 +653,13 @@ procedure, but changing the hold current alone is enough to adjust the motor
 current since the driver will adjust the offset automatically.
 
 * Examples
+
+The example *.ino files use "Serial1" to be compatible with most boards.
+
+The following wiring examples uses "Serial3" so the same pins can be used to
+test both HardwareSerial and Software serial on each of the boards.
+
+To test this wiring, change "Serial1" in the example files to "Serial3".
 
 ** Wiring
 

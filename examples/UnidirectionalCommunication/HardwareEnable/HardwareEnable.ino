@@ -1,7 +1,6 @@
-#include <Arduino.h>
 #include <TMC2209.h>
 
-HardwareSerial & serial_stream = Serial3;
+HardwareSerial & serial_stream = Serial1;
 const uint8_t HARDWARE_ENABLE_PIN = 4;
 
 const int32_t RUN_VELOCITY = 20000;

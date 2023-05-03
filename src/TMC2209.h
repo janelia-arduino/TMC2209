@@ -8,7 +8,15 @@
 #ifndef TMC2209_H
 #define TMC2209_H
 #include <Arduino.h>
-#include <SoftwareSerial.h>
+
+#if !defined(ESP32) && !defined(SAMD_SERIES)
+#  define SOFTWARE_SERIAL_IMPLEMENTED true
+#else
+#  define SOFTWARE_SERIAL_IMPLEMENTED false
+#endif
+#if SOFTWARE_SERIAL_IMPLEMENTED
+#  include <SoftwareSerial.h>
+#endif
 
 
 class TMC2209
@@ -40,12 +48,14 @@ public:
     int16_t alternate_tx_pin=-1);
   #endif
 
+#if SOFTWARE_SERIAL_IMPLEMENTED
   // Software serial ports should only be used for unidirectional communication
   // The RX pin does not need to be connected, but it must be specified when
   // creating an instance of a SoftwareSerial object
   void setup(SoftwareSerial & serial,
     long serial_baud_rate=9600,
     SerialAddress serial_address=SERIAL_ADDRESS_0);
+#endif
 
   // unidirectional methods
 
@@ -222,12 +232,14 @@ public:
 
 private:
   HardwareSerial * hardware_serial_ptr_;
+#if SOFTWARE_SERIAL_IMPLEMENTED
   SoftwareSerial * software_serial_ptr_;
+#endif
   uint32_t serial_baud_rate_;
   uint8_t serial_address_;
   int16_t hardware_enable_pin_;
 
-  void setup(long serial_baud_rate=115200,
+  void initialize(long serial_baud_rate=115200,
     SerialAddress serial_address=SERIAL_ADDRESS_0);
   int serialAvailable();
   size_t serialWrite(uint8_t c);

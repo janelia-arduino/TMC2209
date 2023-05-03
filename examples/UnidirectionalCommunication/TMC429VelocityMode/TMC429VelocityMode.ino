@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <TMC2209.h>
 #include <TMC429.h>
 
@@ -6,7 +5,7 @@ const long SERIAL_BAUD_RATE = 115200;
 const int LOOP_DELAY = 1000;
 
 // Stepper driver settings
-HardwareSerial & serial_stream = Serial3;
+HardwareSerial & serial_stream = Serial1;
 // current values may need to be reduced to prevent overheating depending on
 // specific motor and power supply voltage
 const int RUN_CURRENT_PERCENT = 100;

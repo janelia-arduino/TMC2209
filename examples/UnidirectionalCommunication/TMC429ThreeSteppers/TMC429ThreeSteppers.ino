@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <TMC2209.h>
 #include <TMC429.h>
 

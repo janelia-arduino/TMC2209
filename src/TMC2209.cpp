@@ -10,7 +10,9 @@
 TMC2209::TMC2209()
 {
   hardware_serial_ptr_ = nullptr;
+#if SOFTWARE_SERIAL_IMPLEMENTED
   software_serial_ptr_ = nullptr;
+#endif
   serial_baud_rate_ = 115200;
   serial_address_ = SERIAL_ADDRESS_0;
   hardware_enable_pin_ = -1;
@@ -24,7 +26,7 @@ void TMC2209::setup(HardwareSerial & serial,
   hardware_serial_ptr_ = &serial;
   hardware_serial_ptr_->begin(serial_baud_rate);
 
-  setup(serial_baud_rate, serial_address);
+  initialize(serial_baud_rate, serial_address);
 }
 
 #ifdef ESP32
@@ -44,10 +46,11 @@ void TMC2209::setup(HardwareSerial & serial,
     hardware_serial_ptr_->begin(serial_baud_rate, SERIAL_8N1, alternate_rx_pin, alternate_tx_pin);
   }
 
-  setup(serial_baud_rate, serial_address);
+  initialize(serial_baud_rate, serial_address);
 }
 #endif
 
+#if SOFTWARE_SERIAL_IMPLEMENTED
 void TMC2209::setup(SoftwareSerial & serial,
   long serial_baud_rate,
   SerialAddress serial_address)
@@ -55,8 +58,9 @@ void TMC2209::setup(SoftwareSerial & serial,
   software_serial_ptr_ = &serial;
   software_serial_ptr_->begin(serial_baud_rate);
 
-  setup(serial_baud_rate, serial_address);
+  initialize(serial_baud_rate, serial_address);
 }
+#endif
 
 // unidirectional methods
 
@@ -551,7 +555,7 @@ uint16_t TMC2209::getMicrostepCounter()
 }
 
 // private
-void TMC2209::setup(long serial_baud_rate,
+void TMC2209::initialize(long serial_baud_rate,
   SerialAddress serial_address)
 {
   serial_baud_rate_ = serial_baud_rate;
@@ -571,10 +575,12 @@ int TMC2209::serialAvailable()
   {
     return hardware_serial_ptr_->available();
   }
+#if SOFTWARE_SERIAL_IMPLEMENTED
   else if (software_serial_ptr_ != nullptr)
   {
     return software_serial_ptr_->available();
   }
+#endif
   return 0;
 }
 
@@ -584,10 +590,12 @@ size_t TMC2209::serialWrite(uint8_t c)
   {
     return hardware_serial_ptr_->write(c);
   }
+#if SOFTWARE_SERIAL_IMPLEMENTED
   else if (software_serial_ptr_ != nullptr)
   {
     return software_serial_ptr_->write(c);
   }
+#endif
   return 0;
 }
 
@@ -597,10 +605,12 @@ int TMC2209::serialRead()
   {
     return hardware_serial_ptr_->read();
   }
+#if SOFTWARE_SERIAL_IMPLEMENTED
   else if (software_serial_ptr_ != nullptr)
   {
     return software_serial_ptr_->read();
   }
+#endif
   return 0;
 }
 

@@ -1,7 +1,6 @@
-#include <Arduino.h>
 #include <TMC2209.h>
 
-HardwareSerial & serial_stream = Serial3;
+HardwareSerial & serial_stream = Serial1;
 
 const int32_t RUN_VELOCITY = 20000;
 const int32_t STOP_VELOCITY = 0;

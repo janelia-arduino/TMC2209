@@ -1,9 +1,8 @@
-#include <Arduino.h>
 #include <TMC2209.h>
 
   // Identify which microcontroller serial port is connected to the TMC2209
   // e.g. Serial1, Serial2...
-HardwareSerial & serial_stream = Serial3;
+HardwareSerial & serial_stream = Serial1;
 
 const long SERIAL_BAUD_RATE = 115200;
 const int DELAY = 2000;

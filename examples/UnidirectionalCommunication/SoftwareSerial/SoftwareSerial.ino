@@ -1,6 +1,4 @@
-#include <Arduino.h>
 #include <TMC2209.h>
-#include <SoftwareSerial.h>
 
 
 // Software serial ports should only be used for unidirectional communication

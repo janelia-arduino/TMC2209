@@ -1,22 +1,22 @@
-- [Library Information](#org5d8eb87)
-- [Stepper Motors](#org67d7a5f)
-- [Stepper Motor Controllers and Drivers](#org783d2dc)
-- [Communication](#orga4781f6)
-- [Settings](#org09575ab)
-- [Examples](#orgd88ffc3)
-- [Hardware Documentation](#org0e3cab7)
-- [Host Computer Setup](#org9bff560)
+- [Library Information](#org2470f8f)
+- [Stepper Motors](#org9bc06b6)
+- [Stepper Motor Controllers and Drivers](#org324d0f3)
+- [Communication](#orgf00f983)
+- [Settings](#org59300dd)
+- [Examples](#org5a25b19)
+- [Hardware Documentation](#org155db55)
+- [Host Computer Setup](#org52b6e39)
 
     <!-- This file is generated automatically from metadata -->
     <!-- File edits may be overwritten! -->
 
 
-<a id="org5d8eb87"></a>
+<a id="org2470f8f"></a>
 
 # Library Information
 
 -   **Name:** TMC2209
--   **Version:** 9.0.0
+-   **Version:** 9.0.1
 -   **License:** BSD
 -   **URL:** <https://github.com/janelia-arduino/TMC2209>
 -   **Author:** Peter Polidoro
@@ -30,7 +30,7 @@ The TMC2209 is an ultra-silent motor driver IC for two phase stepper motors with
 ![img](./images/TMC2209.png)
 
 
-<a id="org67d7a5f"></a>
+<a id="org9bc06b6"></a>
 
 # Stepper Motors
 
@@ -41,7 +41,7 @@ A stepper motor, also known as step motor or stepping motor, is a brushless DC e
 [Wikipedia - Stepper Motor](https://en.wikipedia.org/wiki/Stepper_motor)
 
 
-<a id="org783d2dc"></a>
+<a id="org324d0f3"></a>
 
 # Stepper Motor Controllers and Drivers
 
@@ -89,7 +89,7 @@ Another controller option is to use both a microcontroller and a separate step a
 ![img](./images/TMC429_controller_driver.png)
 
 
-<a id="orga4781f6"></a>
+<a id="orgf00f983"></a>
 
 # Communication
 
@@ -140,6 +140,8 @@ Hardware serial ports use dedicated hardware on the microcontroller to perform s
 Software serial ports allow serial communication on other microcontroller digital pins that do not have dedicated UART hardware by replicating the functionality in software.
 
 Hardware serial ports should always be preferred over software serial ports. Software serial ports have many performance limitations, such as not allowing transmitting and receiving data at the same time, lower baud rates, and using software serial ports may affect performance of other code running on the microcontroller.
+
+Not all platforms implement SoftwareSerial, for example ESP32 and SAMD\_SERIES. If any other platforms fail to compile because SoftwareSerial cannot be found, please submit an issue saying which platform fails.
 
 1.  Hardware Serial Setup
 
@@ -355,7 +357,7 @@ A library such as the Arduino TMC429 library may be used to control the step and
 [Arduino TMC429 Library](https://github.com/janelia-arduino/TMC429)
 
 
-<a id="org09575ab"></a>
+<a id="org59300dd"></a>
 
 # Settings
 
@@ -510,9 +512,15 @@ In voltage control mode, the hold current scales the PWM amplitude, but the curr
 In current control mode, setting the hold current is the way to adjust the spinning motor current. The driver will measure the current and automatically adjust the voltage to maintain the hold current, even with the operating conditions change. The PWM offset may be changed to help the automatic tuning procedure, but changing the hold current alone is enough to adjust the motor current since the driver will adjust the offset automatically.
 
 
-<a id="orgd88ffc3"></a>
+<a id="org5a25b19"></a>
 
 # Examples
+
+The example \*.ino files use "Serial1" to be compatible with most boards.
+
+The following wiring examples uses "Serial3" so the same pins can be used to test both HardwareSerial and Software serial on each of the boards.
+
+To test this wiring, change "Serial1" in the example files to "Serial3".
 
 
 ## Wiring
@@ -533,7 +541,7 @@ In current control mode, setting the hold current is the way to adjust the spinn
 <https://github.com/janelia-kicad/trinamic_wiring>
 
 
-<a id="org0e3cab7"></a>
+<a id="org155db55"></a>
 
 # Hardware Documentation
 
@@ -568,7 +576,7 @@ In current control mode, setting the hold current is the way to adjust the spinn
 [Janelia Stepper Driver Web Page](https://github.com/janelia-kicad/stepper_driver)
 
 
-<a id="org9bff560"></a>
+<a id="org52b6e39"></a>
 
 # Host Computer Setup
 
