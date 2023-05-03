@@ -1,17 +1,17 @@
-- [Library Information](#org2470f8f)
-- [Stepper Motors](#org9bc06b6)
-- [Stepper Motor Controllers and Drivers](#org324d0f3)
-- [Communication](#orgf00f983)
-- [Settings](#org59300dd)
-- [Examples](#org5a25b19)
-- [Hardware Documentation](#org155db55)
-- [Host Computer Setup](#org52b6e39)
+- [Library Information](#orge39d4c9)
+- [Stepper Motors](#orge013e82)
+- [Stepper Motor Controllers and Drivers](#org519a766)
+- [Communication](#org6ffa0fe)
+- [Settings](#org7855455)
+- [Examples](#org2f1acab)
+- [Hardware Documentation](#org8da70bf)
+- [Host Computer Setup](#orgf97114a)
 
     <!-- This file is generated automatically from metadata -->
     <!-- File edits may be overwritten! -->
 
 
-<a id="org2470f8f"></a>
+<a id="orge39d4c9"></a>
 
 # Library Information
 
@@ -30,7 +30,7 @@ The TMC2209 is an ultra-silent motor driver IC for two phase stepper motors with
 ![img](./images/TMC2209.png)
 
 
-<a id="org9bc06b6"></a>
+<a id="orge013e82"></a>
 
 # Stepper Motors
 
@@ -41,7 +41,7 @@ A stepper motor, also known as step motor or stepping motor, is a brushless DC e
 [Wikipedia - Stepper Motor](https://en.wikipedia.org/wiki/Stepper_motor)
 
 
-<a id="org324d0f3"></a>
+<a id="org519a766"></a>
 
 # Stepper Motor Controllers and Drivers
 
@@ -89,7 +89,7 @@ Another controller option is to use both a microcontroller and a separate step a
 ![img](./images/TMC429_controller_driver.png)
 
 
-<a id="orgf00f983"></a>
+<a id="org6ffa0fe"></a>
 
 # Communication
 
@@ -146,7 +146,6 @@ Not all platforms implement SoftwareSerial, for example ESP32 and SAMD\_SERIES. 
 1.  Hardware Serial Setup
 
     ```cpp
-    #include <Arduino.h>
     #include <TMC2209.h>
     
     
@@ -166,7 +165,6 @@ Not all platforms implement SoftwareSerial, for example ESP32 and SAMD\_SERIES. 
     Some microcontrollers (e.g. ESP32) allow alternative hardware serial RX and TX pins.
     
     ```cpp
-    #include <Arduino.h>
     #include <TMC2209.h>
     
     
@@ -187,9 +185,7 @@ Not all platforms implement SoftwareSerial, for example ESP32 and SAMD\_SERIES. 
 3.  Software Serial Setup
 
     ```cpp
-    #include <Arduino.h>
     #include <TMC2209.h>
-    #include <SoftwareSerial.h>
     
     
     // Instantiate TMC2209
@@ -248,7 +244,6 @@ The higher the baud rate the better, but microcontrollers have various UART seri
     [Teensy Serial Baud Rate Web Page](https://www.pjrc.com/teensy/td_uart.html)
     
     ```cpp
-    #include <Arduino.h>
     #include <TMC2209.h>
     
     // Instantiate TMC2209
@@ -270,7 +265,6 @@ The higher the baud rate the better, but microcontrollers have various UART seri
     If only unidirectional communication is desired and all TMC2209 chips connected to the same serial line will have identical settings, then no serial addressing is required. All chips can be programmed in parallel like a single device.
     
     ```cpp
-    #include <Arduino.h>
     #include <TMC2209.h>
     
     // Instantiate a single TMC2209 to talk to multiple chips
@@ -287,7 +281,6 @@ The higher the baud rate the better, but microcontrollers have various UART seri
 2.  Unidirectional communication with chips needing different settings
 
     ```cpp
-    #include <Arduino.h>
     #include <TMC2209.h>
     
     // Instantiate the two TMC2209
@@ -316,7 +309,6 @@ The higher the baud rate the better, but microcontrollers have various UART seri
     When multiple TMC2209 chips are connected to the same serial line with multiple addresses then the reply delay value should be increased, otherwise a non-addressed chip might detect a transmission error upon read access to a different chip.
     
     ```cpp
-    #include <Arduino.h>
     #include <TMC2209.h>
     
     // Instantiate the two TMC2209
@@ -357,7 +349,7 @@ A library such as the Arduino TMC429 library may be used to control the step and
 [Arduino TMC429 Library](https://github.com/janelia-arduino/TMC429)
 
 
-<a id="org59300dd"></a>
+<a id="org7855455"></a>
 
 # Settings
 
@@ -512,7 +504,7 @@ In voltage control mode, the hold current scales the PWM amplitude, but the curr
 In current control mode, setting the hold current is the way to adjust the spinning motor current. The driver will measure the current and automatically adjust the voltage to maintain the hold current, even with the operating conditions change. The PWM offset may be changed to help the automatic tuning procedure, but changing the hold current alone is enough to adjust the motor current since the driver will adjust the offset automatically.
 
 
-<a id="org5a25b19"></a>
+<a id="org2f1acab"></a>
 
 # Examples
 
@@ -541,7 +533,7 @@ To test this wiring, change "Serial1" in the example files to "Serial3".
 <https://github.com/janelia-kicad/trinamic_wiring>
 
 
-<a id="org155db55"></a>
+<a id="org8da70bf"></a>
 
 # Hardware Documentation
 
@@ -576,7 +568,7 @@ To test this wiring, change "Serial1" in the example files to "Serial3".
 [Janelia Stepper Driver Web Page](https://github.com/janelia-kicad/stepper_driver)
 
 
-<a id="org52b6e39"></a>
+<a id="orgf97114a"></a>
 
 # Host Computer Setup
 

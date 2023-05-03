@@ -188,7 +188,6 @@ please submit an issue saying which platform fails.
 **** Hardware Serial Setup
 
 #+BEGIN_SRC cpp
-#include <Arduino.h>
 #include <TMC2209.h>
 
 
@@ -209,7 +208,6 @@ Some microcontrollers (e.g. ESP32) allow alternative hardware serial RX and TX
 pins.
 
 #+BEGIN_SRC cpp
-#include <Arduino.h>
 #include <TMC2209.h>
 
 
@@ -230,9 +228,7 @@ void setup()
 **** Software Serial Setup
 
 #+BEGIN_SRC cpp
-#include <Arduino.h>
 #include <TMC2209.h>
-#include <SoftwareSerial.h>
 
 
 // Instantiate TMC2209
@@ -306,7 +302,6 @@ is a good setting to use, but other values as low as 19200 may be used.
 [[https://www.pjrc.com/teensy/td_uart.html][Teensy Serial Baud Rate Web Page]]
 
 #+BEGIN_SRC cpp
-#include <Arduino.h>
 #include <TMC2209.h>
 
 // Instantiate TMC2209
@@ -329,7 +324,6 @@ to the same serial line will have identical settings, then no serial addressing
 is required. All chips can be programmed in parallel like a single device.
 
 #+BEGIN_SRC cpp
-#include <Arduino.h>
 #include <TMC2209.h>
 
 // Instantiate a single TMC2209 to talk to multiple chips
@@ -346,7 +340,6 @@ void setup()
 **** Unidirectional communication with chips needing different settings
 
 #+BEGIN_SRC cpp
-#include <Arduino.h>
 #include <TMC2209.h>
 
 // Instantiate the two TMC2209
@@ -383,7 +376,6 @@ non-addressed chip might detect a transmission error upon read access to a
 different chip.
 
 #+BEGIN_SRC cpp
-#include <Arduino.h>
 #include <TMC2209.h>
 
 // Instantiate the two TMC2209
