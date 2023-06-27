@@ -663,6 +663,10 @@ To test this wiring, change "Serial1" in the example files to "Serial3".
 
 [[./images/TMC2209_mega2560.png]]
 
+*** Uno
+
+[[./images/TMC2209_uno.png]]
+
 *** Wiring Documentation Source
 
 [[https://github.com/janelia-kicad/trinamic_wiring]]
