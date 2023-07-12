@@ -12,7 +12,7 @@
 
 * Library Information
 - Name :: TMC2209
-- Version :: 9.0.1
+- Version :: 9.0.2
 - License :: BSD
 - URL :: https://github.com/janelia-arduino/TMC2209
 - Author :: Peter Polidoro
@@ -392,7 +392,7 @@ void setup()
   stepper_driver_0.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_0);
   stepper_driver_0.setReplyDelay(REPLY_DELAY);
   stepper_driver_1.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_1);
-  stepper_driver_0.setReplyDelay(REPLY_DELAY);
+  stepper_driver_1.setReplyDelay(REPLY_DELAY);
 }
 #+END_SRC
 
