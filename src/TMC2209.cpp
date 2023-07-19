@@ -19,16 +19,6 @@ TMC2209::TMC2209()
   cool_step_enabled_ = false;
 }
 
-void TMC2209::setup(HardwareSerial & serial,
-  long serial_baud_rate,
-  SerialAddress serial_address)
-{
-  hardware_serial_ptr_ = &serial;
-  hardware_serial_ptr_->begin(serial_baud_rate);
-
-  initialize(serial_baud_rate, serial_address);
-}
-
 #ifdef ESP32
 void TMC2209::setup(HardwareSerial & serial,
   long serial_baud_rate,
@@ -45,6 +35,16 @@ void TMC2209::setup(HardwareSerial & serial,
   {
     hardware_serial_ptr_->begin(serial_baud_rate, SERIAL_8N1, alternate_rx_pin, alternate_tx_pin);
   }
+
+  initialize(serial_baud_rate, serial_address);
+}
+#else
+void TMC2209::setup(HardwareSerial & serial,
+  long serial_baud_rate,
+  SerialAddress serial_address)
+{
+  hardware_serial_ptr_ = &serial;
+  hardware_serial_ptr_->begin(serial_baud_rate);
 
   initialize(serial_baud_rate, serial_address);
 }

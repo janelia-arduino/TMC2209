@@ -31,13 +31,6 @@ public:
     SERIAL_ADDRESS_2=2,
     SERIAL_ADDRESS_3=3,
   };
-  // Identify which microcontroller serial port is connected to the TMC2209 e.g.
-  // Serial1, Serial2, etc. Optionally identify which serial address is assigned
-  // to the TMC2209 if not the default of SERIAL_ADDRESS_0.
-  void setup(HardwareSerial & serial,
-    long serial_baud_rate=115200,
-    SerialAddress serial_address=SERIAL_ADDRESS_0);
-
   // Alternate rx and tx pins may be specified for certain microcontrollers e.g.
   // ESP32
   #ifdef ESP32
@@ -46,6 +39,13 @@ public:
     SerialAddress serial_address=SERIAL_ADDRESS_0,
     int16_t alternate_rx_pin=-1,
     int16_t alternate_tx_pin=-1);
+  #else
+  // Identify which microcontroller serial port is connected to the TMC2209 e.g.
+  // Serial1, Serial2, etc. Optionally identify which serial address is assigned
+  // to the TMC2209 if not the default of SERIAL_ADDRESS_0.
+  void setup(HardwareSerial & serial,
+    long serial_baud_rate=115200,
+    SerialAddress serial_address=SERIAL_ADDRESS_0);
   #endif
 
 #if SOFTWARE_SERIAL_IMPLEMENTED
