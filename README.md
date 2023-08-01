@@ -1,17 +1,17 @@
-- [Library Information](#orgb61465b)
-- [Stepper Motors](#orgbc8dff8)
-- [Stepper Motor Controllers and Drivers](#org9e71702)
-- [Communication](#org026dcb2)
-- [Settings](#orgdb0b09d)
-- [Examples](#orgd02465e)
-- [Hardware Documentation](#org8acf630)
-- [Host Computer Setup](#orgf9d7b8b)
+- [Library Information](#orgffba73e)
+- [Stepper Motors](#org5e0347d)
+- [Stepper Motor Controllers and Drivers](#org163d8ed)
+- [Communication](#org34026a7)
+- [Settings](#org8455a30)
+- [Examples](#org3f5420d)
+- [Hardware Documentation](#org434dea2)
+- [Host Computer Setup](#orgf304116)
 
     <!-- This file is generated automatically from metadata -->
     <!-- File edits may be overwritten! -->
 
 
-<a id="orgb61465b"></a>
+<a id="orgffba73e"></a>
 
 # Library Information
 
@@ -30,7 +30,7 @@ The TMC2209 is an ultra-silent motor driver IC for two phase stepper motors with
 ![img](./images/TMC2209.png)
 
 
-<a id="orgbc8dff8"></a>
+<a id="org5e0347d"></a>
 
 # Stepper Motors
 
@@ -41,7 +41,7 @@ A stepper motor, also known as step motor or stepping motor, is a brushless DC e
 [Wikipedia - Stepper Motor](https://en.wikipedia.org/wiki/Stepper_motor)
 
 
-<a id="org9e71702"></a>
+<a id="org163d8ed"></a>
 
 # Stepper Motor Controllers and Drivers
 
@@ -89,7 +89,7 @@ Another controller option is to use both a microcontroller and a separate step a
 ![img](./images/TMC429_controller_driver.png)
 
 
-<a id="org026dcb2"></a>
+<a id="org34026a7"></a>
 
 # Communication
 
@@ -111,7 +111,7 @@ The TMC2209 communicates over a UART serial port using a single wire interface, 
 
 TMC2209 parameters may be set using unidirectional communication from a microcontroller UART serial TX pin to the TMC2209 PDN\_UART pin. Responses from the TMC2209 to the microcontroller are ignored.
 
-<img src="./images/TMC2209_unidirectional.svg" width="600px">
+<img src="./images/trinamic-wiring-TMC2209-unidirectional.svg" width="1200px">
 
 
 ### Bidirectional Communication
@@ -126,7 +126,7 @@ The UART single wire interface allows control of the TMC2209 with any set of mic
     
     Another disadvantage to coupling the TX and RX lines together is that it limits the length of wire between the microcontroller and the TMC2209. The TMC2209 performs a CRC (cyclic redundancy check) which helps increase interface distances while decreasing the risk of wrong or missed commands even in the event of electromagnetic disturbances.
     
-    <img src="./images/TMC2209_bidirectional_coupled.svg" width="600px">
+    <img src="./images/trinamic-wiring-TMC2209-bidirectional-coupled.svg" width="1200px">
 
 
 ### Serial Setup
@@ -276,7 +276,7 @@ The higher the baud rate the better, but microcontrollers have various UART seri
     }
     ```
     
-    <img src="./images/TMC2209_unidirectional_multiple.svg" width="600px">
+    <img src="./images/trinamic-wiring-TMC2209-unidirectional-multiple.svg" width="1200px">
 
 2.  Unidirectional communication with chips needing different settings
 
@@ -329,7 +329,7 @@ The higher the baud rate the better, but microcontrollers have various UART seri
     }
     ```
     
-    <img src="./images/TMC2209_bidirectional_coupled_serial_address.svg" width="600px">
+    <img src="./images/trinamic-wiring-TMC2209-bidirectional-coupled-serial-address.svg" width="1200px">
 
 
 ## Step and Direction Interface
@@ -349,7 +349,7 @@ A library such as the Arduino TMC429 library may be used to control the step and
 [Arduino TMC429 Library](https://github.com/janelia-arduino/TMC429)
 
 
-<a id="orgdb0b09d"></a>
+<a id="org8455a30"></a>
 
 # Settings
 
@@ -504,7 +504,7 @@ In voltage control mode, the hold current scales the PWM amplitude, but the curr
 In current control mode, setting the hold current is the way to adjust the spinning motor current. The driver will measure the current and automatically adjust the voltage to maintain the hold current, even with the operating conditions change. The PWM offset may be changed to help the automatic tuning procedure, but changing the hold current alone is enough to adjust the motor current since the driver will adjust the offset automatically.
 
 
-<a id="orgd02465e"></a>
+<a id="org3f5420d"></a>
 
 # Examples
 
@@ -520,17 +520,17 @@ To test this wiring, change "Serial1" in the example files to "Serial3".
 
 ### Teensy 4.0
 
-<img src="./images/TMC2209_teensy40.svg" width="1200px">
+<img src="./images/trinamic-wiring-TMC2209-teensy40.svg" width="1200px">
 
 
 ### Mega 2560
 
-<img src="./images/TMC2209_mega2560.svg" width="1200px">
+<img src="./images/trinamic-wiring-TMC2209-mega2560.svg" width="1200px">
 
 
 ### Uno
 
-<img src="./images/TMC2209_uno.svg" width="1200px">
+<img src="./images/trinamic-wiring-TMC2209-uno.svg" width="1200px">
 
 
 ### Wiring Documentation Source
@@ -538,7 +538,7 @@ To test this wiring, change "Serial1" in the example files to "Serial3".
 <https://github.com/janelia-kicad/trinamic_wiring>
 
 
-<a id="org8acf630"></a>
+<a id="org434dea2"></a>
 
 # Hardware Documentation
 
@@ -573,7 +573,7 @@ To test this wiring, change "Serial1" in the example files to "Serial3".
 [Janelia Stepper Driver Web Page](https://github.com/janelia-kicad/stepper_driver)
 
 
-<a id="orgf9d7b8b"></a>
+<a id="orgf304116"></a>
 
 # Host Computer Setup
 

@@ -136,7 +136,7 @@ TMC2209 parameters may be set using unidirectional communication from a
 microcontroller UART serial TX pin to the TMC2209 PDN_UART pin. Responses from
 the TMC2209 to the microcontroller are ignored.
 
-#+html: <img src="./images/TMC2209_unidirectional.svg" width="600px">
+#+html: <img src="./images/trinamic-wiring-TMC2209-unidirectional.svg" width="1200px">
 
 *** Bidirectional Communication
 
@@ -160,7 +160,7 @@ performs a CRC (cyclic redundancy check) which helps increase interface
 distances while decreasing the risk of wrong or missed commands even in the
 event of electromagnetic disturbances.
 
-#+html: <img src="./images/TMC2209_bidirectional_coupled.svg" width="600px">
+#+html: <img src="./images/trinamic-wiring-TMC2209-bidirectional-coupled.svg" width="1200px">
 
 *** Serial Setup
 
@@ -335,7 +335,7 @@ void setup()
 }
 #+END_SRC
 
-#+html: <img src="./images/TMC2209_unidirectional_multiple.svg" width="600px">
+#+html: <img src="./images/trinamic-wiring-TMC2209-unidirectional-multiple.svg" width="1200px">
 
 **** Unidirectional communication with chips needing different settings
 
@@ -396,7 +396,7 @@ void setup()
 }
 #+END_SRC
 
-#+html: <img src="./images/TMC2209_bidirectional_coupled_serial_address.svg" width="600px">
+#+html: <img src="./images/trinamic-wiring-TMC2209-bidirectional-coupled-serial-address.svg" width="1200px">
 
 ** Step and Direction Interface
 
@@ -657,15 +657,15 @@ To test this wiring, change "Serial1" in the example files to "Serial3".
 
 *** Teensy 4.0
 
-#+html: <img src="./images/TMC2209_teensy40.svg" width="1200px">
+#+html: <img src="./images/trinamic-wiring-TMC2209-teensy40.svg" width="1200px">
 
 *** Mega 2560
 
-#+html: <img src="./images/TMC2209_mega2560.svg" width="1200px">
+#+html: <img src="./images/trinamic-wiring-TMC2209-mega2560.svg" width="1200px">
 
 *** Uno
 
-#+html: <img src="./images/TMC2209_uno.svg" width="1200px">
+#+html: <img src="./images/trinamic-wiring-TMC2209-uno.svg" width="1200px">
 
 *** Wiring Documentation Source
 
