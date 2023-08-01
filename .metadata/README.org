@@ -137,6 +137,7 @@ microcontroller UART serial TX pin to the TMC2209 PDN_UART pin. Responses from
 the TMC2209 to the microcontroller are ignored.
 
 [[./images/TMC2209_unidirectional.svg]]
+#+html: <img src="./images/TMC2209_unidirectional.svg" width="600px">
 
 *** Bidirectional Communication
 
