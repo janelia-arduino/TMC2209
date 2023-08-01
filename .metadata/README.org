@@ -657,15 +657,15 @@ To test this wiring, change "Serial1" in the example files to "Serial3".
 
 *** Teensy 4.0
 
-#+html: <img src="./images/TMC2209_teensy40.svg" width="600px">
+#+html: <img src="./images/TMC2209_teensy40.svg" width="1200px">
 
 *** Mega 2560
 
-#+html: <img src="./images/TMC2209_mega2560.svg" width="600px">
+#+html: <img src="./images/TMC2209_mega2560.svg" width="1200px">
 
 *** Uno
 
-#+html: <img src="./images/TMC2209_uno.svg" width="600px">
+#+html: <img src="./images/TMC2209_uno.svg" width="1200px">
 
 *** Wiring Documentation Source
 
