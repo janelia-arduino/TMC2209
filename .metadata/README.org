@@ -396,7 +396,7 @@ void setup()
 }
 #+END_SRC
 
-[[./images/TMC2209_bidirectional_coupled_serial_address.png]]
+[[./images/TMC2209_bidirectional_coupled_serial_address.svg]]
 
 ** Step and Direction Interface
 
@@ -665,7 +665,7 @@ To test this wiring, change "Serial1" in the example files to "Serial3".
 
 *** Uno
 
-[[./images/TMC2209_uno.png]]
+[[./images/TMC2209_uno.svg]]
 
 *** Wiring Documentation Source
 
