@@ -307,17 +307,19 @@ is a good setting to use, but other values as low as 19200 may be used.
 // Instantiate TMC2209
 TMC2209 stepper_driver;
 HardwareSerial & serial_stream = Serial1;
-const long SERIAL1_BAUD_RATE = 500000;
+const long SERIAL_BAUD_RATE = 500000;
 
 void setup()
 {
-  stepper_driver.setup(Serial1,SERIAL1_BAUD_RATE);
+  stepper_driver.setup(Serial1, SERIAL_BAUD_RATE);
 }
 #+END_SRC
 
-*** Connecting multiple TMC2209 chips to the same serial line
+*** Connecting multiple TMC2209 chips
 
-**** Unidirectional communication with all chips using identical settings
+**** Unidirectional Communication
+
+***** All chips using identical settings
 
 If only unidirectional communication is desired and all TMC2209 chips connected
 to the same serial line will have identical settings, then no serial addressing
@@ -337,7 +339,7 @@ void setup()
 
 #+html: <img src="./images/trinamic_wiring-TMC2209-unidirectional-multiple.svg" width="1200px">
 
-**** Unidirectional communication with chips needing different settings
+***** Chips needing different settings using one UART
 
 #+BEGIN_SRC cpp
 #include <TMC2209.h>
@@ -352,14 +354,35 @@ const long SERIAL_BAUD_RATE = 115200;
 void setup()
 {
   // TMC2209::SERIAL_ADDRESS_0 is used by default if not specified
-  stepper_driver_0.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_0);
-  stepper_driver_1.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_1);
+  stepper_driver_0.setup(Serial1, SERIAL_BAUD_RATE, SERIAL_ADDRESS_0);
+  stepper_driver_1.setup(Serial1, SERIAL_BAUD_RATE, SERIAL_ADDRESS_1);
 }
 #+END_SRC
 
-[[./images/TMC2209_unidirectional_serial_address.png]]
+#+html: <img src="./images/trinamic_wiring-TMC2209-unidirectional-multiple-address.svg" width="1200px">
 
-**** Bidirectional communication with chips needing different settings
+***** Chips needing different settings using multiple UART
+
+#+BEGIN_SRC cpp
+#include <TMC2209.h>
+
+// Instantiate the two TMC2209
+TMC2209 stepper_driver_0;
+TMC2209 stepper_driver_1;
+const long SERIAL_BAUD_RATE = 115200;
+
+void setup()
+{
+  stepper_driver_0.setup(Serial1, SERIAL_BAUD_RATE);
+  stepper_driver_1.setup(Serial2, SERIAL_BAUD_RATE);
+}
+#+END_SRC
+
+#+html: <img src="./images/trinamic_wiring-TMC2209-unidirectional-multiple-uart.svg" width="1200px">
+
+**** Bidirectional Communication
+
+***** Chips needing different settings using one UART
 
 More than one TMC2209 may be connected to a single serial port, if each TMC2209
 is assigned a unique serial address. The default serial address is
@@ -396,7 +419,26 @@ void setup()
 }
 #+END_SRC
 
-#+html: <img src="./images/trinamic_wiring-TMC2209-bidirectional-coupled-serial-address.svg" width="1200px">
+#+html: <img src="./images/trinamic_wiring-TMC2209-bidirectional-coupled-multiple-address.svg" width="1200px">
+
+***** Chips needing different settings using multiple UART
+
+#+BEGIN_SRC cpp
+#include <TMC2209.h>
+
+// Instantiate the two TMC2209
+TMC2209 stepper_driver_0;
+TMC2209 stepper_driver_1;
+const long SERIAL_BAUD_RATE = 115200;
+
+void setup()
+{
+  stepper_driver_0.setup(Serial1, SERIAL_BAUD_RATE);
+  stepper_driver_1.setup(Serial2, SERIAL_BAUD_RATE);
+}
+#+END_SRC
+
+#+html: <img src="./images/trinamic_wiring-TMC2209-bidirectional-coupled-multiple-uart.svg" width="1200px">
 
 ** Step and Direction Interface
 

@@ -1,17 +1,17 @@
-- [Library Information](#org2f8f03c)
-- [Stepper Motors](#org9348dae)
-- [Stepper Motor Controllers and Drivers](#org5dd234a)
-- [Communication](#org5170b02)
-- [Settings](#orga8c3634)
-- [Examples](#orgdf331c2)
-- [Hardware Documentation](#org09c0106)
-- [Host Computer Setup](#orgcfb8ec4)
+- [Library Information](#orge2af5cb)
+- [Stepper Motors](#org85eda48)
+- [Stepper Motor Controllers and Drivers](#orgf32514f)
+- [Communication](#org479cc3b)
+- [Settings](#org5e18db5)
+- [Examples](#orga66afd9)
+- [Hardware Documentation](#orge0198cf)
+- [Host Computer Setup](#org0acddff)
 
     <!-- This file is generated automatically from metadata -->
     <!-- File edits may be overwritten! -->
 
 
-<a id="org2f8f03c"></a>
+<a id="orge2af5cb"></a>
 
 # Library Information
 
@@ -30,7 +30,7 @@ The TMC2209 is an ultra-silent motor driver IC for two phase stepper motors with
 ![img](./images/TMC2209.png)
 
 
-<a id="org9348dae"></a>
+<a id="org85eda48"></a>
 
 # Stepper Motors
 
@@ -41,7 +41,7 @@ A stepper motor, also known as step motor or stepping motor, is a brushless DC e
 [Wikipedia - Stepper Motor](https://en.wikipedia.org/wiki/Stepper_motor)
 
 
-<a id="org5dd234a"></a>
+<a id="orgf32514f"></a>
 
 # Stepper Motor Controllers and Drivers
 
@@ -89,7 +89,7 @@ Another controller option is to use both a microcontroller and a separate step a
 ![img](./images/TMC429_controller_driver.png)
 
 
-<a id="org5170b02"></a>
+<a id="org479cc3b"></a>
 
 # Communication
 
@@ -249,87 +249,129 @@ The higher the baud rate the better, but microcontrollers have various UART seri
     // Instantiate TMC2209
     TMC2209 stepper_driver;
     HardwareSerial & serial_stream = Serial1;
-    const long SERIAL1_BAUD_RATE = 500000;
+    const long SERIAL_BAUD_RATE = 500000;
     
     void setup()
     {
-      stepper_driver.setup(Serial1,SERIAL1_BAUD_RATE);
+      stepper_driver.setup(Serial1, SERIAL_BAUD_RATE);
     }
     ```
 
 
-### Connecting multiple TMC2209 chips to the same serial line
+### Connecting multiple TMC2209 chips
 
-1.  Unidirectional communication with all chips using identical settings
+1.  Unidirectional Communication
 
-    If only unidirectional communication is desired and all TMC2209 chips connected to the same serial line will have identical settings, then no serial addressing is required. All chips can be programmed in parallel like a single device.
+    1.  All chips using identical settings
     
-    ```cpp
-    #include <TMC2209.h>
+        If only unidirectional communication is desired and all TMC2209 chips connected to the same serial line will have identical settings, then no serial addressing is required. All chips can be programmed in parallel like a single device.
+        
+        ```cpp
+        #include <TMC2209.h>
+        
+        // Instantiate a single TMC2209 to talk to multiple chips
+        TMC2209 stepper_drivers;
+        
+        void setup()
+        {
+          stepper_drivers.setup(Serial1);
+        }
+        ```
+        
+        <img src="./images/trinamic_wiring-TMC2209-unidirectional-multiple.svg" width="1200px">
     
-    // Instantiate a single TMC2209 to talk to multiple chips
-    TMC2209 stepper_drivers;
+    2.  Chips needing different settings using one UART
     
-    void setup()
-    {
-      stepper_drivers.setup(Serial1);
-    }
-    ```
+        ```cpp
+        #include <TMC2209.h>
+        
+        // Instantiate the two TMC2209
+        TMC2209 stepper_driver_0;
+        const TMC2209::SerialAddress SERIAL_ADDRESS_0 = TMC2209::SERIAL_ADDRESS_0;
+        TMC2209 stepper_driver_1;
+        const TMC2209::SerialAddress SERIAL_ADDRESS_1 = TMC2209::SERIAL_ADDRESS_1;
+        const long SERIAL_BAUD_RATE = 115200;
+        
+        void setup()
+        {
+          // TMC2209::SERIAL_ADDRESS_0 is used by default if not specified
+          stepper_driver_0.setup(Serial1, SERIAL_BAUD_RATE, SERIAL_ADDRESS_0);
+          stepper_driver_1.setup(Serial1, SERIAL_BAUD_RATE, SERIAL_ADDRESS_1);
+        }
+        ```
+        
+        <img src="./images/trinamic_wiring-TMC2209-unidirectional-multiple-address.svg" width="1200px">
     
-    <img src="./images/trinamic_wiring-TMC2209-unidirectional-multiple.svg" width="1200px">
+    3.  Chips needing different settings using multiple UART
+    
+        ```cpp
+        #include <TMC2209.h>
+        
+        // Instantiate the two TMC2209
+        TMC2209 stepper_driver_0;
+        TMC2209 stepper_driver_1;
+        const long SERIAL_BAUD_RATE = 115200;
+        
+        void setup()
+        {
+          stepper_driver_0.setup(Serial1, SERIAL_BAUD_RATE);
+          stepper_driver_1.setup(Serial2, SERIAL_BAUD_RATE);
+        }
+        ```
+        
+        <img src="./images/trinamic_wiring-TMC2209-unidirectional-multiple-uart.svg" width="1200px">
 
-2.  Unidirectional communication with chips needing different settings
+2.  Bidirectional Communication
 
-    ```cpp
-    #include <TMC2209.h>
+    1.  Chips needing different settings using one UART
     
-    // Instantiate the two TMC2209
-    TMC2209 stepper_driver_0;
-    const TMC2209::SerialAddress SERIAL_ADDRESS_0 = TMC2209::SERIAL_ADDRESS_0;
-    TMC2209 stepper_driver_1;
-    const TMC2209::SerialAddress SERIAL_ADDRESS_1 = TMC2209::SERIAL_ADDRESS_1;
-    const long SERIAL_BAUD_RATE = 115200;
+        More than one TMC2209 may be connected to a single serial port, if each TMC2209 is assigned a unique serial address. The default serial address is "SERIAL\_ADDRESS\_0". The serial address may be changed from "SERIAL\_ADDRESS\_0" using the TMC2209 hardware input pins MS1 and MS2, to "SERIAL\_ADDRESS\_1", "SERIAL\_ADDRESS\_2", or "SERIAL\_ADDRESS\_3".
+        
+        The TMC2209 serial address must be specified during the TMC2209 setup, if it is not equal to the default of "SERIAL\_ADDRESS\_0".
+        
+        When multiple TMC2209 chips are connected to the same serial line with multiple addresses then the reply delay value should be increased, otherwise a non-addressed chip might detect a transmission error upon read access to a different chip.
+        
+        ```cpp
+        #include <TMC2209.h>
+        
+        // Instantiate the two TMC2209
+        TMC2209 stepper_driver_0;
+        const TMC2209::SerialAddress SERIAL_ADDRESS_0 = TMC2209::SERIAL_ADDRESS_0;
+        TMC2209 stepper_driver_1;
+        const TMC2209::SerialAddress SERIAL_ADDRESS_1 = TMC2209::SERIAL_ADDRESS_1;
+        const uint8_t REPLY_DELAY = 4;
+        const long SERIAL_BAUD_RATE = 115200;
+        
+        void setup()
+        {
+          // TMC2209::SERIAL_ADDRESS_0 is used by default if not specified
+          stepper_driver_0.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_0);
+          stepper_driver_0.setReplyDelay(REPLY_DELAY);
+          stepper_driver_1.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_1);
+          stepper_driver_1.setReplyDelay(REPLY_DELAY);
+        }
+        ```
+        
+        <img src="./images/trinamic_wiring-TMC2209-bidirectional-coupled-multiple-address.svg" width="1200px">
     
-    void setup()
-    {
-      // TMC2209::SERIAL_ADDRESS_0 is used by default if not specified
-      stepper_driver_0.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_0);
-      stepper_driver_1.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_1);
-    }
-    ```
+    2.  Chips needing different settings using multiple UART
     
-    ![img](./images/TMC2209_unidirectional_serial_address.png)
-
-3.  Bidirectional communication with chips needing different settings
-
-    More than one TMC2209 may be connected to a single serial port, if each TMC2209 is assigned a unique serial address. The default serial address is "SERIAL\_ADDRESS\_0". The serial address may be changed from "SERIAL\_ADDRESS\_0" using the TMC2209 hardware input pins MS1 and MS2, to "SERIAL\_ADDRESS\_1", "SERIAL\_ADDRESS\_2", or "SERIAL\_ADDRESS\_3".
-    
-    The TMC2209 serial address must be specified during the TMC2209 setup, if it is not equal to the default of "SERIAL\_ADDRESS\_0".
-    
-    When multiple TMC2209 chips are connected to the same serial line with multiple addresses then the reply delay value should be increased, otherwise a non-addressed chip might detect a transmission error upon read access to a different chip.
-    
-    ```cpp
-    #include <TMC2209.h>
-    
-    // Instantiate the two TMC2209
-    TMC2209 stepper_driver_0;
-    const TMC2209::SerialAddress SERIAL_ADDRESS_0 = TMC2209::SERIAL_ADDRESS_0;
-    TMC2209 stepper_driver_1;
-    const TMC2209::SerialAddress SERIAL_ADDRESS_1 = TMC2209::SERIAL_ADDRESS_1;
-    const uint8_t REPLY_DELAY = 4;
-    const long SERIAL_BAUD_RATE = 115200;
-    
-    void setup()
-    {
-      // TMC2209::SERIAL_ADDRESS_0 is used by default if not specified
-      stepper_driver_0.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_0);
-      stepper_driver_0.setReplyDelay(REPLY_DELAY);
-      stepper_driver_1.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_1);
-      stepper_driver_1.setReplyDelay(REPLY_DELAY);
-    }
-    ```
-    
-    <img src="./images/trinamic_wiring-TMC2209-bidirectional-coupled-serial-address.svg" width="1200px">
+        ```cpp
+        #include <TMC2209.h>
+        
+        // Instantiate the two TMC2209
+        TMC2209 stepper_driver_0;
+        TMC2209 stepper_driver_1;
+        const long SERIAL_BAUD_RATE = 115200;
+        
+        void setup()
+        {
+          stepper_driver_0.setup(Serial1, SERIAL_BAUD_RATE);
+          stepper_driver_1.setup(Serial2, SERIAL_BAUD_RATE);
+        }
+        ```
+        
+        <img src="./images/trinamic_wiring-TMC2209-bidirectional-coupled-multiple-uart.svg" width="1200px">
 
 
 ## Step and Direction Interface
@@ -349,7 +391,7 @@ A library such as the Arduino TMC429 library may be used to control the step and
 [Arduino TMC429 Library](https://github.com/janelia-arduino/TMC429)
 
 
-<a id="orga8c3634"></a>
+<a id="org5e18db5"></a>
 
 # Settings
 
@@ -504,7 +546,7 @@ In voltage control mode, the hold current scales the PWM amplitude, but the curr
 In current control mode, setting the hold current is the way to adjust the spinning motor current. The driver will measure the current and automatically adjust the voltage to maintain the hold current, even with the operating conditions change. The PWM offset may be changed to help the automatic tuning procedure, but changing the hold current alone is enough to adjust the motor current since the driver will adjust the offset automatically.
 
 
-<a id="orgdf331c2"></a>
+<a id="orga66afd9"></a>
 
 # Examples
 
@@ -538,7 +580,7 @@ To test this wiring, change "Serial1" in the example files to "Serial3".
 <https://github.com/janelia-kicad/trinamic_wiring>
 
 
-<a id="org09c0106"></a>
+<a id="orge0198cf"></a>
 
 # Hardware Documentation
 
@@ -573,7 +615,7 @@ To test this wiring, change "Serial1" in the example files to "Serial3".
 [Janelia Stepper Driver Web Page](https://github.com/janelia-kicad/stepper_driver)
 
 
-<a id="orgcfb8ec4"></a>
+<a id="org0acddff"></a>
 
 # Host Computer Setup
 
