@@ -23,7 +23,7 @@
 The TMC2209 is an ultra-silent motor driver IC for two phase stepper motors with
 both UART serial and step and direction interfaces.
 
-[[./images/TMC2209.png]]
+#+html: <img src="./images/trinamic_wiring-TMC2209-description.svg" width="1200px">
 
 * Stepper Motors
 
@@ -99,14 +99,14 @@ One controller option is to use just a single microcontroller, communicating
 with the TMC2209 over both the UART serial interface and the step and direction
 interface.
 
-[[./images/microcontroller_controller_driver.png]]
+#+html: <img src="./images/trinamic_wiring-TMC2209-microcontroller.svg" width="1200px">
 
 *** TMC429 and Microcontroller Stepper Motor Controller
 
 Another controller option is to use both a microcontroller and a separate step
 and direction controller, such as the TMC429.
 
-[[./images/TMC429_controller_driver.png]]
+#+html: <img src="./images/trinamic_wiring-TMC2209-stepper-controller.svg" width="1200px">
 
 * Communication
 
