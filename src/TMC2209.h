@@ -152,12 +152,13 @@ public:
   void useInternalSenseResistors();
 
   // bidirectional methods
-
-  // check to make sure TMC2209 is properly setup and communicating
-  bool isSetupAndCommunicating();
+  uint8_t getVersion();
 
   // if driver is not communicating, check power and communication connections
   bool isCommunicating();
+
+  // check to make sure TMC2209 is properly setup and communicating
+  bool isSetupAndCommunicating();
 
   // driver may be communicating but not setup if driver power is lost then
   // restored after setup so that defaults are loaded instead of setup options
@@ -244,17 +245,14 @@ private:
   int serialAvailable();
   size_t serialWrite(uint8_t c);
   int serialRead();
+  void serialFlush();
 
   // Serial Settings
   const static uint8_t BYTE_MAX_VALUE = 0xFF;
   const static uint8_t BITS_PER_BYTE = 8;
 
-  const static uint32_t ECHO_DELAY_INC_MICROSECONDS = 1;
-  const static uint32_t ECHO_DELAY_MAX_MICROSECONDS = 4000;
   const static uint32_t REPLY_DELAY_INC_MICROSECONDS = 1;
   const static uint32_t REPLY_DELAY_MAX_MICROSECONDS = 10000;
-  const static uint32_t POST_READ_DELAY_INC_MICROSECONDS = 10;
-  const static uint32_t POST_READ_DELAY_NUMERATOR = 500000;
 
   const static uint8_t STEPPER_DRIVER_FEATURE_OFF = 0;
   const static uint8_t STEPPER_DRIVER_FEATURE_ON = 1;
@@ -556,7 +554,6 @@ private:
   void setRegistersToDefaults();
   void readAndStoreRegisters();
 
-  uint8_t getVersion();
   bool serialOperationMode();
 
   void minimizeMotorCurrent();

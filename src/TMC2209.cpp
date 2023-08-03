@@ -361,6 +361,14 @@ void TMC2209::useInternalSenseResistors()
 
 // bidirectional methods
 
+uint8_t TMC2209::getVersion()
+{
+  Input input;
+  input.bytes = read(ADDRESS_IOIN);
+
+  return input.version;
+}
+
 bool TMC2209::isCommunicating()
 {
   return (getVersion() == VERSION);
@@ -614,6 +622,14 @@ int TMC2209::serialRead()
   return 0;
 }
 
+void TMC2209::serialFlush()
+{
+  if (hardware_serial_ptr_ != nullptr)
+  {
+    return hardware_serial_ptr_->flush();
+  }
+}
+
 void TMC2209::setOperationModeToSerial(SerialAddress serial_address)
 {
   serial_address_ = serial_address;
@@ -661,13 +677,6 @@ void TMC2209::readAndStoreRegisters()
   global_config_.bytes = readGlobalConfigBytes();
   chopper_config_.bytes = readChopperConfigBytes();
   pwm_config_.bytes = readPwmConfigBytes();
-}
-uint8_t TMC2209::getVersion()
-{
-  Input input;
-  input.bytes = read(ADDRESS_IOIN);
-
-  return input.version;
 }
 
 bool TMC2209::serialOperationMode()
@@ -743,56 +752,30 @@ void TMC2209::sendDatagramBidirectional(Datagram & datagram,
 {
   uint8_t byte;
 
+  // Wait for the transmission of outgoing serial data to complete
+  serialFlush();
+
   // clear the serial receive buffer if necessary
-  // Serial.println("**************************************");
-  // Serial.println("clear the serial receive buffer if necessary...");
   while (serialAvailable() > 0)
   {
     byte = serialRead();
-    // Serial.print("serialRead: ");
-    // Serial.println(byte, HEX);
   }
-  // Serial.println("**************************************");
-  // Serial.println();
 
   // write datagram
-  // Serial.println("**************************************");
-  // Serial.println("write datagram...");
   for (uint8_t i=0; i<datagram_size; ++i)
   {
     byte = (datagram.bytes >> (i * BITS_PER_BYTE)) & BYTE_MAX_VALUE;
     serialWrite(byte);
-    // Serial.print("serialWrite: ");
-    // Serial.println(byte, HEX);
-  }
-  // Serial.println("**************************************");
-  // Serial.println();
-
-  // wait for bytes sent out on TX line to be echoed on RX line
-  uint32_t echo_delay = 0;
-  while ((serialAvailable() < datagram_size) and
-    (echo_delay < ECHO_DELAY_MAX_MICROSECONDS))
-  {
-    delayMicroseconds(ECHO_DELAY_INC_MICROSECONDS);
-    echo_delay += ECHO_DELAY_INC_MICROSECONDS;
   }
 
-  if (echo_delay >= ECHO_DELAY_MAX_MICROSECONDS)
-  {
-    return;
-  }
+  // Wait for the transmission of outgoing serial data to complete
+  serialFlush();
 
   // clear RX buffer of echo bytes
-  // Serial.println("**************************************");
-  // Serial.println("clear RX buffer of echo bytes");
   for (uint8_t i=0; i<datagram_size; ++i)
   {
     byte = serialRead();
-    // Serial.print("serialRead: ");
-    // Serial.println(byte, HEX);
   }
-  // Serial.println("**************************************");
-  // Serial.println();
 }
 
 void TMC2209::write(uint8_t register_address,
@@ -845,12 +828,6 @@ uint32_t TMC2209::read(uint8_t register_address)
     read_reply_datagram.bytes |= (byte << (byte_count++ * BITS_PER_BYTE));
   }
 
-  // this unfortunate code was found to be necessary after testing on hardware
-  uint32_t post_read_delay_repeat = POST_READ_DELAY_NUMERATOR / serial_baud_rate_;
-  for (uint8_t i=0; i<post_read_delay_repeat; ++i)
-  {
-    delayMicroseconds(POST_READ_DELAY_INC_MICROSECONDS);
-  }
   return reverseData(read_reply_datagram.data);
 }
 
