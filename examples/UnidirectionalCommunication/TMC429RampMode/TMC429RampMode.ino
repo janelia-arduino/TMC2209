@@ -1,6 +1,15 @@
 #include <TMC2209.h>
 #include <TMC429.h>
 
+// This example will not work on Arduino boards without HardwareSerial ports,
+// such as the Uno, Nano, and Mini.
+//
+// See this reference for more details:
+// https://www.arduino.cc/reference/en/language/functions/communication/serial/
+//
+// To make this library work with those boards, refer to this library example:
+// examples/UnidirectionalCommunication/SoftwareSerial
+
 const long SERIAL_BAUD_RATE = 115200;
 const int BETWEEN_MOVE_DELAY = 2000;
 const int CHECK_AT_POSITION_DELAY = 500;

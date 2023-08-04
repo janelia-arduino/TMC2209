@@ -1,10 +1,10 @@
 #include <TMC2209.h>
 
-// It may be necessary to cycle the power of the TMC2209 for SoftwareSerial to work
-// if the TMC2209 was previously communicating over HardwareSerial at a higher baud
-// rate. The TMC2209 can get confused when the baud rate changes significantly
-// between resets.
-
+// SoftwareSerial can be used on Arduino boards without HardwareSerial ports,
+// such as the Uno, Nano, and Mini.
+//
+// See this reference for more details:
+// https://www.arduino.cc/reference/en/language/functions/communication/serial/
 
 // Software serial ports should only be used for unidirectional communication
 // The RX pin does not need to be connected, but it must be specified when

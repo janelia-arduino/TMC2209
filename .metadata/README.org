@@ -680,7 +680,7 @@ conditions occur. Use the PWM offset and the hold current both to adjust the
 motor current.
 
 In current control mode, setting the hold current is the way to adjust the
-spinning motor current. The driver will measure the current and automatically
+stationary motor current. The driver will measure the current and automatically
 adjust the voltage to maintain the hold current, even with the operating
 conditions change. The PWM offset may be changed to help the automatic tuning
 procedure, but changing the hold current alone is enough to adjust the motor

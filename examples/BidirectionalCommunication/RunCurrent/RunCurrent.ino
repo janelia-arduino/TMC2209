@@ -1,7 +1,13 @@
 #include <TMC2209.h>
 
-  // Identify which microcontroller serial port is connected to the TMC2209
-  // e.g. Serial1, Serial2...
+// This example will not work on Arduino boards without HardwareSerial ports,
+// such as the Uno, Nano, and Mini.
+//
+// See this reference for more details:
+// https://www.arduino.cc/reference/en/language/functions/communication/serial/
+
+// Identify which microcontroller serial port is connected to the TMC2209
+// e.g. Serial1, Serial2...
 HardwareSerial & serial_stream = Serial1;
 
 const long SERIAL_BAUD_RATE = 115200;
