@@ -15,7 +15,7 @@ const int BETWEEN_MOVE_DELAY = 2000;
 const int CHECK_AT_POSITION_DELAY = 500;
 
 // Stepper driver settings
-HardwareSerial & serial_stream = Serial1;
+HardwareSerial & serial_stream = Serial3;
 // current values may need to be reduced to prevent overheating depending on
 // specific motor and power supply voltage
 const int RUN_CURRENT_PERCENT = 100;

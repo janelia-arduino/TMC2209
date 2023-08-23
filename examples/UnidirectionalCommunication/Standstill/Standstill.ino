@@ -9,7 +9,7 @@
 // To make this library work with those boards, refer to this library example:
 // examples/UnidirectionalCommunication/SoftwareSerial
 
-HardwareSerial & serial_stream = Serial1;
+HardwareSerial & serial_stream = Serial3;
 
 const long SERIAL_BAUD_RATE = 115200;
 const int DELAY = 4000;

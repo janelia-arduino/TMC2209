@@ -6,7 +6,7 @@
 // See this reference for more details:
 // https://www.arduino.cc/reference/en/language/functions/communication/serial/
 
-HardwareSerial & serial_stream = Serial1;
+HardwareSerial & serial_stream = Serial3;
 
 const long SERIAL_BAUD_RATE = 115200;
 const int DELAY = 4000;

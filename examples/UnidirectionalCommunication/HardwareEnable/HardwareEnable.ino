@@ -9,7 +9,7 @@
 // To make this library work with those boards, refer to this library example:
 // examples/UnidirectionalCommunication/SoftwareSerial
 
-HardwareSerial & serial_stream = Serial1;
+HardwareSerial & serial_stream = Serial3;
 const uint8_t HARDWARE_ENABLE_PIN = 4;
 
 const int32_t RUN_VELOCITY = 20000;
