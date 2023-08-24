@@ -771,6 +771,20 @@ void TMC2209::sendDatagramBidirectional(Datagram & datagram,
   // Wait for the transmission of outgoing serial data to complete
   serialFlush();
 
+  // wait for bytes sent out on TX line to be echoed on RX line
+  uint32_t echo_delay = 0;
+  while ((serialAvailable() < datagram_size) and
+    (echo_delay < ECHO_DELAY_MAX_MICROSECONDS))
+  {
+    delayMicroseconds(ECHO_DELAY_INC_MICROSECONDS);
+    echo_delay += ECHO_DELAY_INC_MICROSECONDS;
+  }
+
+  if (echo_delay >= ECHO_DELAY_MAX_MICROSECONDS)
+  {
+    return;
+  }
+
   // clear RX buffer of echo bytes
   for (uint8_t i=0; i<datagram_size; ++i)
   {
