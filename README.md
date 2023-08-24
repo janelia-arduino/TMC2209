@@ -1,22 +1,22 @@
-- [Library Information](#orgd84c6c7)
-- [Stepper Motors](#orgc1cca3f)
-- [Stepper Motor Controllers and Drivers](#org32b80ed)
-- [Communication](#org1a8ad49)
-- [Settings](#org7bfc3bb)
-- [Examples](#org8bc87f2)
-- [Hardware Documentation](#orgfb586c0)
-- [Host Computer Setup](#orgb3acdcd)
+- [Library Information](#org9b6a190)
+- [Stepper Motors](#orgee0313d)
+- [Stepper Motor Controllers and Drivers](#org215fe00)
+- [Communication](#orge9d26e7)
+- [Settings](#org85dfa54)
+- [Examples](#org7150aaa)
+- [Hardware Documentation](#orgb828881)
+- [Host Computer Setup](#org01931ac)
 
     <!-- This file is generated automatically from metadata -->
     <!-- File edits may be overwritten! -->
 
 
-<a id="orgd84c6c7"></a>
+<a id="org9b6a190"></a>
 
 # Library Information
 
 -   **Name:** TMC2209
--   **Version:** 9.0.4
+-   **Version:** 9.0.5
 -   **License:** BSD
 -   **URL:** <https://github.com/janelia-arduino/TMC2209>
 -   **Author:** Peter Polidoro
@@ -30,7 +30,7 @@ The TMC2209 is an ultra-silent motor driver IC for two phase stepper motors with
 <img src="./images/trinamic_wiring-TMC2209-description.svg" width="1200px">
 
 
-<a id="orgc1cca3f"></a>
+<a id="orgee0313d"></a>
 
 # Stepper Motors
 
@@ -41,7 +41,7 @@ A stepper motor, also known as step motor or stepping motor, is a brushless DC e
 [Wikipedia - Stepper Motor](https://en.wikipedia.org/wiki/Stepper_motor)
 
 
-<a id="org32b80ed"></a>
+<a id="org215fe00"></a>
 
 # Stepper Motor Controllers and Drivers
 
@@ -89,7 +89,7 @@ Another controller option is to use both a microcontroller and a separate step a
 <img src="./images/trinamic_wiring-TMC2209-stepper-controller.svg" width="1200px">
 
 
-<a id="org1a8ad49"></a>
+<a id="orge9d26e7"></a>
 
 # Communication
 
@@ -391,7 +391,7 @@ A library such as the Arduino TMC429 library may be used to control the step and
 [Arduino TMC429 Library](https://github.com/janelia-arduino/TMC429)
 
 
-<a id="org7bfc3bb"></a>
+<a id="org85dfa54"></a>
 
 # Settings
 
@@ -546,7 +546,7 @@ In voltage control mode, the hold current scales the PWM amplitude, but the curr
 In current control mode, setting the hold current is the way to adjust the stationary motor current. The driver will measure the current and automatically adjust the voltage to maintain the hold current, even with the operating conditions change. The PWM offset may be changed to help the automatic tuning procedure, but changing the hold current alone is enough to adjust the motor current since the driver will adjust the offset automatically.
 
 
-<a id="org8bc87f2"></a>
+<a id="org7150aaa"></a>
 
 # Examples
 
@@ -580,7 +580,7 @@ To test this wiring, change "Serial1" in the example files to "Serial3".
 <https://github.com/janelia-kicad/trinamic_wiring>
 
 
-<a id="orgfb586c0"></a>
+<a id="orgb828881"></a>
 
 # Hardware Documentation
 
@@ -615,7 +615,7 @@ To test this wiring, change "Serial1" in the example files to "Serial3".
 [Janelia Stepper Driver Web Page](https://github.com/janelia-kicad/stepper_driver)
 
 
-<a id="orgb3acdcd"></a>
+<a id="org01931ac"></a>
 
 # Host Computer Setup
 
