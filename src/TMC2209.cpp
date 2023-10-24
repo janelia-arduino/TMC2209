@@ -29,10 +29,12 @@ void TMC2209::setup(HardwareSerial & serial,
   hardware_serial_ptr_ = &serial;
   if ((alternate_rx_pin < 0) || (alternate_tx_pin < 0))
   {
+    hardware_serial_ptr_->end();
     hardware_serial_ptr_->begin(serial_baud_rate);
   }
   else
   {
+    hardware_serial_ptr_->end();
     hardware_serial_ptr_->begin(serial_baud_rate, SERIAL_8N1, alternate_rx_pin, alternate_tx_pin);
   }
 
@@ -44,6 +46,7 @@ void TMC2209::setup(HardwareSerial & serial,
   SerialAddress serial_address)
 {
   hardware_serial_ptr_ = &serial;
+  hardware_serial_ptr_->end();
   hardware_serial_ptr_->begin(serial_baud_rate);
 
   initialize(serial_baud_rate, serial_address);
@@ -56,6 +59,7 @@ void TMC2209::setup(SoftwareSerial & serial,
   SerialAddress serial_address)
 {
   software_serial_ptr_ = &serial;
+  software_serial_ptr_->end();
   software_serial_ptr_->begin(serial_baud_rate);
 
   initialize(serial_baud_rate, serial_address);
