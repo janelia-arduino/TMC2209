@@ -214,7 +214,7 @@ On some Arduino boards (e.g. Uno, Nano, Mini, and Mega) pins 0 and 1 are used fo
 Arduino boards with additional hardware serial ports, such as "Serial1" and "Serial2", can use those ports to communicate with the TMC2209.
 
 
-### Teeny Serial
+### Teensy Serial
 
 [Teensy Serial Web Page](https://www.pjrc.com/teensy/td_uart.html)
 
