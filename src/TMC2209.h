@@ -9,7 +9,7 @@
 #define TMC2209_H
 #include <Arduino.h>
 
-#if !defined(ESP32) && !defined(SAMD_SERIES) && !defined(ARDUINO_RASPBERRY_PI_PICO)
+#if !defined(ESP32) && !defined(ARDUINO_ARCH_SAMD) && !defined(ARDUINO_RASPBERRY_PI_PICO)
 #  define SOFTWARE_SERIAL_IMPLEMENTED true
 #else
 #  define SOFTWARE_SERIAL_IMPLEMENTED false
