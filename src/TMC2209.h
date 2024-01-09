@@ -591,6 +591,8 @@ private:
   uint32_t readChopperConfigBytes();
   void writeStoredPwmConfig();
   uint32_t readPwmConfigBytes();
+
+  uint32_t constrain_(uint32_t value, uint32_t low, uint32_t high);
 };
 
 #endif

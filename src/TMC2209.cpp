@@ -97,7 +97,7 @@ void TMC2209::disable()
 
 void TMC2209::setMicrostepsPerStep(uint16_t microsteps_per_step)
 {
-  uint16_t microsteps_per_step_shifted = constrain(microsteps_per_step,
+  uint16_t microsteps_per_step_shifted = constrain_(microsteps_per_step,
     MICROSTEPS_PER_STEP_MIN,
     MICROSTEPS_PER_STEP_MAX);
   microsteps_per_step_shifted = microsteps_per_step >> 1;
@@ -312,9 +312,9 @@ void TMC2209::setStallGuardThreshold(uint8_t stall_guard_threshold)
 void TMC2209::enableCoolStep(uint8_t lower_threshold,
     uint8_t upper_threshold)
 {
-  lower_threshold = constrain(lower_threshold, SEMIN_MIN, SEMIN_MAX);
+  lower_threshold = constrain_(lower_threshold, SEMIN_MIN, SEMIN_MAX);
   cool_config_.semin = lower_threshold;
-  upper_threshold = constrain(upper_threshold, SEMAX_MIN, SEMAX_MAX);
+  upper_threshold = constrain_(upper_threshold, SEMAX_MIN, SEMAX_MAX);
   cool_config_.semax = upper_threshold;
   write(ADDRESS_COOLCONF, cool_config_.bytes);
   cool_step_enabled_ = true;
@@ -851,7 +851,7 @@ uint32_t TMC2209::read(uint8_t register_address)
 
 uint8_t TMC2209::percentToCurrentSetting(uint8_t percent)
 {
-  uint8_t constrained_percent = constrain(percent,
+  uint8_t constrained_percent = constrain_(percent,
     PERCENT_MIN,
     PERCENT_MAX);
   uint8_t current_setting = map(constrained_percent,
@@ -874,7 +874,7 @@ uint8_t TMC2209::currentSettingToPercent(uint8_t current_setting)
 
 uint8_t TMC2209::percentToHoldDelaySetting(uint8_t percent)
 {
-  uint8_t constrained_percent = constrain(percent,
+  uint8_t constrained_percent = constrain_(percent,
     PERCENT_MIN,
     PERCENT_MAX);
   uint8_t hold_delay_setting = map(constrained_percent,
@@ -941,4 +941,9 @@ void TMC2209::writeStoredPwmConfig()
 uint32_t TMC2209::readPwmConfigBytes()
 {
   return read(ADDRESS_PWMCONF);
+}
+
+uint32_t TMC2209::constrain_(uint32_t value, uint32_t low, uint32_t high)
+{
+  return ((value)<(low)?(low):((value)>(high)?(high):(value)));
 }
