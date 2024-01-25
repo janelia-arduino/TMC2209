@@ -1,22 +1,22 @@
-- [Library Information](#org90c2955)
-- [Stepper Motors](#org70e9129)
-- [Stepper Motor Controllers and Drivers](#org3801345)
-- [Communication](#org76570a9)
-- [Settings](#orgc9473ce)
-- [Examples](#org66b2186)
-- [Hardware Documentation](#org733ac67)
-- [Host Computer Setup](#org52dc625)
+- [Library Information](#org279b5c1)
+- [Stepper Motors](#org4bc6737)
+- [Stepper Motor Controllers and Drivers](#org26bfc5e)
+- [Communication](#org223fc68)
+- [Settings](#orgb8dcddf)
+- [Examples](#org22c0b13)
+- [Hardware Documentation](#org51b6a4b)
+- [Host Computer Setup](#org83c69bb)
 
     <!-- This file is generated automatically from metadata -->
     <!-- File edits may be overwritten! -->
 
 
-<a id="org90c2955"></a>
+<a id="org279b5c1"></a>
 
 # Library Information
 
 -   **Name:** TMC2209
--   **Version:** 9.0.10
+-   **Version:** 9.0.11
 -   **License:** BSD
 -   **URL:** <https://github.com/janelia-arduino/TMC2209>
 -   **Author:** Peter Polidoro
@@ -30,7 +30,7 @@ The TMC2209 is an ultra-silent motor driver IC for two phase stepper motors with
 <img src="./images/trinamic_wiring-TMC2209-description.svg" width="1200px">
 
 
-<a id="org70e9129"></a>
+<a id="org4bc6737"></a>
 
 # Stepper Motors
 
@@ -41,7 +41,7 @@ A stepper motor, also known as step motor or stepping motor, is a brushless DC e
 [Wikipedia - Stepper Motor](https://en.wikipedia.org/wiki/Stepper_motor)
 
 
-<a id="org3801345"></a>
+<a id="org26bfc5e"></a>
 
 # Stepper Motor Controllers and Drivers
 
@@ -89,7 +89,7 @@ Another controller option is to use both a microcontroller and a separate step a
 <img src="./images/trinamic_wiring-TMC2209-stepper-controller.svg" width="1200px">
 
 
-<a id="org76570a9"></a>
+<a id="org223fc68"></a>
 
 # Communication
 
@@ -391,7 +391,7 @@ A library such as the Arduino TMC429 library may be used to control the step and
 [Arduino TMC429 Library](https://github.com/janelia-arduino/TMC429)
 
 
-<a id="orgc9473ce"></a>
+<a id="orgb8dcddf"></a>
 
 # Settings
 
@@ -546,15 +546,9 @@ In voltage control mode, the hold current scales the PWM amplitude, but the curr
 In current control mode, setting the hold current is the way to adjust the stationary motor current. The driver will measure the current and automatically adjust the voltage to maintain the hold current, even with the operating conditions change. The PWM offset may be changed to help the automatic tuning procedure, but changing the hold current alone is enough to adjust the motor current since the driver will adjust the offset automatically.
 
 
-<a id="org66b2186"></a>
+<a id="org22c0b13"></a>
 
 # Examples
-
-The example \*.ino files use "Serial1" to be compatible with most boards.
-
-The following wiring examples uses "Serial3" so the same pins can be used to test both HardwareSerial and Software serial on each of the boards.
-
-To test this wiring, change "Serial1" in the example files to "Serial3".
 
 
 ## Wiring
@@ -580,7 +574,7 @@ To test this wiring, change "Serial1" in the example files to "Serial3".
 <https://github.com/janelia-kicad/trinamic_wiring>
 
 
-<a id="org733ac67"></a>
+<a id="org51b6a4b"></a>
 
 # Hardware Documentation
 
@@ -615,27 +609,44 @@ To test this wiring, change "Serial1" in the example files to "Serial3".
 [Janelia Stepper Driver Web Page](https://github.com/janelia-kicad/stepper_driver)
 
 
-<a id="org52dc625"></a>
+<a id="org83c69bb"></a>
 
 # Host Computer Setup
 
 
-## GNU/Linux
+## Download this repository
+
+<https://github.com/janelia-arduino/TMC2209.git>
+
+```sh
+git clone https://github.com/janelia-arduino/TMC2209.git
+```
 
 
-### Drivers
+## PlatformIO
 
-GNU/Linux computers usually have all of the necessary drivers already installed, but users need the appropriate permissions to open the device and communicate with it.
 
-Udev is the GNU/Linux subsystem that detects when things are plugged into your computer.
+### Install PlatformIO Core
 
-1.  Download rules into the correct directory
+<https://docs.platformio.org/en/latest/core/installation/index.html>
 
-    1.  Teensy
-    
-        ```sh
-        curl -fsSL https://www.pjrc.com/teensy/00-teensy.rules | sudo tee /etc/udev/rules.d/00-teensy.rules
-        ```
+```sh
+python3 -m venv .venv
+source .venv/bin/activate
+pip install platformio
+pio --version
+```
+
+
+### 99-platformio-udev.rules
+
+Linux users have to install udev rules for PlatformIO supported boards/devices.
+
+1.  Download udev rules file to /etc/udev/rules.d
+
+    ```sh
+    curl -fsSL https://raw.githubusercontent.com/platformio/platformio-core/develop/platformio/assets/system/99-platformio-udev.rules | sudo tee /etc/udev/rules.d/99-platformio-udev.rules
+    ```
 
 2.  Restart udev management tool
 
@@ -643,14 +654,65 @@ Udev is the GNU/Linux subsystem that detects when things are plugged into your c
     sudo service udev restart
     ```
 
-3.  Ubuntu/Debian users may need to add own “username” to the “dialout” group
+3.  Add user to groups
 
     ```sh
     sudo usermod -a -G dialout $USER && sudo usermod -a -G plugdev $USER
     ```
 
-4.  After setting up rules and groups
+4.  Remove modemmanager
+
+    ```sh
+    sudo apt-get purge --auto-remove modemmanager
+    ```
+
+5.  After setting up rules and groups
 
     You will need to log out and log back in again (or reboot) for the user group changes to take effect.
     
     After this file is installed, physically unplug and reconnect your board.
+
+
+### Compile the firmware
+
+1.  Gnu/Linux
+
+    ```sh
+    make firmware
+    ```
+
+2.  Other
+
+    ```sh
+    pio run -e teensy35
+    ```
+
+
+### Upload the firmware
+
+1.  Gnu/Linux
+
+    ```sh
+    make upload
+    ```
+
+2.  Other
+
+    ```sh
+    pio run -e teensy35 -t upload
+    ```
+
+
+### Serial Terminal Monitor
+
+1.  Gnu/Linux
+
+    ```sh
+    make monitor
+    ```
+
+2.  Other
+
+    ```sh
+    pio device monitor --echo --eol=LF
+    ```
