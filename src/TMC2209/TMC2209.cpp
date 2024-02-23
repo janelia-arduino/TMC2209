@@ -10,7 +10,7 @@
 TMC2209::TMC2209()
 {
   hardware_serial_ptr_ = nullptr;
-#if SOFTWARE_SERIAL_IMPLEMENTED
+#if SOFTWARE_SERIAL_INCLUDED
   software_serial_ptr_ = nullptr;
 #endif
   serial_baud_rate_ = 115200;
@@ -53,7 +53,7 @@ void TMC2209::setup(HardwareSerial & serial,
 }
 #endif
 
-#if SOFTWARE_SERIAL_IMPLEMENTED
+#if SOFTWARE_SERIAL_INCLUDED
 void TMC2209::setup(SoftwareSerial & serial,
   long serial_baud_rate,
   SerialAddress serial_address)
@@ -587,7 +587,7 @@ int TMC2209::serialAvailable()
   {
     return hardware_serial_ptr_->available();
   }
-#if SOFTWARE_SERIAL_IMPLEMENTED
+#if SOFTWARE_SERIAL_INCLUDED
   else if (software_serial_ptr_ != nullptr)
   {
     return software_serial_ptr_->available();
@@ -602,7 +602,7 @@ size_t TMC2209::serialWrite(uint8_t c)
   {
     return hardware_serial_ptr_->write(c);
   }
-#if SOFTWARE_SERIAL_IMPLEMENTED
+#if SOFTWARE_SERIAL_INCLUDED
   else if (software_serial_ptr_ != nullptr)
   {
     return software_serial_ptr_->write(c);
@@ -617,7 +617,7 @@ int TMC2209::serialRead()
   {
     return hardware_serial_ptr_->read();
   }
-#if SOFTWARE_SERIAL_IMPLEMENTED
+#if SOFTWARE_SERIAL_INCLUDED
   else if (software_serial_ptr_ != nullptr)
   {
     return software_serial_ptr_->read();

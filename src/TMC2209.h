@@ -10,11 +10,11 @@
 #include <Arduino.h>
 
 #if !defined(ESP32) && !defined(ARDUINO_ARCH_SAMD) && !defined(ARDUINO_RASPBERRY_PI_PICO) && !defined(ARDUINO_SAM_DUE)
-#  define SOFTWARE_SERIAL_IMPLEMENTED true
+#  define SOFTWARE_SERIAL_INCLUDED true
 #else
-#  define SOFTWARE_SERIAL_IMPLEMENTED false
+#  define SOFTWARE_SERIAL_INCLUDED false
 #endif
-#if SOFTWARE_SERIAL_IMPLEMENTED
+#if SOFTWARE_SERIAL_INCLUDED
 #  include <SoftwareSerial.h>
 #endif
 
@@ -48,7 +48,7 @@ public:
     SerialAddress serial_address=SERIAL_ADDRESS_0);
   #endif
 
-#if SOFTWARE_SERIAL_IMPLEMENTED
+#if SOFTWARE_SERIAL_INCLUDED
   // Software serial ports should only be used for unidirectional communication
   // The RX pin does not need to be connected, but it must be specified when
   // creating an instance of a SoftwareSerial object
@@ -233,7 +233,7 @@ public:
 
 private:
   HardwareSerial * hardware_serial_ptr_;
-#if SOFTWARE_SERIAL_IMPLEMENTED
+#if SOFTWARE_SERIAL_INCLUDED
   SoftwareSerial * software_serial_ptr_;
 #endif
   uint32_t serial_baud_rate_;
