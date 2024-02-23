@@ -791,16 +791,21 @@ After this file is installed, physically unplug and reconnect your board.
 
 *** Compile the firmware
 
+
 **** Gnu/Linux
 
 #+BEGIN_SRC sh
-make firmware
+make teensy-firmware
+make mega-firmware
+make uno-firmware
 #+END_SRC
 
 **** Other
 
 #+BEGIN_SRC sh
-pio run -e teensy35
+pio run -e teensy40
+pio run -e mega
+pio run -e uno
 #+END_SRC
 
 *** Upload the firmware
@@ -808,13 +813,17 @@ pio run -e teensy35
 **** Gnu/Linux
 
 #+BEGIN_SRC sh
-make upload
+make teensy-upload
+make mega-upload
+make uno-upload
 #+END_SRC
 
 **** Other
 
 #+BEGIN_SRC sh
-pio run -e teensy35 -t upload
+pio run -e teensy40 -t upload
+pio run -e mega -t upload
+pio run -e uno -t upload
 #+END_SRC
 
 *** Serial Terminal Monitor
@@ -828,7 +837,7 @@ make monitor
 **** Other
 
 #+BEGIN_SRC sh
-pio device monitor --echo --eol=LF
+pio device monitor
 #+END_SRC
 
 

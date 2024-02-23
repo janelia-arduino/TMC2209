@@ -1,17 +1,17 @@
-- [Library Information](#org279b5c1)
-- [Stepper Motors](#org4bc6737)
-- [Stepper Motor Controllers and Drivers](#org26bfc5e)
-- [Communication](#org223fc68)
-- [Settings](#orgb8dcddf)
-- [Examples](#org22c0b13)
-- [Hardware Documentation](#org51b6a4b)
-- [Host Computer Setup](#org83c69bb)
+- [Library Information](#org03be802)
+- [Stepper Motors](#org5ad9d60)
+- [Stepper Motor Controllers and Drivers](#orgdcf0928)
+- [Communication](#org46a203a)
+- [Settings](#org1f9f14e)
+- [Examples](#org69beecd)
+- [Hardware Documentation](#orgd17abcc)
+- [Host Computer Setup](#orgc86fcea)
 
     <!-- This file is generated automatically from metadata -->
     <!-- File edits may be overwritten! -->
 
 
-<a id="org279b5c1"></a>
+<a id="org03be802"></a>
 
 # Library Information
 
@@ -30,7 +30,7 @@ The TMC2209 is an ultra-silent motor driver IC for two phase stepper motors with
 <img src="./images/trinamic_wiring-TMC2209-description.svg" width="1200px">
 
 
-<a id="org4bc6737"></a>
+<a id="org5ad9d60"></a>
 
 # Stepper Motors
 
@@ -41,7 +41,7 @@ A stepper motor, also known as step motor or stepping motor, is a brushless DC e
 [Wikipedia - Stepper Motor](https://en.wikipedia.org/wiki/Stepper_motor)
 
 
-<a id="org26bfc5e"></a>
+<a id="orgdcf0928"></a>
 
 # Stepper Motor Controllers and Drivers
 
@@ -89,7 +89,7 @@ Another controller option is to use both a microcontroller and a separate step a
 <img src="./images/trinamic_wiring-TMC2209-stepper-controller.svg" width="1200px">
 
 
-<a id="org223fc68"></a>
+<a id="org46a203a"></a>
 
 # Communication
 
@@ -391,7 +391,7 @@ A library such as the Arduino TMC429 library may be used to control the step and
 [Arduino TMC429 Library](https://github.com/janelia-arduino/TMC429)
 
 
-<a id="orgb8dcddf"></a>
+<a id="org1f9f14e"></a>
 
 # Settings
 
@@ -546,7 +546,7 @@ In voltage control mode, the hold current scales the PWM amplitude, but the curr
 In current control mode, setting the hold current is the way to adjust the stationary motor current. The driver will measure the current and automatically adjust the voltage to maintain the hold current, even with the operating conditions change. The PWM offset may be changed to help the automatic tuning procedure, but changing the hold current alone is enough to adjust the motor current since the driver will adjust the offset automatically.
 
 
-<a id="org22c0b13"></a>
+<a id="org69beecd"></a>
 
 # Examples
 
@@ -574,7 +574,7 @@ In current control mode, setting the hold current is the way to adjust the stati
 <https://github.com/janelia-kicad/trinamic_wiring>
 
 
-<a id="org51b6a4b"></a>
+<a id="orgd17abcc"></a>
 
 # Hardware Documentation
 
@@ -609,7 +609,7 @@ In current control mode, setting the hold current is the way to adjust the stati
 [Janelia Stepper Driver Web Page](https://github.com/janelia-kicad/stepper_driver)
 
 
-<a id="org83c69bb"></a>
+<a id="orgc86fcea"></a>
 
 # Host Computer Setup
 
@@ -678,13 +678,17 @@ Linux users have to install udev rules for PlatformIO supported boards/devices.
 1.  Gnu/Linux
 
     ```sh
-    make firmware
+    make teensy-firmware
+    make mega-firmware
+    make uno-firmware
     ```
 
 2.  Other
 
     ```sh
-    pio run -e teensy35
+    pio run -e teensy40
+    pio run -e mega
+    pio run -e uno
     ```
 
 
@@ -693,13 +697,17 @@ Linux users have to install udev rules for PlatformIO supported boards/devices.
 1.  Gnu/Linux
 
     ```sh
-    make upload
+    make teensy-upload
+    make mega-upload
+    make uno-upload
     ```
 
 2.  Other
 
     ```sh
-    pio run -e teensy35 -t upload
+    pio run -e teensy40 -t upload
+    pio run -e mega -t upload
+    pio run -e uno -t upload
     ```
 
 
@@ -714,5 +722,5 @@ Linux users have to install udev rules for PlatformIO supported boards/devices.
 2.  Other
 
     ```sh
-    pio device monitor --echo --eol=LF
+    pio device monitor
     ```

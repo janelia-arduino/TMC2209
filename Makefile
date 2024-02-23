@@ -2,12 +2,29 @@
 clean:
 	rm -rf .pio
 
-firmware: clean
-	pio run -e teensy41
+.PHONY: teensy-firmware
+teensy-firmware: clean
+	pio run -e teensy40
 
-.PHONY: upload
-upload: clean
-	pio run -e teensy41 --target upload --upload-port /dev/ttyACM0
+.PHONY: teensy-upload
+teensy-upload: clean
+	pio run -e teensy40 --target upload --upload-port /dev/ttyACM0
+
+.PHONY: mega-firmware
+mega-firmware: clean
+	pio run -e mega
+
+.PHONY: mega-upload
+mega-upload: clean
+	pio run -e mega --target upload --upload-port /dev/ttyACM0
+
+.PHONY: uno-firmware
+uno-firmware: clean
+	pio run -e uno
+
+.PHONY: uno-upload
+uno-upload: clean
+	pio run -e uno --target upload --upload-port /dev/ttyACM0
 
 .PHONY: monitor
 monitor:
