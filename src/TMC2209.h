@@ -9,7 +9,7 @@
 #define TMC2209_H
 #include <Arduino.h>
 
-#if !defined(ESP32) && !defined(ARDUINO_ARCH_SAMD) && !defined(ARDUINO_RASPBERRY_PI_PICO) && !defined(ARDUINO_SAM_DUE)
+#if !defined(ESP32) && !defined(ARDUINO_ARCH_SAMD) && !defined(ARDUINO_ARCH_RP2040) && !defined(ARDUINO_SAM_DUE)
 #  define SOFTWARE_SERIAL_INCLUDED true
 #else
 #  define SOFTWARE_SERIAL_INCLUDED false
@@ -32,21 +32,27 @@ public:
     SERIAL_ADDRESS_3=3,
   };
   // Alternate rx and tx pins may be specified for certain microcontrollers e.g.
-  // ESP32
-  #ifdef ESP32
+  // ESP32 and RP2040
+#if defined(ESP32)
   void setup(HardwareSerial & serial,
     long serial_baud_rate=115200,
     SerialAddress serial_address=SERIAL_ADDRESS_0,
     int16_t alternate_rx_pin=-1,
     int16_t alternate_tx_pin=-1);
-  #else
+#elif defined(ARDUINO_ARCH_RP2040)
+  void setup(SerialUART & serial,
+    long serial_baud_rate=115200,
+    SerialAddress serial_address=SERIAL_ADDRESS_0,
+    int16_t alternate_rx_pin=-1,
+    int16_t alternate_tx_pin=-1);
+#else
   // Identify which microcontroller serial port is connected to the TMC2209 e.g.
   // Serial1, Serial2, etc. Optionally identify which serial address is assigned
   // to the TMC2209 if not the default of SERIAL_ADDRESS_0.
   void setup(HardwareSerial & serial,
     long serial_baud_rate=115200,
     SerialAddress serial_address=SERIAL_ADDRESS_0);
-  #endif
+#endif
 
 #if SOFTWARE_SERIAL_INCLUDED
   // Software serial ports should only be used for unidirectional communication

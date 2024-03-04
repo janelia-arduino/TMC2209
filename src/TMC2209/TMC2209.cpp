@@ -19,7 +19,7 @@ TMC2209::TMC2209()
   cool_step_enabled_ = false;
 }
 
-#ifdef ESP32
+#if defined(ESP32)
 void TMC2209::setup(HardwareSerial & serial,
   long serial_baud_rate,
   SerialAddress serial_address,
@@ -36,6 +36,29 @@ void TMC2209::setup(HardwareSerial & serial,
   {
     hardware_serial_ptr_->end();
     hardware_serial_ptr_->begin(serial_baud_rate, SERIAL_8N1, alternate_rx_pin, alternate_tx_pin);
+  }
+
+  initialize(serial_baud_rate, serial_address);
+}
+#elif defined(ARDUINO_ARCH_RP2040)
+void TMC2209::setup(SerialUART & serial,
+  long serial_baud_rate,
+  SerialAddress serial_address,
+  int16_t alternate_rx_pin,
+  int16_t alternate_tx_pin)
+{
+  hardware_serial_ptr_ = &serial;
+  if ((alternate_rx_pin < 0) || (alternate_tx_pin < 0))
+  {
+    hardware_serial_ptr_->end();
+    hardware_serial_ptr_->begin(serial_baud_rate);
+  }
+  else
+  {
+    hardware_serial_ptr_->end();
+    serial.setRX(alternate_rx_pin);
+    serial.setTX(alternate_tx_pin);
+    hardware_serial_ptr_->begin(serial_baud_rate);
   }
 
   initialize(serial_baud_rate, serial_address);

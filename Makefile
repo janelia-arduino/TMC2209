@@ -26,6 +26,14 @@ uno-firmware: clean
 uno-upload: clean
 	pio run -e uno --target upload --upload-port /dev/ttyACM0
 
+.PHONY: pico-firmware
+pico-firmware: clean
+	pio run -e pico
+
+.PHONY: pico-upload
+pico-upload: clean
+	pio run -e pico --target upload
+
 .PHONY: monitor
 monitor:
 	pio device monitor --echo --eol=LF

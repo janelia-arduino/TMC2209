@@ -12,7 +12,7 @@
 
 * Library Information
 - Name :: TMC2209
-- Version :: 9.0.12
+- Version :: 9.1.0
 - License :: BSD
 - URL :: https://github.com/janelia-arduino/TMC2209
 - Author :: Peter Polidoro
@@ -23,7 +23,7 @@
 The TMC2209 is an ultra-silent motor driver IC for two phase stepper motors with
 both UART serial and step and direction interfaces.
 
-#+html: <img src="./images/trinamic_wiring-TMC2209-description.svg" width="1200px">
+#+html: <img src="./images/trinamic_wiring-TMC2209-description.svg" width="1920px">
 
 * Stepper Motors
 
@@ -99,14 +99,14 @@ One controller option is to use just a single microcontroller, communicating
 with the TMC2209 over both the UART serial interface and the step and direction
 interface.
 
-#+html: <img src="./images/trinamic_wiring-TMC2209-microcontroller.svg" width="1200px">
+#+html: <img src="./images/trinamic_wiring-TMC2209-microcontroller.svg" width="1920px">
 
 *** TMC429 and Microcontroller Stepper Motor Controller
 
 Another controller option is to use both a microcontroller and a separate step
 and direction controller, such as the TMC429.
 
-#+html: <img src="./images/trinamic_wiring-TMC2209-stepper-controller.svg" width="1200px">
+#+html: <img src="./images/trinamic_wiring-TMC2209-stepper-controller.svg" width="1920px">
 
 * Communication
 
@@ -136,7 +136,7 @@ TMC2209 parameters may be set using unidirectional communication from a
 microcontroller UART serial TX pin to the TMC2209 PDN_UART pin. Responses from
 the TMC2209 to the microcontroller are ignored.
 
-#+html: <img src="./images/trinamic_wiring-TMC2209-unidirectional.svg" width="1200px">
+#+html: <img src="./images/trinamic_wiring-TMC2209-unidirectional.svg" width="1920px">
 
 *** Bidirectional Communication
 
@@ -160,7 +160,7 @@ performs a CRC (cyclic redundancy check) which helps increase interface
 distances while decreasing the risk of wrong or missed commands even in the
 event of electromagnetic disturbances.
 
-#+html: <img src="./images/trinamic_wiring-TMC2209-bidirectional-coupled.svg" width="1200px">
+#+html: <img src="./images/trinamic_wiring-TMC2209-bidirectional-coupled.svg" width="1920px">
 
 *** Serial Setup
 
@@ -337,7 +337,7 @@ void setup()
 }
 #+END_SRC
 
-#+html: <img src="./images/trinamic_wiring-TMC2209-unidirectional-multiple.svg" width="1200px">
+#+html: <img src="./images/trinamic_wiring-TMC2209-unidirectional-multiple.svg" width="1920px">
 
 ***** Chips needing different settings using one UART
 
@@ -359,7 +359,7 @@ void setup()
 }
 #+END_SRC
 
-#+html: <img src="./images/trinamic_wiring-TMC2209-unidirectional-multiple-address.svg" width="1200px">
+#+html: <img src="./images/trinamic_wiring-TMC2209-unidirectional-multiple-address.svg" width="1920px">
 
 ***** Chips needing different settings using multiple UART
 
@@ -378,7 +378,7 @@ void setup()
 }
 #+END_SRC
 
-#+html: <img src="./images/trinamic_wiring-TMC2209-unidirectional-multiple-uart.svg" width="1200px">
+#+html: <img src="./images/trinamic_wiring-TMC2209-unidirectional-multiple-uart.svg" width="1920px">
 
 **** Bidirectional Communication
 
@@ -419,7 +419,7 @@ void setup()
 }
 #+END_SRC
 
-#+html: <img src="./images/trinamic_wiring-TMC2209-bidirectional-coupled-multiple-address.svg" width="1200px">
+#+html: <img src="./images/trinamic_wiring-TMC2209-bidirectional-coupled-multiple-address.svg" width="1920px">
 
 ***** Chips needing different settings using multiple UART
 
@@ -438,7 +438,7 @@ void setup()
 }
 #+END_SRC
 
-#+html: <img src="./images/trinamic_wiring-TMC2209-bidirectional-coupled-multiple-uart.svg" width="1200px">
+#+html: <img src="./images/trinamic_wiring-TMC2209-bidirectional-coupled-multiple-uart.svg" width="1920px">
 
 ** Step and Direction Interface
 
@@ -692,15 +692,15 @@ current since the driver will adjust the offset automatically.
 
 *** Teensy 4.0
 
-#+html: <img src="./images/trinamic_wiring-TMC2209-teensy40.svg" width="1200px">
+#+html: <img src="./images/trinamic_wiring-TMC2209-teensy40.svg" width="1920px">
 
 *** Mega 2560
 
-#+html: <img src="./images/trinamic_wiring-TMC2209-mega2560.svg" width="1200px">
+#+html: <img src="./images/trinamic_wiring-TMC2209-mega2560.svg" width="1920px">
 
 *** Uno
 
-#+html: <img src="./images/trinamic_wiring-TMC2209-uno.svg" width="1200px">
+#+html: <img src="./images/trinamic_wiring-TMC2209-uno.svg" width="1920px">
 
 *** Wiring Documentation Source
 
