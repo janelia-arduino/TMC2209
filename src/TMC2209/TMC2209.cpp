@@ -29,7 +29,7 @@ void TMC2209::setup(HardwareSerial & serial,
   hardware_serial_ptr_ = &serial;
   if ((alternate_rx_pin < 0) || (alternate_tx_pin < 0))
   {
-    hardware_serial_ptr_->end(false);
+    hardware_serial_ptr_->end();
     hardware_serial_ptr_->begin(serial_baud_rate);
   }
   else
