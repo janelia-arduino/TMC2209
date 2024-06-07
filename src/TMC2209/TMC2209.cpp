@@ -224,6 +224,18 @@ void TMC2209::setAllCurrentValues(uint8_t run_current_percent,
   writeStoredDriverCurrent();
 }
 
+void TMC2209::enableDoubleEdge()
+{
+  chopper_config_.double_edge = DOUBLE_EDGE_DISABLE;
+  writeStoredChopperConfig();
+}
+
+void TMC2209::disableDoubleEdge()
+{
+  chopper_config_.double_edge = DOUBLE_EDGE_ENABLE;
+  writeStoredChopperConfig();
+}
+
 void TMC2209::enableInverseMotorDirection()
 {
   global_config_.shaft = 1;

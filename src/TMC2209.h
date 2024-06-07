@@ -88,6 +88,9 @@ public:
     uint8_t hold_current_percent,
     uint8_t hold_delay_percent);
 
+  void enableDoubleEdge();
+  void disableDoubleEdge();
+
   void enableInverseMotorDirection();
   void disableInverseMotorDirection();
 
@@ -492,6 +495,8 @@ private:
   const static uint8_t MRES_004 = 0b0110;
   const static uint8_t MRES_002 = 0b0111;
   const static uint8_t MRES_001 = 0b1000;
+  const static uint8_t DOUBLE_EDGE_DISABLE = 0;
+  const static uint8_t DOUBLE_EDGE_ENABLE = 1;
 
   const static size_t MICROSTEPS_PER_STEP_MIN = 1;
   const static size_t MICROSTEPS_PER_STEP_MAX = 256;
