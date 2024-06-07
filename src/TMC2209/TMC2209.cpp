@@ -226,13 +226,13 @@ void TMC2209::setAllCurrentValues(uint8_t run_current_percent,
 
 void TMC2209::enableDoubleEdge()
 {
-  chopper_config_.double_edge = DOUBLE_EDGE_DISABLE;
+  chopper_config_.double_edge = DOUBLE_EDGE_ENABLE;
   writeStoredChopperConfig();
 }
 
 void TMC2209::disableDoubleEdge()
 {
-  chopper_config_.double_edge = DOUBLE_EDGE_ENABLE;
+  chopper_config_.double_edge = DOUBLE_EDGE_DISABLE;
   writeStoredChopperConfig();
 }
 
