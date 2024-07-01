@@ -40,6 +40,9 @@ public:
     int16_t alternate_rx_pin=-1,
     int16_t alternate_tx_pin=-1);
 #elif defined(ARDUINO_ARCH_RP2040)
+  void setup(HardwareSerial & serial,
+    long serial_baud_rate=115200,
+    SerialAddress serial_address=SERIAL_ADDRESS_0);
   void setup(SerialUART & serial,
     long serial_baud_rate=115200,
     SerialAddress serial_address=SERIAL_ADDRESS_0,
