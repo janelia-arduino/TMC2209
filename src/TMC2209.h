@@ -226,6 +226,17 @@ public:
   const static uint8_t CURRENT_SCALING_MAX = 31;
   Status getStatus();
 
+  struct GlobalStatus
+  {
+    uint32_t reset : 1;
+    uint32_t drv_err : 1;
+    uint32_t uv_cp : 1;
+    uint32_t reserved : 29;
+  };
+  GlobalStatus getGlobalStatus();
+  void clearReset();
+  void clearDriveError();
+
   uint8_t getInterfaceTransmissionCounter();
 
   uint32_t getInterstepDuration();
@@ -329,14 +340,11 @@ private:
   GlobalConfig global_config_;
 
   const static uint8_t ADDRESS_GSTAT = 0x01;
-  union GlobalStatus
+  union GlobalStatusUnion
   {
     struct
     {
-      uint32_t reset : 1;
-      uint32_t drv_err : 1;
-      uint32_t uv_cp : 1;
-      uint32_t reserved : 29;
+      GlobalStatus global_status;
     };
     uint32_t bytes;
   };

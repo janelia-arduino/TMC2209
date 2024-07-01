@@ -548,6 +548,30 @@ TMC2209::Status TMC2209::getStatus()
   return drive_status.status;
 }
 
+TMC2209::GlobalStatus TMC2209::getGlobalStatus()
+{
+  GlobalStatusUnion global_status_union;
+  global_status_union.bytes = 0;
+  global_status_union.bytes = read(ADDRESS_GSTAT);
+  return global_status_union.global_status;
+}
+
+void TMC2209::clearReset()
+{
+  GlobalStatusUnion global_status_union;
+  global_status_union.bytes = 0;
+  global_status_union.global_status.reset = 1;
+  write(ADDRESS_GSTAT, global_status_union.bytes);
+}
+
+void TMC2209::clearDriveError()
+{
+  GlobalStatusUnion global_status_union;
+  global_status_union.bytes = 0;
+  global_status_union.global_status.drv_err = 1;
+  write(ADDRESS_GSTAT, global_status_union.bytes);
+}
+
 uint8_t TMC2209::getInterfaceTransmissionCounter()
 {
   return read(ADDRESS_IFCNT);
@@ -608,6 +632,7 @@ void TMC2209::initialize(long serial_baud_rate,
 
   setOperationModeToSerial(serial_address);
   setRegistersToDefaults();
+  clearDriveError();
 
   minimizeMotorCurrent();
   disable();
