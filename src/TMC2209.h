@@ -285,7 +285,7 @@ private:
   const static uint8_t STEPPER_DRIVER_FEATURE_OFF = 0;
   const static uint8_t STEPPER_DRIVER_FEATURE_ON = 1;
 
-  const static int MAX_READ_RETRIES = 5;
+  const static uint8_t MAX_READ_RETRIES = 5;
   const static uint32_t READ_RETRY_DELAY_MS = 20;
 
   // Datagrams
