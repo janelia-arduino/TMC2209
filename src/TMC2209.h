@@ -86,9 +86,15 @@ public:
   void setAllCurrentValues(uint8_t run_current_percent,
     uint8_t hold_current_percent,
     uint8_t hold_delay_percent);
+  void setRMSCurrent(uint16_t mA,
+    float rSense,
+    float holdMultiplier = 0.5f);
 
   void enableDoubleEdge();
   void disableDoubleEdge();
+
+  void enableVSense();
+  void disableVSense();
 
   void enableInverseMotorDirection();
   void disableInverseMotorDirection();
@@ -278,6 +284,9 @@ private:
 
   const static uint8_t STEPPER_DRIVER_FEATURE_OFF = 0;
   const static uint8_t STEPPER_DRIVER_FEATURE_ON = 1;
+
+  const static int MAX_READ_RETRIES = 5;
+  const static uint32_t READ_RETRY_DELAY_MS = 20;
 
   // Datagrams
   const static uint8_t WRITE_READ_REPLY_DATAGRAM_SIZE = 8;
@@ -504,6 +513,8 @@ private:
   const static uint8_t MRES_001 = 0b1000;
   const static uint8_t DOUBLE_EDGE_DISABLE = 0;
   const static uint8_t DOUBLE_EDGE_ENABLE = 1;
+  const static uint8_t VSENSE_DISABLE = 0;
+  const static uint8_t VSENSE_ENABLE = 1;
 
   const static size_t MICROSTEPS_PER_STEP_MIN = 1;
   const static size_t MICROSTEPS_PER_STEP_MAX = 256;

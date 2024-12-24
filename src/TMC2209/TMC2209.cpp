@@ -223,6 +223,30 @@ void TMC2209::setAllCurrentValues(uint8_t run_current_percent,
   writeStoredDriverCurrent();
 }
 
+void TMC2209::setRMSCurrent(uint16_t mA,
+  float rSense,
+  float holdMultiplier)
+{
+  // Taken from https://github.com/teemuatlut/TMCStepper/blob/74e8e6881adc9241c2e626071e7328d7652f361a/src/source/TMCStepper.cpp#L41.
+
+  uint8_t CS = 32.0*1.41421*mA/1000.0*(rSense+0.02)/0.325 - 1;
+  // If Current Scale is too low, turn on high sensitivity R_sense and calculate again
+  if (CS < 16) {
+    enableVSense();
+    CS = 32.0*1.41421*mA/1000.0*(rSense+0.02)/0.180 - 1;
+  } else { // If CS >= 16, turn off high_sense_r
+    disableVSense();
+  }
+
+  if (CS > 31) {
+    CS = 31;
+  }
+
+  driver_current_.irun = CS;
+  driver_current_.ihold = CS*holdMultiplier;
+  writeStoredDriverCurrent();
+}
+
 void TMC2209::enableDoubleEdge()
 {
   chopper_config_.double_edge = DOUBLE_EDGE_ENABLE;
@@ -232,6 +256,18 @@ void TMC2209::enableDoubleEdge()
 void TMC2209::disableDoubleEdge()
 {
   chopper_config_.double_edge = DOUBLE_EDGE_DISABLE;
+  writeStoredChopperConfig();
+}
+
+void TMC2209::enableVSense()
+{
+  chopper_config_.vsense = VSENSE_ENABLE;
+  writeStoredChopperConfig();
+}
+
+void TMC2209::disableVSense()
+{
+  chopper_config_.vsense = VSENSE_DISABLE;
   writeStoredChopperConfig();
 }
 
