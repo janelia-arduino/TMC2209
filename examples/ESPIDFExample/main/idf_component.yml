@@ -1,0 +1,5 @@
+dependencies:
+  TMC2209:
+    path: ../../..
+    # Alternatively you can point this directly at the GitHub repository:
+    # git: https://github.com/janelia-arduino/TMC2209.git

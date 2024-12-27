@@ -223,6 +223,30 @@ void TMC2209::setAllCurrentValues(uint8_t run_current_percent,
   writeStoredDriverCurrent();
 }
 
+void TMC2209::setRMSCurrent(uint16_t mA,
+  float rSense,
+  float holdMultiplier)
+{
+  // Taken from https://github.com/teemuatlut/TMCStepper/blob/74e8e6881adc9241c2e626071e7328d7652f361a/src/source/TMCStepper.cpp#L41.
+
+  uint8_t CS = 32.0*1.41421*mA/1000.0*(rSense+0.02)/0.325 - 1;
+  // If Current Scale is too low, turn on high sensitivity R_sense and calculate again
+  if (CS < 16) {
+    enableVSense();
+    CS = 32.0*1.41421*mA/1000.0*(rSense+0.02)/0.180 - 1;
+  } else { // If CS >= 16, turn off high_sense_r
+    disableVSense();
+  }
+
+  if (CS > 31) {
+    CS = 31;
+  }
+
+  driver_current_.irun = CS;
+  driver_current_.ihold = CS*holdMultiplier;
+  writeStoredDriverCurrent();
+}
+
 void TMC2209::enableDoubleEdge()
 {
   chopper_config_.double_edge = DOUBLE_EDGE_ENABLE;
@@ -232,6 +256,18 @@ void TMC2209::enableDoubleEdge()
 void TMC2209::disableDoubleEdge()
 {
   chopper_config_.double_edge = DOUBLE_EDGE_DISABLE;
+  writeStoredChopperConfig();
+}
+
+void TMC2209::enableVSense()
+{
+  chopper_config_.vsense = VSENSE_ENABLE;
+  writeStoredChopperConfig();
+}
+
+void TMC2209::disableVSense()
+{
+  chopper_config_.vsense = VSENSE_DISABLE;
   writeStoredChopperConfig();
 }
 
@@ -880,32 +916,43 @@ uint32_t TMC2209::read(uint8_t register_address)
   read_request_datagram.rw = RW_READ;
   read_request_datagram.crc = calculateCrc(read_request_datagram, READ_REQUEST_DATAGRAM_SIZE);
 
-  sendDatagramBidirectional(read_request_datagram, READ_REQUEST_DATAGRAM_SIZE);
-
-  uint32_t reply_delay = 0;
-  while ((serialAvailable() < WRITE_READ_REPLY_DATAGRAM_SIZE) and
-    (reply_delay < REPLY_DELAY_MAX_MICROSECONDS))
+  for (uint8_t retry = 0; retry < MAX_READ_RETRIES; retry++)
   {
-    delayMicroseconds(REPLY_DELAY_INC_MICROSECONDS);
-    reply_delay += REPLY_DELAY_INC_MICROSECONDS;
+    sendDatagramBidirectional(read_request_datagram, READ_REQUEST_DATAGRAM_SIZE);
+
+    uint32_t reply_delay = 0;
+    while ((serialAvailable() < WRITE_READ_REPLY_DATAGRAM_SIZE) and
+      (reply_delay < REPLY_DELAY_MAX_MICROSECONDS))
+    {
+      delayMicroseconds(REPLY_DELAY_INC_MICROSECONDS);
+      reply_delay += REPLY_DELAY_INC_MICROSECONDS;
+    }
+
+    if (reply_delay >= REPLY_DELAY_MAX_MICROSECONDS)
+    {
+      return 0;
+    }
+
+    uint64_t byte;
+    uint8_t byte_count = 0;
+    WriteReadReplyDatagram read_reply_datagram;
+    read_reply_datagram.bytes = 0;
+    for (uint8_t i=0; i<WRITE_READ_REPLY_DATAGRAM_SIZE; ++i)
+    {
+      byte = serialRead();
+      read_reply_datagram.bytes |= (byte << (byte_count++ * BITS_PER_BYTE));
+    }
+
+    auto crc = calculateCrc(read_reply_datagram, WRITE_READ_REPLY_DATAGRAM_SIZE);
+    if (crc == read_reply_datagram.crc)
+    {
+      return reverseData(read_reply_datagram.data);
+    }
+
+    delay(READ_RETRY_DELAY_MS);
   }
 
-  if (reply_delay >= REPLY_DELAY_MAX_MICROSECONDS)
-  {
-    return 0;
-  }
-
-  uint64_t byte;
-  uint8_t byte_count = 0;
-  WriteReadReplyDatagram read_reply_datagram;
-  read_reply_datagram.bytes = 0;
-  for (uint8_t i=0; i<WRITE_READ_REPLY_DATAGRAM_SIZE; ++i)
-  {
-    byte = serialRead();
-    read_reply_datagram.bytes |= (byte << (byte_count++ * BITS_PER_BYTE));
-  }
-
-  return reverseData(read_reply_datagram.data);
+  return 0;
 }
 
 uint8_t TMC2209::percentToCurrentSetting(uint8_t percent)
