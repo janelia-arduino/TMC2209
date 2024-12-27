@@ -12,11 +12,14 @@
 
 * Library Information
 - Name :: TMC2209
-- Version :: 9.4.2
+- Version :: 10.0.0
 - License :: BSD
 - URL :: https://github.com/janelia-arduino/TMC2209
 - Author :: Peter Polidoro
 - Email :: peter@polidoro.io
+- Contributors
+  - thinkier
+  - pvginkel
 
 ** Description
 
