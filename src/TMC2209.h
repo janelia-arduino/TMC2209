@@ -9,7 +9,7 @@
 #define TMC2209_H
 #include <Arduino.h>
 
-#if !defined(ESP32) && !defined(ARDUINO_ARCH_SAMD) && !defined(ARDUINO_ARCH_RP2040) && !defined(ARDUINO_SAM_DUE)
+#if !defined(ESP32) && !defined(ARDUINO_ARCH_SAMD) && !defined(ARDUINO_ARCH_RP2040) && !defined(ARDUINO_SAM_DUE) && !define(ARDUINO_UNOR4_MINIMA)
 #  define SOFTWARE_SERIAL_INCLUDED true
 #else
 #  define SOFTWARE_SERIAL_INCLUDED false
