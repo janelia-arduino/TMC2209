@@ -12,7 +12,7 @@
 
 * Library Information
 - Name :: TMC2209
-- Version :: 10.0.0
+- Version :: 10.1.0
 - License :: BSD
 - URL :: https://github.com/janelia-arduino/TMC2209
 - Author :: Peter Polidoro
