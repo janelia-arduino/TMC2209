@@ -51,6 +51,10 @@ public:
     SerialAddress serial_address,
     int16_t alternate_rx_pin,
     int16_t alternate_tx_pin);
+#elif defined(ARDUINO_UNOR4_MINIMA)
+  void setup(UART & serial,
+    long serial_baud_rate,
+    SerialAddress serial_address);
 #endif
 
 #if SOFTWARE_SERIAL_INCLUDED

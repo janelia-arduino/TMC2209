@@ -73,6 +73,17 @@ void TMC2209::setup(SerialUART & serial,
 
   initialize(serial_baud_rate, serial_address);
 }
+#elif defined(ARDUINO_UNOR4_MINIMA)
+void TMC2209::setup(UART & serial,
+  long serial_baud_rate,
+  SerialAddress serial_address)
+{
+  hardware_serial_ptr_ = &serial;
+  hardware_serial_ptr_->end();
+  hardware_serial_ptr_->begin(serial_baud_rate);
+
+  initialize(serial_baud_rate, serial_address);
+}
 #endif
 
 #if SOFTWARE_SERIAL_INCLUDED
