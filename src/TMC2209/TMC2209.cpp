@@ -19,6 +19,7 @@ TMC2209::TMC2209()
   cool_step_enabled_ = false;
 }
 
+#if !defined(ARDUINO_ARCH_RENESAS)
 void TMC2209::setup(HardwareSerial & serial,
   long serial_baud_rate,
   SerialAddress serial_address)
@@ -29,6 +30,7 @@ void TMC2209::setup(HardwareSerial & serial,
 
   initialize(serial_baud_rate, serial_address);
 }
+#endif
 #if defined(ESP32)
 void TMC2209::setup(HardwareSerial & serial,
   long serial_baud_rate,
@@ -60,27 +62,27 @@ void TMC2209::setup(SerialUART & serial,
   hardware_serial_ptr_ = &serial;
   if ((alternate_rx_pin < 0) || (alternate_tx_pin < 0))
   {
-    hardware_serial_ptr_->end();
-    hardware_serial_ptr_->begin(serial_baud_rate);
+    serial.end();
+    serial.begin(serial_baud_rate);
   }
   else
   {
     hardware_serial_ptr_->end();
     serial.setRX(alternate_rx_pin);
     serial.setTX(alternate_tx_pin);
-    hardware_serial_ptr_->begin(serial_baud_rate);
+    serial.begin(serial_baud_rate);
   }
 
   initialize(serial_baud_rate, serial_address);
 }
-#elif defined(ARDUINO_UNOR4_MINIMA)
+#elif defined(ARDUINO_ARCH_RENESAS)
 void TMC2209::setup(UART & serial,
   long serial_baud_rate,
   SerialAddress serial_address)
 {
   hardware_serial_ptr_ = &serial;
-  hardware_serial_ptr_->end();
-  hardware_serial_ptr_->begin(serial_baud_rate);
+  serial.end();
+  serial.begin(serial_baud_rate);
 
   initialize(serial_baud_rate, serial_address);
 }

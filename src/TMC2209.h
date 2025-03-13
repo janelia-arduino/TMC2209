@@ -9,7 +9,7 @@
 #define TMC2209_H
 #include <Arduino.h>
 
-#if !defined(ESP32) && !defined(ARDUINO_ARCH_SAMD) && !defined(ARDUINO_ARCH_RP2040) && !defined(ARDUINO_SAM_DUE) && !defined(ARDUINO_UNOR4_MINIMA)
+#if !defined(ESP32) && !defined(ARDUINO_ARCH_SAMD) && !defined(ARDUINO_ARCH_RP2040) && !defined(ARDUINO_SAM_DUE) && !defined(ARDUINO_ARCH_RENESAS)
 #  define SOFTWARE_SERIAL_INCLUDED true
 #else
 #  define SOFTWARE_SERIAL_INCLUDED false
@@ -34,9 +34,11 @@ public:
   // Identify which microcontroller serial port is connected to the TMC2209 e.g.
   // Serial1, Serial2, etc. Optionally identify which serial address is assigned
   // to the TMC2209 if not the default of SERIAL_ADDRESS_0.
+#if !defined(ARDUINO_ARCH_RENESAS)
   void setup(HardwareSerial & serial,
     long serial_baud_rate=115200,
     SerialAddress serial_address=SERIAL_ADDRESS_0);
+#endif
   // Alternate rx and tx pins may be specified for certain microcontrollers e.g.
   // ESP32 and RP2040
 #if defined(ESP32)
@@ -51,10 +53,10 @@ public:
     SerialAddress serial_address,
     int16_t alternate_rx_pin,
     int16_t alternate_tx_pin);
-#elif defined(ARDUINO_UNOR4_MINIMA)
+#elif defined(ARDUINO_ARCH_RENESAS)
   void setup(UART & serial,
-    long serial_baud_rate,
-    SerialAddress serial_address);
+    long serial_baud_rate=115200,
+    SerialAddress serial_address=SERIAL_ADDRESS_0);
 #endif
 
 #if SOFTWARE_SERIAL_INCLUDED
