@@ -19,6 +19,9 @@ void setup()
 {
   Serial.begin(SERIAL_BAUD_RATE);
 
+  // Start Serial1 on pins 0 (RX) and 1 (TX)
+  Serial1.begin(SERIAL_BAUD_RATE);
+
   stepper_driver.setup(serial_stream);
 }
 
