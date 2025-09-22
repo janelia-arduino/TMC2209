@@ -56,6 +56,7 @@ void setup()
   {
     TMC2209 & stepper_driver = stepper_drivers[motor_index];
     HardwareSerial & serial_stream = *(serial_stream_ptrs[motor_index]);
+    serial_stream.begin(SERIAL_BAUD_RATE);
     stepper_driver.setup(serial_stream);
     stepper_driver.setRunCurrent(RUN_CURRENT_PERCENT);
     stepper_driver.enableAutomaticCurrentScaling();

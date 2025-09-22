@@ -36,26 +36,16 @@ public:
   // to the TMC2209 if not the default of SERIAL_ADDRESS_0.
 #if !defined(ARDUINO_ARCH_RENESAS)
   void setup(HardwareSerial & serial,
-    long serial_baud_rate=115200,
     SerialAddress serial_address=SERIAL_ADDRESS_0);
 #endif
-  // Alternate rx and tx pins may be specified for certain microcontrollers e.g.
-  // ESP32 and RP2040
 #if defined(ESP32)
   void setup(HardwareSerial & serial,
-    long serial_baud_rate,
-    SerialAddress serial_address,
-    int16_t alternate_rx_pin,
-    int16_t alternate_tx_pin);
+    SerialAddress serial_address);
 #elif defined(ARDUINO_ARCH_RP2040)
   void setup(SerialUART & serial,
-    long serial_baud_rate,
-    SerialAddress serial_address,
-    int16_t alternate_rx_pin,
-    int16_t alternate_tx_pin);
+    SerialAddress serial_address);
 #elif defined(ARDUINO_ARCH_RENESAS)
   void setup(UART & serial,
-    long serial_baud_rate=115200,
     SerialAddress serial_address=SERIAL_ADDRESS_0);
 #endif
 
@@ -64,7 +54,6 @@ public:
   // The RX pin does not need to be connected, but it must be specified when
   // creating an instance of a SoftwareSerial object
   void setup(SoftwareSerial & serial,
-    long serial_baud_rate=9600,
     SerialAddress serial_address=SERIAL_ADDRESS_0);
 #endif
 
@@ -267,12 +256,10 @@ private:
 #if SOFTWARE_SERIAL_INCLUDED
   SoftwareSerial * software_serial_ptr_;
 #endif
-  uint32_t serial_baud_rate_;
   uint8_t serial_address_;
   int16_t hardware_enable_pin_;
 
-  void initialize(long serial_baud_rate=115200,
-    SerialAddress serial_address=SERIAL_ADDRESS_0);
+  void initialize(SerialAddress serial_address=SERIAL_ADDRESS_0);
   int serialAvailable();
   size_t serialWrite(uint8_t c);
   int serialRead();

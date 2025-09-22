@@ -28,6 +28,7 @@ bool invert_direction = false;
 
 void setup()
 {
+  serial_stream.begin(SERIAL_BAUD_RATE);
   stepper_driver.setup(serial_stream);
 
   stepper_driver.setHardwareEnablePin(HARDWARE_ENABLE_PIN);

@@ -20,6 +20,7 @@ const int STOP_DURATION = 1000;
 // current values may need to be reduced to prevent overheating depending on
 // specific motor and power supply voltage
 const uint8_t RUN_CURRENT_PERCENT = 100;
+const long SERIAL_BAUD_RATE = 9600;
 
 
 // Instantiate TMC2209
@@ -28,6 +29,7 @@ bool invert_direction = false;
 
 void setup()
 {
+  soft_serial.begin(SERIAL_BAUD_RATE);
   stepper_driver.setup(soft_serial);
 
   stepper_driver.setRunCurrent(RUN_CURRENT_PERCENT);

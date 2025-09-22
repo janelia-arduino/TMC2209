@@ -19,6 +19,7 @@ const uint16_t STOP_DURATION = 1000;
 // current values may need to be reduced to prevent overheating depending on
 // specific motor and power supply voltage
 const uint8_t RUN_CURRENT_PERCENT = 100;
+const long SERIAL_BAUD_RATE = 115200;
 
 
 // Instantiate TMC2209
@@ -26,6 +27,7 @@ TMC2209 stepper_driver;
 
 void setup()
 {
+  serial_stream.begin(SERIAL_BAUD_RATE);
   stepper_driver.setup(serial_stream);
 
   pinMode(STEP_PIN, OUTPUT);

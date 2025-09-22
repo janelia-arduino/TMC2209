@@ -1,22 +1,23 @@
-- [Library Information](#org0a93f63)
-- [Stepper Motors](#org9bac8a2)
-- [Stepper Motor Controllers and Drivers](#orgf1aa7b0)
-- [Communication](#orga2f6a2f)
-- [Settings](#org6d043c2)
-- [Examples](#org3f060c6)
-- [Hardware Documentation](#orge381e19)
-- [Host Computer Setup](#orgc537c8a)
+- [Library Information](#org966bbeb)
+- [Version 11+ Migration Changes](#org61a3e42)
+- [Stepper Motors](#orgfaa99b7)
+- [Stepper Motor Controllers and Drivers](#orgd77a89f)
+- [Communication](#orgef38600)
+- [Settings](#org8d370ab)
+- [Examples](#org6377bd7)
+- [Hardware Documentation](#org84fb27d)
+- [Host Computer Setup](#org3f3c47d)
 
     <!-- This file is generated automatically from metadata -->
     <!-- File edits may be overwritten! -->
 
 
-<a id="org0a93f63"></a>
+<a id="org966bbeb"></a>
 
 # Library Information
 
 -   **Name:** TMC2209
--   **Version:** 10.1.1
+-   **Version:** 11.0.0
 -   **License:** BSD
 -   **URL:** <https://github.com/janelia-arduino/TMC2209>
 -   **Author:** Peter Polidoro
@@ -33,7 +34,14 @@ The TMC2209 is an ultra-silent motor driver IC for two phase stepper motors with
 <img src="./images/trinamic_wiring-TMC2209-description.svg" width="1920px">
 
 
-<a id="org9bac8a2"></a>
+<a id="org61a3e42"></a>
+
+# Version 11+ Migration Changes
+
+Starting with version 11, the UART "begin" method must be called by user code before calling the stepper driver "setup" method.
+
+
+<a id="orgfaa99b7"></a>
 
 # Stepper Motors
 
@@ -44,7 +52,7 @@ A stepper motor, also known as step motor or stepping motor, is a brushless DC e
 [Wikipedia - Stepper Motor](https://en.wikipedia.org/wiki/Stepper_motor)
 
 
-<a id="orgf1aa7b0"></a>
+<a id="orgd77a89f"></a>
 
 # Stepper Motor Controllers and Drivers
 
@@ -92,7 +100,7 @@ Another controller option is to use both a microcontroller and a separate step a
 <img src="./images/trinamic_wiring-TMC2209-stepper-controller.svg" width="1920px">
 
 
-<a id="orga2f6a2f"></a>
+<a id="orgef38600"></a>
 
 # Communication
 
@@ -156,9 +164,11 @@ Not all platforms implement SoftwareSerial, for example ESP32 and SAMD\_SERIES. 
     TMC2209 stepper_driver;
     
     HardwareSerial & serial_stream = Serial1;
+    const long SERIAL_BAUD_RATE = 115200;
     
     void setup()
     {
+      serial_stream.begin(SERIAL_BAUD_RATE);
       stepper_driver.setup(serial_stream);
     }
     ```
@@ -181,7 +191,10 @@ Not all platforms implement SoftwareSerial, for example ESP32 and SAMD\_SERIES. 
     
     void setup()
     {
-      stepper_driver.setup(serial_stream, SERIAL_BAUD_RATE, TMC2209::SERIAL_ADDRESS_0, RX_PIN, TX_PIN);
+      serial_stream.setRX(RX_PIN);
+      serial_stream.setTX(TX_PIN);
+      serial_stream.begin(SERIAL_BAUD_RATE);
+      stepper_driver.setup(serial_stream, TMC2209::SERIAL_ADDRESS_0);
     }
     ```
 
@@ -200,9 +213,11 @@ Not all platforms implement SoftwareSerial, for example ESP32 and SAMD\_SERIES. 
     const int RX_PIN = 0;
     const int TX_PIN = 1;
     SoftwareSerial soft_serial(RX_PIN, TX_PIN);
+    const long SERIAL_BAUD_RATE = 9600;
     
     void setup()
     {
+      soft_serial.begin(SERIAL_BAUD_RATE);
       stepper_driver.setup(soft_serial);
     }
     ```
@@ -256,7 +271,8 @@ The higher the baud rate the better, but microcontrollers have various UART seri
     
     void setup()
     {
-      stepper_driver.setup(Serial1, SERIAL_BAUD_RATE);
+      serial_stream.begin(SERIAL_BAUD_RATE);
+      stepper_driver.setup(Serial1);
     }
     ```
 
@@ -272,11 +288,14 @@ The higher the baud rate the better, but microcontrollers have various UART seri
         ```cpp
         #include <TMC2209.h>
         
+        const long SERIAL_BAUD_RATE = 115200;
+        
         // Instantiate a single TMC2209 to talk to multiple chips
         TMC2209 stepper_drivers;
         
         void setup()
         {
+          Serial1.begin(SERIAL_BAUD_RATE);
           stepper_drivers.setup(Serial1);
         }
         ```
@@ -297,9 +316,10 @@ The higher the baud rate the better, but microcontrollers have various UART seri
         
         void setup()
         {
+          Serial1.begin(SERIAL_BAUD_RATE);
           // TMC2209::SERIAL_ADDRESS_0 is used by default if not specified
-          stepper_driver_0.setup(Serial1, SERIAL_BAUD_RATE, SERIAL_ADDRESS_0);
-          stepper_driver_1.setup(Serial1, SERIAL_BAUD_RATE, SERIAL_ADDRESS_1);
+          stepper_driver_0.setup(Serial1, SERIAL_ADDRESS_0);
+          stepper_driver_1.setup(Serial1, SERIAL_ADDRESS_1);
         }
         ```
         
@@ -317,8 +337,10 @@ The higher the baud rate the better, but microcontrollers have various UART seri
         
         void setup()
         {
-          stepper_driver_0.setup(Serial1, SERIAL_BAUD_RATE);
-          stepper_driver_1.setup(Serial2, SERIAL_BAUD_RATE);
+          Serial1.begin(SERIAL_BAUD_RATE);
+          stepper_driver_0.setup(Serial1);
+          Serial2.begin(SERIAL_BAUD_RATE);
+          stepper_driver_1.setup(Serial2);
         }
         ```
         
@@ -347,10 +369,11 @@ The higher the baud rate the better, but microcontrollers have various UART seri
         
         void setup()
         {
+          Serial1.begin(SERIAL_BAUD_RATE);
           // TMC2209::SERIAL_ADDRESS_0 is used by default if not specified
-          stepper_driver_0.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_0);
+          stepper_driver_0.setup(Serial1, SERIAL_ADDRESS_0);
           stepper_driver_0.setReplyDelay(REPLY_DELAY);
-          stepper_driver_1.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_1);
+          stepper_driver_1.setup(Serial1, SERIAL_ADDRESS_1);
           stepper_driver_1.setReplyDelay(REPLY_DELAY);
         }
         ```
@@ -369,8 +392,10 @@ The higher the baud rate the better, but microcontrollers have various UART seri
         
         void setup()
         {
-          stepper_driver_0.setup(Serial1, SERIAL_BAUD_RATE);
-          stepper_driver_1.setup(Serial2, SERIAL_BAUD_RATE);
+          Serial1.begin(SERIAL_BAUD_RATE);
+          stepper_driver_0.setup(Serial1);
+          Serial2.begin(SERIAL_BAUD_RATE);
+          stepper_driver_1.setup(Serial2);
         }
         ```
         
@@ -394,7 +419,7 @@ A library such as the Arduino TMC429 library may be used to control the step and
 [Arduino TMC429 Library](https://github.com/janelia-arduino/TMC429)
 
 
-<a id="org6d043c2"></a>
+<a id="org8d370ab"></a>
 
 # Settings
 
@@ -549,7 +574,7 @@ In voltage control mode, the hold current scales the PWM amplitude, but the curr
 In current control mode, setting the hold current is the way to adjust the stationary motor current. The driver will measure the current and automatically adjust the voltage to maintain the hold current, even with the operating conditions change. The PWM offset may be changed to help the automatic tuning procedure, but changing the hold current alone is enough to adjust the motor current since the driver will adjust the offset automatically.
 
 
-<a id="org3f060c6"></a>
+<a id="org6377bd7"></a>
 
 # Examples
 
@@ -577,7 +602,7 @@ In current control mode, setting the hold current is the way to adjust the stati
 <https://github.com/janelia-kicad/trinamic_wiring>
 
 
-<a id="orge381e19"></a>
+<a id="org84fb27d"></a>
 
 # Hardware Documentation
 
@@ -612,7 +637,7 @@ In current control mode, setting the hold current is the way to adjust the stati
 [Janelia Stepper Driver Web Page](https://github.com/janelia-kicad/stepper_driver)
 
 
-<a id="orgc537c8a"></a>
+<a id="org3f3c47d"></a>
 
 # Host Computer Setup
 

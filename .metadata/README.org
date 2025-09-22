@@ -12,7 +12,7 @@
 
 * Library Information
 - Name :: TMC2209
-- Version :: 10.1.1
+- Version :: 11.0.0
 - License :: BSD
 - URL :: https://github.com/janelia-arduino/TMC2209
 - Author :: Peter Polidoro
@@ -27,6 +27,11 @@ The TMC2209 is an ultra-silent motor driver IC for two phase stepper motors with
 both UART serial and step and direction interfaces.
 
 #+html: <img src="./images/trinamic_wiring-TMC2209-description.svg" width="1920px">
+
+* Version 11+ Migration Changes
+
+Starting with version 11, the UART "begin" method must be called by user code
+before calling the stepper driver "setup" method.
 
 * Stepper Motors
 
@@ -198,9 +203,11 @@ please submit an issue saying which platform fails.
 TMC2209 stepper_driver;
 
 HardwareSerial & serial_stream = Serial1;
+const long SERIAL_BAUD_RATE = 115200;
 
 void setup()
 {
+  serial_stream.begin(SERIAL_BAUD_RATE);
   stepper_driver.setup(serial_stream);
 }
 #+END_SRC
@@ -224,7 +231,10 @@ const int TX_PIN = 26;
 
 void setup()
 {
-  stepper_driver.setup(serial_stream, SERIAL_BAUD_RATE, TMC2209::SERIAL_ADDRESS_0, RX_PIN, TX_PIN);
+  serial_stream.setRX(RX_PIN);
+  serial_stream.setTX(TX_PIN);
+  serial_stream.begin(SERIAL_BAUD_RATE);
+  stepper_driver.setup(serial_stream, TMC2209::SERIAL_ADDRESS_0);
 }
 #+END_SRC
 
@@ -243,9 +253,11 @@ TMC2209 stepper_driver;
 const int RX_PIN = 0;
 const int TX_PIN = 1;
 SoftwareSerial soft_serial(RX_PIN, TX_PIN);
+const long SERIAL_BAUD_RATE = 9600;
 
 void setup()
 {
+  soft_serial.begin(SERIAL_BAUD_RATE);
   stepper_driver.setup(soft_serial);
 }
 #+END_SRC
@@ -314,7 +326,8 @@ const long SERIAL_BAUD_RATE = 500000;
 
 void setup()
 {
-  stepper_driver.setup(Serial1, SERIAL_BAUD_RATE);
+  serial_stream.begin(SERIAL_BAUD_RATE);
+  stepper_driver.setup(Serial1);
 }
 #+END_SRC
 
@@ -331,11 +344,14 @@ is required. All chips can be programmed in parallel like a single device.
 #+BEGIN_SRC cpp
 #include <TMC2209.h>
 
+const long SERIAL_BAUD_RATE = 115200;
+
 // Instantiate a single TMC2209 to talk to multiple chips
 TMC2209 stepper_drivers;
 
 void setup()
 {
+  Serial1.begin(SERIAL_BAUD_RATE);
   stepper_drivers.setup(Serial1);
 }
 #+END_SRC
@@ -356,9 +372,10 @@ const long SERIAL_BAUD_RATE = 115200;
 
 void setup()
 {
+  Serial1.begin(SERIAL_BAUD_RATE);
   // TMC2209::SERIAL_ADDRESS_0 is used by default if not specified
-  stepper_driver_0.setup(Serial1, SERIAL_BAUD_RATE, SERIAL_ADDRESS_0);
-  stepper_driver_1.setup(Serial1, SERIAL_BAUD_RATE, SERIAL_ADDRESS_1);
+  stepper_driver_0.setup(Serial1, SERIAL_ADDRESS_0);
+  stepper_driver_1.setup(Serial1, SERIAL_ADDRESS_1);
 }
 #+END_SRC
 
@@ -376,8 +393,10 @@ const long SERIAL_BAUD_RATE = 115200;
 
 void setup()
 {
-  stepper_driver_0.setup(Serial1, SERIAL_BAUD_RATE);
-  stepper_driver_1.setup(Serial2, SERIAL_BAUD_RATE);
+  Serial1.begin(SERIAL_BAUD_RATE);
+  stepper_driver_0.setup(Serial1);
+  Serial2.begin(SERIAL_BAUD_RATE);
+  stepper_driver_1.setup(Serial2);
 }
 #+END_SRC
 
@@ -414,10 +433,11 @@ const long SERIAL_BAUD_RATE = 115200;
 
 void setup()
 {
+  Serial1.begin(SERIAL_BAUD_RATE);
   // TMC2209::SERIAL_ADDRESS_0 is used by default if not specified
-  stepper_driver_0.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_0);
+  stepper_driver_0.setup(Serial1, SERIAL_ADDRESS_0);
   stepper_driver_0.setReplyDelay(REPLY_DELAY);
-  stepper_driver_1.setup(Serial1,SERIAL_BAUD_RATE,SERIAL_ADDRESS_1);
+  stepper_driver_1.setup(Serial1, SERIAL_ADDRESS_1);
   stepper_driver_1.setReplyDelay(REPLY_DELAY);
 }
 #+END_SRC
@@ -436,8 +456,10 @@ const long SERIAL_BAUD_RATE = 115200;
 
 void setup()
 {
-  stepper_driver_0.setup(Serial1, SERIAL_BAUD_RATE);
-  stepper_driver_1.setup(Serial2, SERIAL_BAUD_RATE);
+  Serial1.begin(SERIAL_BAUD_RATE);
+  stepper_driver_0.setup(Serial1);
+  Serial2.begin(SERIAL_BAUD_RATE);
+  stepper_driver_1.setup(Serial2);
 }
 #+END_SRC
 

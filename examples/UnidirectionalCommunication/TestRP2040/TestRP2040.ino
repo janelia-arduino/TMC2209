@@ -27,13 +27,15 @@ const int32_t RUN_VELOCITY = 20000;
 
 void setup()
 {
-  x_stepper_driver.setup(x_serial, SERIAL_BAUD_RATE);
+  x_serial.begin(SERIAL_BAUD_RATE);
+  x_stepper_driver.setup(x_serial);
   x_stepper_driver.setRunCurrent(RUN_CURRENT_PERCENT);
   x_stepper_driver.enableCoolStep();
   x_stepper_driver.enable();
   x_stepper_driver.moveAtVelocity(RUN_VELOCITY);
 
-  y_stepper_driver.setup(y_serial, SERIAL_BAUD_RATE);
+  y_serial.begin(SERIAL_BAUD_RATE);
+  y_stepper_driver.setup(y_serial);
   y_stepper_driver.setRunCurrent(RUN_CURRENT_PERCENT);
   y_stepper_driver.enableCoolStep();
   y_stepper_driver.enable();

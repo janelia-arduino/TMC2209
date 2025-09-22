@@ -28,12 +28,16 @@ void setup()
 {
   Serial.begin(SERIAL_BAUD_RATE);
 
+  serial_stream1.begin(SERIAL_BAUD_RATE);
+  stepper_driver1.setup(serial_stream1, TMC2209::SERIAL_ADDRESS_0);
+
   Serial2.setRX(SERIAL2_RX_PIN);
   Serial2.setTX(SERIAL2_TX_PIN);
+  Serial2.begin(SERIAL_BAUD_RATE);
+  stepper_driver2.setup(serial_stream2);
 
-  stepper_driver1.setup(serial_stream1, SERIAL_BAUD_RATE, TMC2209::SERIAL_ADDRESS_0, SERIAL1_RX_PIN, SERIAL1_TX_PIN);
-  stepper_driver2.setup(serial_stream2, SERIAL_BAUD_RATE);
-  stepper_driver3.setup(Serial3, SERIAL_BAUD_RATE);
+  Serial3.begin(SERIAL_BAUD_RATE);
+  stepper_driver3.setup(Serial3);
 }
 
 void loop()

@@ -25,6 +25,7 @@ void setup()
 {
   Serial.begin(SERIAL_BAUD_RATE);
 
+  serial_stream.begin(SERIAL_BAUD_RATE);
   stepper_driver.setup(serial_stream);
 
   stepper_driver.setRunCurrent(RUN_CURRENT_PERCENT);

@@ -39,6 +39,7 @@ void setup()
 void loop()
 {
   long serial1_baud_rate = SERIAL1_BAUD_RATES[serial1_baud_rate_index++];
+  serial_stream.begin(serial1_baud_rate);
   stepper_driver.setup(serial_stream,serial1_baud_rate);
   if (serial1_baud_rate_index == SERIAL1_BAUD_RATE_COUNT)
   {
@@ -94,5 +95,6 @@ void loop()
 
   Serial.println("*************************");
   Serial.println();
+  serial_stream.end();
   delay(DELAY);
 }
