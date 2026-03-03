@@ -93,7 +93,9 @@ void TMC2209::setMicrostepsPerStep(uint16_t microsteps_per_step)
   uint16_t microsteps_per_step_shifted = constrain_(microsteps_per_step,
     MICROSTEPS_PER_STEP_MIN,
     MICROSTEPS_PER_STEP_MAX);
-  microsteps_per_step_shifted = microsteps_per_step >> 1;
+  // Shift the constrained value (not the raw input) so out-of-range values
+  // don't produce an incorrect exponent.
+  microsteps_per_step_shifted = microsteps_per_step_shifted >> 1;
   uint16_t exponent = 0;
   while (microsteps_per_step_shifted > 0)
   {
@@ -898,7 +900,18 @@ uint32_t TMC2209::read(uint8_t register_address)
 
     if (reply_delay >= REPLY_DELAY_MAX_MICROSECONDS)
     {
-      return 0;
+      // Reply timed out. Treat as a retryable failure so MAX_READ_RETRIES
+      // actually takes effect.
+
+      // Drain any partial bytes that may have arrived so the next retry starts
+      // from a clean RX buffer.
+      while (serialAvailable() > 0)
+      {
+        (void)serialRead();
+      }
+
+      delay(READ_RETRY_DELAY_MS);
+      continue;
     }
 
     uint64_t byte;
