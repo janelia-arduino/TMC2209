@@ -9,6 +9,8 @@
 #define TMC2209_H
 #include <Arduino.h>
 
+#include "Result.hpp"
+
 #if !defined(ESP32) && !defined(ARDUINO_ARCH_SAMD) && !defined(ARDUINO_ARCH_RP2040) && !defined(ARDUINO_SAM_DUE) && !defined(ARDUINO_ARCH_RENESAS)
 #  define SOFTWARE_SERIAL_INCLUDED true
 #else
@@ -23,6 +25,12 @@ class TMC2209
 {
 public:
   TMC2209();
+
+  // Expose transport result/error helpers without requiring users to type the
+  // namespace.
+  using UartError = tmc2209::UartError;
+  template<typename T>
+  using Result = tmc2209::Result<T>;
 
   enum SerialAddress
   {
@@ -163,6 +171,14 @@ public:
   // bidirectional methods
   uint8_t getVersion();
 
+  // Explicit register access with error reporting.
+  Result<uint32_t> readRegister(uint8_t register_address);
+  Result<void> writeRegister(uint8_t register_address, uint32_t data);
+
+  // Retrieve and clear the last UART error observed by the library.
+  UartError getLastUartError() const;
+  void clearLastUartError();
+
   // if driver is not communicating, check power and communication connections
   bool isCommunicating();
 
@@ -258,6 +274,8 @@ private:
 #endif
   uint8_t serial_address_;
   int16_t hardware_enable_pin_;
+
+  UartError last_uart_error_;
 
   void initialize(SerialAddress serial_address=SERIAL_ADDRESS_0);
   int serialAvailable();
@@ -591,7 +609,7 @@ private:
   void sendDatagramUnidirectional(Datagram & datagram,
     uint8_t datagram_size);
   template<typename Datagram>
-  void sendDatagramBidirectional(Datagram & datagram,
+  UartError sendDatagramBidirectional(Datagram & datagram,
     uint8_t datagram_size);
 
   void write(uint8_t register_address,

@@ -16,6 +16,7 @@ TMC2209::TMC2209()
   serial_address_ = SERIAL_ADDRESS_0;
   hardware_enable_pin_ = -1;
   cool_step_enabled_ = false;
+  last_uart_error_ = UartError::None;
 }
 
 #if !defined(ARDUINO_ARCH_RENESAS)
@@ -414,6 +415,157 @@ uint8_t TMC2209::getVersion()
   input.bytes = read(ADDRESS_IOIN);
 
   return input.version;
+}
+
+TMC2209::Result<uint32_t> TMC2209::readRegister(uint8_t register_address)
+{
+  Result<uint32_t> result;
+
+  // Ensure a serial transport has been configured.
+  if (hardware_serial_ptr_ == nullptr
+#if SOFTWARE_SERIAL_INCLUDED
+    && software_serial_ptr_ == nullptr
+#endif
+  )
+  {
+    result.error = UartError::NotInitialized;
+    last_uart_error_ = result.error;
+    return result;
+  }
+
+  ReadRequestDatagram read_request_datagram;
+  read_request_datagram.bytes = 0;
+  read_request_datagram.sync = SYNC;
+  read_request_datagram.serial_address = serial_address_;
+  read_request_datagram.register_address = register_address;
+  read_request_datagram.rw = RW_READ;
+  read_request_datagram.crc = calculateCrc(read_request_datagram, READ_REQUEST_DATAGRAM_SIZE);
+
+  UartError last_error = UartError::ReplyTimeout;
+
+  for (uint8_t retry = 0; retry < MAX_READ_RETRIES; retry++)
+  {
+    const UartError send_error = sendDatagramBidirectional(read_request_datagram,
+      READ_REQUEST_DATAGRAM_SIZE);
+    if (send_error != UartError::None)
+    {
+      last_error = send_error;
+      delay(READ_RETRY_DELAY_MS);
+      continue;
+    }
+
+    uint32_t reply_delay = 0;
+    while ((serialAvailable() < WRITE_READ_REPLY_DATAGRAM_SIZE) and
+      (reply_delay < REPLY_DELAY_MAX_MICROSECONDS))
+    {
+      delayMicroseconds(REPLY_DELAY_INC_MICROSECONDS);
+      reply_delay += REPLY_DELAY_INC_MICROSECONDS;
+    }
+
+    if (reply_delay >= REPLY_DELAY_MAX_MICROSECONDS)
+    {
+      last_error = UartError::ReplyTimeout;
+
+      // Drain any partial bytes that may have arrived so the next retry starts
+      // from a clean RX buffer.
+      while (serialAvailable() > 0)
+      {
+        (void)serialRead();
+      }
+
+      delay(READ_RETRY_DELAY_MS);
+      continue;
+    }
+
+    uint64_t byte;
+    uint8_t byte_count = 0;
+    WriteReadReplyDatagram read_reply_datagram;
+    read_reply_datagram.bytes = 0;
+    for (uint8_t i=0; i<WRITE_READ_REPLY_DATAGRAM_SIZE; ++i)
+    {
+      byte = serialRead();
+      read_reply_datagram.bytes |= (byte << (byte_count++ * BITS_PER_BYTE));
+    }
+
+    auto crc = calculateCrc(read_reply_datagram, WRITE_READ_REPLY_DATAGRAM_SIZE);
+    if (crc != read_reply_datagram.crc)
+    {
+      last_error = UartError::CrcMismatch;
+      delay(READ_RETRY_DELAY_MS);
+      continue;
+    }
+
+    // Sanity-check the reply frame header.
+    if ((read_reply_datagram.sync != SYNC) ||
+      (read_reply_datagram.serial_address != READ_REPLY_SERIAL_ADDRESS) ||
+      (read_reply_datagram.register_address != register_address) ||
+      (read_reply_datagram.rw != RW_READ))
+    {
+      last_error = UartError::UnexpectedFrame;
+
+      // Drain any leftover bytes so the next retry starts clean.
+      while (serialAvailable() > 0)
+      {
+        (void)serialRead();
+      }
+
+      delay(READ_RETRY_DELAY_MS);
+      continue;
+    }
+
+    result.value = reverseData(read_reply_datagram.data);
+    result.error = UartError::None;
+    last_uart_error_ = result.error;
+    return result;
+  }
+
+  result.value = 0;
+  result.error = last_error;
+  last_uart_error_ = result.error;
+  return result;
+}
+
+TMC2209::Result<void> TMC2209::writeRegister(uint8_t register_address,
+  uint32_t data)
+{
+  Result<void> result;
+
+  // Ensure a serial transport has been configured.
+  if (hardware_serial_ptr_ == nullptr
+#if SOFTWARE_SERIAL_INCLUDED
+    && software_serial_ptr_ == nullptr
+#endif
+  )
+  {
+    result.error = UartError::NotInitialized;
+    last_uart_error_ = result.error;
+    return result;
+  }
+
+  WriteReadReplyDatagram write_datagram;
+  write_datagram.bytes = 0;
+  write_datagram.sync = SYNC;
+  write_datagram.serial_address = serial_address_;
+  write_datagram.register_address = register_address;
+  write_datagram.rw = RW_WRITE;
+  write_datagram.data = reverseData(data);
+  write_datagram.crc = calculateCrc(write_datagram, WRITE_READ_REPLY_DATAGRAM_SIZE);
+
+  sendDatagramUnidirectional(write_datagram, WRITE_READ_REPLY_DATAGRAM_SIZE);
+
+  result.error = UartError::None;
+  last_uart_error_ = result.error;
+  return result;
+}
+
+TMC2209::UartError TMC2209::getLastUartError() const
+{
+  return last_uart_error_;
+}
+
+void TMC2209::clearLastUartError()
+{
+  last_uart_error_ = UartError::None;
 }
 
 bool TMC2209::isCommunicating()
@@ -816,7 +968,7 @@ void TMC2209::sendDatagramUnidirectional(Datagram & datagram,
 }
 
 template<typename Datagram>
-void TMC2209::sendDatagramBidirectional(Datagram & datagram,
+TMC2209::UartError TMC2209::sendDatagramBidirectional(Datagram & datagram,
   uint8_t datagram_size)
 {
   uint8_t byte;
@@ -851,7 +1003,7 @@ void TMC2209::sendDatagramBidirectional(Datagram & datagram,
 
   if (echo_delay >= ECHO_DELAY_MAX_MICROSECONDS)
   {
-    return;
+    return UartError::EchoTimeout;
   }
 
   // clear RX buffer of echo bytes
@@ -859,81 +1011,24 @@ void TMC2209::sendDatagramBidirectional(Datagram & datagram,
   {
     byte = serialRead();
   }
+
+  return UartError::None;
 }
 
 void TMC2209::write(uint8_t register_address,
   uint32_t data)
 {
-  WriteReadReplyDatagram write_datagram;
-  write_datagram.bytes = 0;
-  write_datagram.sync = SYNC;
-  write_datagram.serial_address = serial_address_;
-  write_datagram.register_address = register_address;
-  write_datagram.rw = RW_WRITE;
-  write_datagram.data = reverseData(data);
-  write_datagram.crc = calculateCrc(write_datagram, WRITE_READ_REPLY_DATAGRAM_SIZE);
-
-  sendDatagramUnidirectional(write_datagram, WRITE_READ_REPLY_DATAGRAM_SIZE);
+  (void)writeRegister(register_address, data);
 }
 
 uint32_t TMC2209::read(uint8_t register_address)
 {
-  ReadRequestDatagram read_request_datagram;
-  read_request_datagram.bytes = 0;
-  read_request_datagram.sync = SYNC;
-  read_request_datagram.serial_address = serial_address_;
-  read_request_datagram.register_address = register_address;
-  read_request_datagram.rw = RW_READ;
-  read_request_datagram.crc = calculateCrc(read_request_datagram, READ_REQUEST_DATAGRAM_SIZE);
-
-  for (uint8_t retry = 0; retry < MAX_READ_RETRIES; retry++)
+  const auto result = readRegister(register_address);
+  if (!result.ok())
   {
-    sendDatagramBidirectional(read_request_datagram, READ_REQUEST_DATAGRAM_SIZE);
-
-    uint32_t reply_delay = 0;
-    while ((serialAvailable() < WRITE_READ_REPLY_DATAGRAM_SIZE) and
-      (reply_delay < REPLY_DELAY_MAX_MICROSECONDS))
-    {
-      delayMicroseconds(REPLY_DELAY_INC_MICROSECONDS);
-      reply_delay += REPLY_DELAY_INC_MICROSECONDS;
-    }
-
-    if (reply_delay >= REPLY_DELAY_MAX_MICROSECONDS)
-    {
-      // Reply timed out. Treat as a retryable failure so MAX_READ_RETRIES
-      // actually takes effect.
-
-      // Drain any partial bytes that may have arrived so the next retry starts
-      // from a clean RX buffer.
-      while (serialAvailable() > 0)
-      {
-        (void)serialRead();
-      }
-
-      delay(READ_RETRY_DELAY_MS);
-      continue;
-    }
-
-    uint64_t byte;
-    uint8_t byte_count = 0;
-    WriteReadReplyDatagram read_reply_datagram;
-    read_reply_datagram.bytes = 0;
-    for (uint8_t i=0; i<WRITE_READ_REPLY_DATAGRAM_SIZE; ++i)
-    {
-      byte = serialRead();
-      read_reply_datagram.bytes |= (byte << (byte_count++ * BITS_PER_BYTE));
-    }
-
-    auto crc = calculateCrc(read_reply_datagram, WRITE_READ_REPLY_DATAGRAM_SIZE);
-    if (crc == read_reply_datagram.crc)
-    {
-      return reverseData(read_reply_datagram.data);
-    }
-
-    delay(READ_RETRY_DELAY_MS);
+    return 0;
   }
-
-  return 0;
+  return result.value;
 }
 
 uint8_t TMC2209::percentToCurrentSetting(uint8_t percent)

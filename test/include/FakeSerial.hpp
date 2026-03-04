@@ -29,6 +29,7 @@ public:
     tx_.clear();
     current_frame_.clear();
     read_request_count_ = 0;
+    corrupt_crc_remaining_ = corrupt_crc_for_first_replies_;
   }
 
   // Configure: only respond starting with this read request attempt.
@@ -37,6 +38,14 @@ public:
   void reply_after_attempt(unsigned int attempt)
   {
     reply_after_attempt_ = attempt;
+  }
+
+  // Configure: corrupt the CRC byte for the first N replies.
+  // Useful for exercising CRC mismatch + retry behavior.
+  void corrupt_crc_for_first_replies(unsigned int replies)
+  {
+    corrupt_crc_for_first_replies_ = replies;
+    corrupt_crc_remaining_ = replies;
   }
 
   unsigned int read_request_count() const
@@ -183,6 +192,13 @@ private:
 
     reply[7] = crc8_tmc_(reply, 7);
 
+    if (corrupt_crc_remaining_ > 0)
+    {
+      // Flip a bit to force a CRC mismatch.
+      reply[7] ^= 0x01;
+      --corrupt_crc_remaining_;
+    }
+
     // Enqueue reply after the echo bytes already placed in RX.
     for (uint8_t b : reply)
     {
@@ -198,4 +214,7 @@ private:
 
   unsigned int reply_after_attempt_{1};
   unsigned int read_request_count_{0};
+
+  unsigned int corrupt_crc_for_first_replies_{0};
+  unsigned int corrupt_crc_remaining_{0};
 };

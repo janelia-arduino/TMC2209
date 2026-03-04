@@ -56,6 +56,56 @@ void test_read_retries_after_reply_timeout()
   TEST_ASSERT_EQUAL_UINT_MESSAGE(2, serial.read_request_count(), "expected one retry after timeout");
 }
 
+void test_readRegister_reports_timeout_error_when_no_reply()
+{
+  FakeSerial serial;
+
+  // Never reply to read requests.
+  serial.reply_after_attempt(999);
+
+  TMC2209 tmc;
+  tmc.setup(serial, TMC2209::SERIAL_ADDRESS_0);
+  serial.reset();
+
+  const auto res = tmc.readRegister(0x06);
+  TEST_ASSERT_FALSE_MESSAGE(res.ok(), "expected readRegister to fail");
+  TEST_ASSERT_EQUAL_UINT8_MESSAGE(static_cast<uint8_t>(TMC2209::UartError::ReplyTimeout),
+    static_cast<uint8_t>(res.error),
+    "expected ReplyTimeout error");
+
+  TEST_ASSERT_EQUAL_UINT8_MESSAGE(static_cast<uint8_t>(TMC2209::UartError::ReplyTimeout),
+    static_cast<uint8_t>(tmc.getLastUartError()),
+    "expected getLastUartError() to return ReplyTimeout");
+
+  // Default MAX_READ_RETRIES is 5 in this library.
+  TEST_ASSERT_EQUAL_UINT_MESSAGE(5, serial.read_request_count(), "expected retries on timeout");
+}
+
+void test_readRegister_retries_after_crc_mismatch()
+{
+  FakeSerial serial;
+
+  const uint32_t ioin_value = 0x21000000u;
+  serial.set_register_value(0x06, ioin_value);
+
+  // Corrupt the first reply CRC, then send a valid reply on retry.
+  serial.corrupt_crc_for_first_replies(1);
+
+  TMC2209 tmc;
+  tmc.setup(serial, TMC2209::SERIAL_ADDRESS_0);
+  serial.reset();
+
+  const auto res = tmc.readRegister(0x06);
+  TEST_ASSERT_TRUE_MESSAGE(res.ok(), "expected readRegister to succeed after CRC retry");
+  TEST_ASSERT_EQUAL_HEX32_MESSAGE(ioin_value, res.value, "expected register value");
+
+  TEST_ASSERT_EQUAL_UINT_MESSAGE(2, serial.read_request_count(), "expected one retry after CRC mismatch");
+
+  TEST_ASSERT_EQUAL_UINT8_MESSAGE(static_cast<uint8_t>(TMC2209::UartError::None),
+    static_cast<uint8_t>(tmc.getLastUartError()),
+    "expected getLastUartError() to be cleared on success");
+}
+
 int main(int argc, char **argv)
 {
   (void)argc;
@@ -66,6 +116,8 @@ int main(int argc, char **argv)
   RUN_TEST(test_microsteps_powers_of_two_map_exactly);
   RUN_TEST(test_microsteps_clamps_out_of_range_inputs);
   RUN_TEST(test_read_retries_after_reply_timeout);
+  RUN_TEST(test_readRegister_reports_timeout_error_when_no_reply);
+  RUN_TEST(test_readRegister_retries_after_crc_mismatch);
 
   return UNITY_END();
 }
