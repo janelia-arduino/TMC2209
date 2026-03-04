@@ -1,6 +1,7 @@
 #include <unity.h>
 
 #include <TMC2209.h>
+#include <tmc_bits.hpp>
 
 #include "FakeSerial.hpp"
 
@@ -106,6 +107,50 @@ void test_readRegister_retries_after_crc_mismatch()
     "expected getLastUartError() to be cleared on success");
 }
 
+
+void test_tmc_bits_bit_get_set()
+{
+  uint32_t reg = 0;
+  using B = tmc::bits::Bit<3>;
+
+  TEST_ASSERT_FALSE(B::get(reg));
+
+  B::set(reg, true);
+  TEST_ASSERT_TRUE(B::get(reg));
+  TEST_ASSERT_EQUAL_HEX32(0x00000008u, reg);
+
+  B::set(reg, false);
+  TEST_ASSERT_FALSE(B::get(reg));
+  TEST_ASSERT_EQUAL_HEX32(0x00000000u, reg);
+}
+
+void test_tmc_bits_field_get_set_and_masks()
+{
+  uint32_t reg = 0;
+  using F = tmc::bits::Field<8, 4>;
+
+  F::set(reg, 0xFu);
+  TEST_ASSERT_EQUAL_HEX32(0x00000F00u, reg);
+  TEST_ASSERT_EQUAL_UINT32(0xFu, F::get(reg));
+
+  // Value is masked to field width (4 bits) so 0xAB becomes 0xB.
+  F::set(reg, 0xABu);
+  TEST_ASSERT_EQUAL_HEX32(0x00000B00u, reg);
+  TEST_ASSERT_EQUAL_UINT32(0xBu, F::get(reg));
+}
+
+void test_tmc_bits_field_does_not_clobber_other_bits()
+{
+  uint32_t reg = 0xA5A5A5A5u;
+  using F = tmc::bits::Field<8, 4>;
+
+  const uint32_t expected = reg & ~uint32_t(0x00000F00u);
+
+  F::set(reg, 0);
+  TEST_ASSERT_EQUAL_HEX32(expected, reg);
+}
+
+
 int main(int argc, char **argv)
 {
   (void)argc;
@@ -118,6 +163,9 @@ int main(int argc, char **argv)
   RUN_TEST(test_read_retries_after_reply_timeout);
   RUN_TEST(test_readRegister_reports_timeout_error_when_no_reply);
   RUN_TEST(test_readRegister_retries_after_crc_mismatch);
+  RUN_TEST(test_tmc_bits_bit_get_set);
+  RUN_TEST(test_tmc_bits_field_get_set_and_masks);
+  RUN_TEST(test_tmc_bits_field_does_not_clobber_other_bits);
 
   return UNITY_END();
 }
