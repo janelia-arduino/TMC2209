@@ -14,50 +14,51 @@ const uint8_t SERIAL2_TX_PIN = 4;
 const uint8_t SERIAL3_RX_PIN = 26;
 const uint8_t SERIAL3_TX_PIN = 27;
 
-SerialUART & serial_stream1 = Serial1;
-HardwareSerial & serial_stream2 = Serial2;
-SerialPIO Serial3(SERIAL3_TX_PIN, SERIAL3_RX_PIN);
+SerialUART &serial_stream1 = Serial1;
+HardwareSerial &serial_stream2 = Serial2;
+SerialPIO Serial3 (SERIAL3_TX_PIN, SERIAL3_RX_PIN);
 
 // Instantiate TMC2209
 TMC2209 stepper_driver1;
 TMC2209 stepper_driver2;
 TMC2209 stepper_driver3;
 
-
-void setup()
+void
+setup ()
 {
-  Serial.begin(SERIAL_BAUD_RATE);
+  Serial.begin (SERIAL_BAUD_RATE);
 
-  serial_stream1.begin(SERIAL_BAUD_RATE);
-  stepper_driver1.setup(serial_stream1, TMC2209::SERIAL_ADDRESS_0);
+  serial_stream1.begin (SERIAL_BAUD_RATE);
+  stepper_driver1.setup (serial_stream1, TMC2209::SERIAL_ADDRESS_0);
 
-  Serial2.setRX(SERIAL2_RX_PIN);
-  Serial2.setTX(SERIAL2_TX_PIN);
-  Serial2.begin(SERIAL_BAUD_RATE);
-  stepper_driver2.setup(serial_stream2);
+  Serial2.setRX (SERIAL2_RX_PIN);
+  Serial2.setTX (SERIAL2_TX_PIN);
+  Serial2.begin (SERIAL_BAUD_RATE);
+  stepper_driver2.setup (serial_stream2);
 
-  Serial3.begin(SERIAL_BAUD_RATE);
-  stepper_driver3.setup(Serial3);
+  Serial3.begin (SERIAL_BAUD_RATE);
+  stepper_driver3.setup (Serial3);
 }
 
-void loop()
+void
+loop ()
 {
-  if (stepper_driver1.isSetupAndCommunicating())
-  {
-    Serial.println("Stepper driver is setup and communicating!");
-    Serial.println("Try turning driver power off to see what happens.");
-  }
-  else if (stepper_driver1.isCommunicatingButNotSetup())
-  {
-    Serial.println("Stepper driver is communicating but not setup!");
-    Serial.println("Running setup again...");
-    stepper_driver1.setup(serial_stream1);
-  }
+  if (stepper_driver1.isSetupAndCommunicating ())
+    {
+      Serial.println ("Stepper driver is setup and communicating!");
+      Serial.println ("Try turning driver power off to see what happens.");
+    }
+  else if (stepper_driver1.isCommunicatingButNotSetup ())
+    {
+      Serial.println ("Stepper driver is communicating but not setup!");
+      Serial.println ("Running setup again...");
+      stepper_driver1.setup (serial_stream1);
+    }
   else
-  {
-    Serial.println("Stepper driver is not communicating!");
-    Serial.println("Try turning driver power on to see what happens.");
-  }
-  Serial.println();
-  delay(DELAY);
+    {
+      Serial.println ("Stepper driver is not communicating!");
+      Serial.println ("Try turning driver power on to see what happens.");
+    }
+  Serial.println ();
+  delay (DELAY);
 }

@@ -8,11 +8,26 @@
 class SoftwareSerial
 {
 public:
-  SoftwareSerial(int /*rx*/ = -1, int /*tx*/ = -1) {}
+  SoftwareSerial (int /*rx*/ = -1, int /*tx*/ = -1) {}
 
-  void begin(unsigned long /*baud*/) {}
+  void
+  begin (unsigned long /*baud*/)
+  {
+  }
 
-  int available() { return 0; }
-  int read() { return -1; }
-  size_t write(uint8_t /*c*/) { return 0; }
+  int
+  available ()
+  {
+    return 0;
+  }
+  int
+  read ()
+  {
+    return -1;
+  }
+  size_t
+  write (uint8_t /*c*/)
+  {
+    return 0;
+  }
 };

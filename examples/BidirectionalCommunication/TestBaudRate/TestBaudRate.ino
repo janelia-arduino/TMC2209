@@ -6,12 +6,11 @@
 // See this reference for more details:
 // https://www.arduino.cc/reference/en/language/functions/communication/serial/
 
-HardwareSerial & serial_stream = Serial3;
+HardwareSerial &serial_stream = Serial3;
 
 const long SERIAL_BAUD_RATE = 115200;
 const long SERIAL1_BAUD_RATE_COUNT = 10;
-const long SERIAL1_BAUD_RATES[SERIAL1_BAUD_RATE_COUNT] =
-{
+const long SERIAL1_BAUD_RATES[SERIAL1_BAUD_RATE_COUNT] = {
   500000,
   250000,
   115200,
@@ -30,71 +29,72 @@ const int DELAY = 2000;
 TMC2209 stepper_driver;
 uint8_t serial1_baud_rate_index = 0;
 
-
-void setup()
+void
+setup ()
 {
-  Serial.begin(SERIAL_BAUD_RATE);
+  Serial.begin (SERIAL_BAUD_RATE);
 }
 
-void loop()
+void
+loop ()
 {
   long serial1_baud_rate = SERIAL1_BAUD_RATES[serial1_baud_rate_index++];
-  serial_stream.begin(serial1_baud_rate);
-  stepper_driver.setup(serial_stream,serial1_baud_rate);
+  serial_stream.begin (serial1_baud_rate);
+  stepper_driver.setup (serial_stream, serial1_baud_rate);
   if (serial1_baud_rate_index == SERIAL1_BAUD_RATE_COUNT)
-  {
-    serial1_baud_rate_index = 0;
-  }
+    {
+      serial1_baud_rate_index = 0;
+    }
 
   bool test_further = false;
 
-  Serial.println("*************************");
-  Serial.print("serial1_baud_rate = ");
-  Serial.println(serial1_baud_rate);
+  Serial.println ("*************************");
+  Serial.print ("serial1_baud_rate = ");
+  Serial.println (serial1_baud_rate);
 
-  if (stepper_driver.isSetupAndCommunicating())
-  {
-    Serial.println("Stepper driver setup and communicating!");
-    test_further = true;
-  }
+  if (stepper_driver.isSetupAndCommunicating ())
+    {
+      Serial.println ("Stepper driver setup and communicating!");
+      test_further = true;
+    }
   else
-  {
-    Serial.println("Stepper driver not setup and communicating!");
-  }
+    {
+      Serial.println ("Stepper driver not setup and communicating!");
+    }
 
   if (test_further)
-  {
-    uint32_t microstep_sum = 0;
-    for (uint8_t i=0; i<SUCCESSIVE_OPERATION_COUNT; ++i)
     {
-      microstep_sum += stepper_driver.getMicrostepsPerStep();
+      uint32_t microstep_sum = 0;
+      for (uint8_t i = 0; i < SUCCESSIVE_OPERATION_COUNT; ++i)
+        {
+          microstep_sum += stepper_driver.getMicrostepsPerStep ();
+        }
+      if (microstep_sum > 0)
+        {
+          Serial.println ("Successive read test passed!");
+        }
+      else
+        {
+          Serial.println ("Successive read test failed!");
+        }
+      uint8_t itc_begin = stepper_driver.getInterfaceTransmissionCounter ();
+      for (uint8_t i = 0; i < SUCCESSIVE_OPERATION_COUNT; ++i)
+        {
+          stepper_driver.disable ();
+        }
+      uint8_t itc_end = stepper_driver.getInterfaceTransmissionCounter ();
+      if (itc_begin != itc_end)
+        {
+          Serial.println ("Successive write test passed!");
+        }
+      else
+        {
+          Serial.println ("Successive write test failed!");
+        }
     }
-    if (microstep_sum > 0)
-    {
-      Serial.println("Successive read test passed!");
-    }
-    else
-    {
-      Serial.println("Successive read test failed!");
-    }
-    uint8_t itc_begin = stepper_driver.getInterfaceTransmissionCounter();
-    for (uint8_t i=0; i<SUCCESSIVE_OPERATION_COUNT; ++i)
-    {
-      stepper_driver.disable();
-    }
-    uint8_t itc_end = stepper_driver.getInterfaceTransmissionCounter();
-    if (itc_begin != itc_end)
-    {
-      Serial.println("Successive write test passed!");
-    }
-    else
-    {
-      Serial.println("Successive write test failed!");
-    }
-  }
 
-  Serial.println("*************************");
-  Serial.println();
-  serial_stream.end();
-  delay(DELAY);
+  Serial.println ("*************************");
+  Serial.println ();
+  serial_stream.end ();
+  delay (DELAY);
 }

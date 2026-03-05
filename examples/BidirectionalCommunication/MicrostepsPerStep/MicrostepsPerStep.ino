@@ -6,7 +6,7 @@
 // See this reference for more details:
 // https://www.arduino.cc/reference/en/language/functions/communication/serial/
 
-HardwareSerial & serial_stream = Serial3;
+HardwareSerial &serial_stream = Serial3;
 
 const long SERIAL_BAUD_RATE = 115200;
 const int DELAY = 4000;
@@ -20,48 +20,48 @@ const uint8_t MICROSTEPS_PER_STEP_EXPONENT_INC = 1;
 
 uint8_t microsteps_per_step_exponent = MICROSTEPS_PER_STEP_EXPONENT_MIN;
 
-
 // Instantiate TMC2209
 TMC2209 stepper_driver;
 
-
-void setup()
+void
+setup ()
 {
-  Serial.begin(SERIAL_BAUD_RATE);
+  Serial.begin (SERIAL_BAUD_RATE);
 
-  serial_stream.begin(SERIAL_BAUD_RATE);
-  stepper_driver.setup(serial_stream);
+  serial_stream.begin (SERIAL_BAUD_RATE);
+  stepper_driver.setup (serial_stream);
 
-  stepper_driver.setMicrostepsPerStepPowerOfTwo(microsteps_per_step_exponent);
-  stepper_driver.setRunCurrent(RUN_CURRENT_PERCENT);
-  stepper_driver.enable();
-  stepper_driver.moveAtVelocity(VELOCITY);
+  stepper_driver.setMicrostepsPerStepPowerOfTwo (microsteps_per_step_exponent);
+  stepper_driver.setRunCurrent (RUN_CURRENT_PERCENT);
+  stepper_driver.enable ();
+  stepper_driver.moveAtVelocity (VELOCITY);
 }
 
-void loop()
+void
+loop ()
 {
-  if (not stepper_driver.isSetupAndCommunicating())
-  {
-    Serial.println("Stepper driver not setup and communicating!");
-    return;
-  }
+  if (not stepper_driver.isSetupAndCommunicating ())
+    {
+      Serial.println ("Stepper driver not setup and communicating!");
+      return;
+    }
 
-  Serial.print("setMicrostepsPerStepPowerOfTwo(");
-  Serial.print(microsteps_per_step_exponent);
-  Serial.println(")");
-  stepper_driver.setMicrostepsPerStepPowerOfTwo(microsteps_per_step_exponent);
-  Serial.print("getMicrostepsPerStep() = ");
-  Serial.println(stepper_driver.getMicrostepsPerStep());
-  delay(DELAY);
+  Serial.print ("setMicrostepsPerStepPowerOfTwo(");
+  Serial.print (microsteps_per_step_exponent);
+  Serial.println (")");
+  stepper_driver.setMicrostepsPerStepPowerOfTwo (microsteps_per_step_exponent);
+  Serial.print ("getMicrostepsPerStep() = ");
+  Serial.println (stepper_driver.getMicrostepsPerStep ());
+  delay (DELAY);
 
-  uint32_t interstep_duration = stepper_driver.getInterstepDuration();
-  Serial.print("interstep_duration = ");
-  Serial.println(interstep_duration);
-  Serial.println();
+  uint32_t interstep_duration = stepper_driver.getInterstepDuration ();
+  Serial.print ("interstep_duration = ");
+  Serial.println (interstep_duration);
+  Serial.println ();
 
   microsteps_per_step_exponent += MICROSTEPS_PER_STEP_EXPONENT_INC;
   if (microsteps_per_step_exponent > MICROSTEPS_PER_STEP_EXPONENT_MAX)
-  {
-    microsteps_per_step_exponent = MICROSTEPS_PER_STEP_EXPONENT_MIN;
-  }
+    {
+      microsteps_per_step_exponent = MICROSTEPS_PER_STEP_EXPONENT_MIN;
+    }
 }

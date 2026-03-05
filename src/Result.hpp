@@ -26,24 +26,32 @@ enum class UartError : unsigned char
   WriteVerifyFailed,
 };
 
-template<typename T>
+template <typename T>
 struct Result
 {
   T value{};
-  UartError error{UartError::None};
+  UartError error{ UartError::None };
 
-  constexpr bool ok() const { return error == UartError::None; }
+  constexpr bool
+  ok () const
+  {
+    return error == UartError::None;
+  }
 };
 
 // Specialization for void results.
-template<>
+template <>
 struct Result<void>
 {
-  UartError error{UartError::None};
+  UartError error{ UartError::None };
 
-  constexpr bool ok() const { return error == UartError::None; }
+  constexpr bool
+  ok () const
+  {
+    return error == UartError::None;
+  }
 };
 
-}  // namespace tmc2209
+} // namespace tmc2209
 
-#endif  // TMC2209_RESULT_HPP
+#endif // TMC2209_RESULT_HPP

@@ -9,7 +9,7 @@
 // To make this library work with those boards, refer to this library example:
 // examples/UnidirectionalCommunication/SoftwareSerial
 
-HardwareSerial & serial_stream = Serial3;
+HardwareSerial &serial_stream = Serial3;
 
 const int32_t RUN_VELOCITY = 20000;
 const int32_t STOP_VELOCITY = 0;
@@ -20,36 +20,37 @@ const int STOP_DURATION = 1000;
 const uint8_t RUN_CURRENT_PERCENT = 100;
 const long SERIAL_BAUD_RATE = 115200;
 
-
 // Instantiate TMC2209
 TMC2209 stepper_driver;
 bool invert_direction = false;
 
-void setup()
+void
+setup ()
 {
-  serial_stream.begin(SERIAL_BAUD_RATE);
-  stepper_driver.setup(serial_stream);
+  serial_stream.begin (SERIAL_BAUD_RATE);
+  stepper_driver.setup (serial_stream);
 
-  stepper_driver.setRunCurrent(RUN_CURRENT_PERCENT);
-  stepper_driver.enableCoolStep();
-  stepper_driver.enable();
+  stepper_driver.setRunCurrent (RUN_CURRENT_PERCENT);
+  stepper_driver.enableCoolStep ();
+  stepper_driver.enable ();
 }
 
-void loop()
+void
+loop ()
 {
-  stepper_driver.moveAtVelocity(STOP_VELOCITY);
-  delay(STOP_DURATION);
+  stepper_driver.moveAtVelocity (STOP_VELOCITY);
+  delay (STOP_DURATION);
   if (invert_direction)
-  {
-    stepper_driver.enableInverseMotorDirection();
-  }
+    {
+      stepper_driver.enableInverseMotorDirection ();
+    }
   else
-  {
-    stepper_driver.disableInverseMotorDirection();
-  }
+    {
+      stepper_driver.disableInverseMotorDirection ();
+    }
   invert_direction = not invert_direction;
 
-  stepper_driver.moveAtVelocity(RUN_VELOCITY);
+  stepper_driver.moveAtVelocity (RUN_VELOCITY);
 
-  delay(RUN_DURATION);
+  delay (RUN_DURATION);
 }

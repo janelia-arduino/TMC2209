@@ -14,188 +14,187 @@
 #include "tmc2209_registers.hpp"
 
 #if !defined(ESP32) && !defined(ARDUINO_ARCH_SAMD) && !defined(ARDUINO_ARCH_RP2040) && !defined(ARDUINO_SAM_DUE) && !defined(ARDUINO_ARCH_RENESAS)
-#  define SOFTWARE_SERIAL_INCLUDED true
+#define SOFTWARE_SERIAL_INCLUDED true
 #else
-#  define SOFTWARE_SERIAL_INCLUDED false
+#define SOFTWARE_SERIAL_INCLUDED false
 #endif
 #if SOFTWARE_SERIAL_INCLUDED
-#  include <SoftwareSerial.h>
+#include <SoftwareSerial.h>
 #endif
-
 
 class TMC2209
 {
 public:
-  TMC2209();
+  TMC2209 ();
 
   // Expose transport result/error helpers without requiring users to type the
   // namespace.
   using UartError = tmc2209::UartError;
-  template<typename T>
+  template <typename T>
   using Result = tmc2209::Result<T>;
 
   enum SerialAddress
   {
-    SERIAL_ADDRESS_0=0,
-    SERIAL_ADDRESS_1=1,
-    SERIAL_ADDRESS_2=2,
-    SERIAL_ADDRESS_3=3,
+    SERIAL_ADDRESS_0 = 0,
+    SERIAL_ADDRESS_1 = 1,
+    SERIAL_ADDRESS_2 = 2,
+    SERIAL_ADDRESS_3 = 3,
   };
   // Identify which microcontroller serial port is connected to the TMC2209 e.g.
   // Serial1, Serial2, etc. Optionally identify which serial address is assigned
   // to the TMC2209 if not the default of SERIAL_ADDRESS_0.
 #if !defined(ARDUINO_ARCH_RENESAS)
-  void setup(HardwareSerial & serial,
-    SerialAddress serial_address=SERIAL_ADDRESS_0);
+  void setup (HardwareSerial &serial,
+              SerialAddress serial_address = SERIAL_ADDRESS_0);
 #endif
 #if defined(ESP32)
-  void setup(HardwareSerial & serial,
-    SerialAddress serial_address);
+  void setup (HardwareSerial &serial,
+              SerialAddress serial_address);
 #elif defined(ARDUINO_ARCH_RP2040)
-  void setup(SerialUART & serial,
-    SerialAddress serial_address);
+  void setup (SerialUART &serial,
+              SerialAddress serial_address);
 #elif defined(ARDUINO_ARCH_RENESAS)
-  void setup(UART & serial,
-    SerialAddress serial_address=SERIAL_ADDRESS_0);
+  void setup (UART &serial,
+              SerialAddress serial_address = SERIAL_ADDRESS_0);
 #endif
 
 #if SOFTWARE_SERIAL_INCLUDED
   // Software serial ports should only be used for unidirectional communication
   // The RX pin does not need to be connected, but it must be specified when
   // creating an instance of a SoftwareSerial object
-  void setup(SoftwareSerial & serial,
-    SerialAddress serial_address=SERIAL_ADDRESS_0);
+  void setup (SoftwareSerial &serial,
+              SerialAddress serial_address = SERIAL_ADDRESS_0);
 #endif
 
   // unidirectional methods
 
   // driver must be enabled before use it is disabled by default
-  void setHardwareEnablePin(uint8_t hardware_enable_pin);
-  void enable();
-  void disable();
+  void setHardwareEnablePin (uint8_t hardware_enable_pin);
+  void enable ();
+  void disable ();
 
   // valid values = 1,2,4,8,...128,256, other values get rounded down
-  void setMicrostepsPerStep(uint16_t microsteps_per_step);
+  void setMicrostepsPerStep (uint16_t microsteps_per_step);
 
   // valid values = 0-8, microsteps = 2^exponent, 0=1,1=2,2=4,...8=256
   // https://en.wikipedia.org/wiki/Power_of_two
-  void setMicrostepsPerStepPowerOfTwo(uint8_t exponent);
+  void setMicrostepsPerStepPowerOfTwo (uint8_t exponent);
 
   // range 0-100
-  void setRunCurrent(uint8_t percent);
+  void setRunCurrent (uint8_t percent);
   // range 0-100
-  void setHoldCurrent(uint8_t percent);
+  void setHoldCurrent (uint8_t percent);
   // range 0-100
-  void setHoldDelay(uint8_t percent);
+  void setHoldDelay (uint8_t percent);
   // range 0-100
-  void setAllCurrentValues(uint8_t run_current_percent,
-    uint8_t hold_current_percent,
-    uint8_t hold_delay_percent);
-  void setRMSCurrent(uint16_t mA,
-    float rSense,
-    float holdMultiplier = 0.5f);
+  void setAllCurrentValues (uint8_t run_current_percent,
+                            uint8_t hold_current_percent,
+                            uint8_t hold_delay_percent);
+  void setRMSCurrent (uint16_t mA,
+                      float rSense,
+                      float holdMultiplier = 0.5f);
 
-  void enableDoubleEdge();
-  void disableDoubleEdge();
+  void enableDoubleEdge ();
+  void disableDoubleEdge ();
 
-  void enableVSense();
-  void disableVSense();
+  void enableVSense ();
+  void disableVSense ();
 
-  void enableInverseMotorDirection();
-  void disableInverseMotorDirection();
+  void enableInverseMotorDirection ();
+  void disableInverseMotorDirection ();
 
   enum StandstillMode
   {
-    NORMAL=0,
-    FREEWHEELING=1,
-    STRONG_BRAKING=2,
-    BRAKING=3,
+    NORMAL = 0,
+    FREEWHEELING = 1,
+    STRONG_BRAKING = 2,
+    BRAKING = 3,
   };
-  void setStandstillMode(StandstillMode mode);
+  void setStandstillMode (StandstillMode mode);
 
-  void enableAutomaticCurrentScaling();
-  void disableAutomaticCurrentScaling();
-  void enableAutomaticGradientAdaptation();
-  void disableAutomaticGradientAdaptation();
+  void enableAutomaticCurrentScaling ();
+  void disableAutomaticCurrentScaling ();
+  void enableAutomaticGradientAdaptation ();
+  void disableAutomaticGradientAdaptation ();
   // range 0-255
-  void setPwmOffset(uint8_t pwm_amplitude);
+  void setPwmOffset (uint8_t pwm_amplitude);
   // range 0-255
-  void setPwmGradient(uint8_t pwm_amplitude);
+  void setPwmGradient (uint8_t pwm_amplitude);
 
   // default = 20
   // mimimum of 2 for StealthChop auto tuning
-  void setPowerDownDelay(uint8_t power_down_delay);
+  void setPowerDownDelay (uint8_t power_down_delay);
 
   // mimimum of 2 when using multiple serial addresses
   // in bidirectional communication
   const static uint8_t REPLY_DELAY_MAX = 15;
-  void setReplyDelay(uint8_t delay);
+  void setReplyDelay (uint8_t delay);
 
-  void moveAtVelocity(int32_t microsteps_per_period);
-  void moveUsingStepDirInterface();
+  void moveAtVelocity (int32_t microsteps_per_period);
+  void moveUsingStepDirInterface ();
 
-  void enableStealthChop();
-  void disableStealthChop();
+  void enableStealthChop ();
+  void disableStealthChop ();
 
-  void setStealthChopDurationThreshold(uint32_t duration_threshold);
+  void setStealthChopDurationThreshold (uint32_t duration_threshold);
 
-  void setStallGuardThreshold(uint8_t stall_guard_threshold);
+  void setStallGuardThreshold (uint8_t stall_guard_threshold);
 
   // lower_threshold: min = 1, max = 15
   // upper_threshold: min = 0, max = 15, 0-2 recommended
-  void enableCoolStep(uint8_t lower_threshold=1,
-    uint8_t upper_threshold=0);
-  void disableCoolStep();
+  void enableCoolStep (uint8_t lower_threshold = 1,
+                       uint8_t upper_threshold = 0);
+  void disableCoolStep ();
   enum CurrentIncrement
   {
-    CURRENT_INCREMENT_1=0,
-    CURRENT_INCREMENT_2=1,
-    CURRENT_INCREMENT_4=2,
-    CURRENT_INCREMENT_8=3,
+    CURRENT_INCREMENT_1 = 0,
+    CURRENT_INCREMENT_2 = 1,
+    CURRENT_INCREMENT_4 = 2,
+    CURRENT_INCREMENT_8 = 3,
   };
-  void setCoolStepCurrentIncrement(CurrentIncrement current_increment);
+  void setCoolStepCurrentIncrement (CurrentIncrement current_increment);
   enum MeasurementCount
   {
-    MEASUREMENT_COUNT_32=0,
-    MEASUREMENT_COUNT_8=1,
-    MEASUREMENT_COUNT_2=2,
-    MEASUREMENT_COUNT_1=3,
+    MEASUREMENT_COUNT_32 = 0,
+    MEASUREMENT_COUNT_8 = 1,
+    MEASUREMENT_COUNT_2 = 2,
+    MEASUREMENT_COUNT_1 = 3,
   };
-  void setCoolStepMeasurementCount(MeasurementCount measurement_count);
-  void setCoolStepDurationThreshold(uint32_t duration_threshold);
+  void setCoolStepMeasurementCount (MeasurementCount measurement_count);
+  void setCoolStepDurationThreshold (uint32_t duration_threshold);
 
-  void enableAnalogCurrentScaling();
-  void disableAnalogCurrentScaling();
+  void enableAnalogCurrentScaling ();
+  void disableAnalogCurrentScaling ();
 
-  void useExternalSenseResistors();
-  void useInternalSenseResistors();
+  void useExternalSenseResistors ();
+  void useInternalSenseResistors ();
 
   // bidirectional methods
-  uint8_t getVersion();
+  uint8_t getVersion ();
 
   // Explicit register access with error reporting.
-  Result<uint32_t> readRegister(uint8_t register_address);
-  Result<void> writeRegister(uint8_t register_address, uint32_t data);
+  Result<uint32_t> readRegister (uint8_t register_address);
+  Result<void> writeRegister (uint8_t register_address, uint32_t data);
 
   // Retrieve and clear the last UART error observed by the library.
-  UartError getLastUartError() const;
-  void clearLastUartError();
+  UartError getLastUartError () const;
+  void clearLastUartError ();
 
   // if driver is not communicating, check power and communication connections
-  bool isCommunicating();
+  bool isCommunicating ();
 
   // check to make sure TMC2209 is properly setup and communicating
-  bool isSetupAndCommunicating();
+  bool isSetupAndCommunicating ();
 
   // driver may be communicating but not setup if driver power is lost then
   // restored after setup so that defaults are loaded instead of setup options
-  bool isCommunicatingButNotSetup();
+  bool isCommunicatingButNotSetup ();
 
   // driver may also be disabled by the hardware enable input pin
   // this pin must be grounded or disconnected before driver may be enabled
-  bool hardwareDisabled();
+  bool hardwareDisabled ();
 
-  uint16_t getMicrostepsPerStep();
+  uint16_t getMicrostepsPerStep ();
 
   struct Settings
   {
@@ -220,7 +219,7 @@ public:
     bool analog_current_scaling_enabled;
     bool internal_sense_resistors_enabled;
   };
-  Settings getSettings();
+  Settings getSettings ();
 
   struct Status
   {
@@ -243,7 +242,7 @@ public:
     uint32_t standstill : 1;
   };
   const static uint8_t CURRENT_SCALING_MAX = 31;
-  Status getStatus();
+  Status getStatus ();
 
   struct GlobalStatus
   {
@@ -252,38 +251,38 @@ public:
     uint32_t uv_cp : 1;
     uint32_t reserved : 29;
   };
-  GlobalStatus getGlobalStatus();
-  void clearReset();
-  void clearDriveError();
+  GlobalStatus getGlobalStatus ();
+  void clearReset ();
+  void clearDriveError ();
 
-  uint8_t getInterfaceTransmissionCounter();
+  uint8_t getInterfaceTransmissionCounter ();
 
-  uint32_t getInterstepDuration();
+  uint32_t getInterstepDuration ();
 
-  uint16_t getStallGuardResult();
+  uint16_t getStallGuardResult ();
 
-  uint8_t getPwmScaleSum();
-  int16_t getPwmScaleAuto();
-  uint8_t getPwmOffsetAuto();
-  uint8_t getPwmGradientAuto();
+  uint8_t getPwmScaleSum ();
+  int16_t getPwmScaleAuto ();
+  uint8_t getPwmOffsetAuto ();
+  uint8_t getPwmGradientAuto ();
 
-  uint16_t getMicrostepCounter();
+  uint16_t getMicrostepCounter ();
 
 private:
-  HardwareSerial * hardware_serial_ptr_;
+  HardwareSerial *hardware_serial_ptr_;
 #if SOFTWARE_SERIAL_INCLUDED
-  SoftwareSerial * software_serial_ptr_;
+  SoftwareSerial *software_serial_ptr_;
 #endif
   uint8_t serial_address_;
   int16_t hardware_enable_pin_;
 
   UartError last_uart_error_;
 
-  void initialize(SerialAddress serial_address=SERIAL_ADDRESS_0);
-  int serialAvailable();
-  size_t serialWrite(uint8_t c);
-  int serialRead();
-  void serialFlush();
+  void initialize (SerialAddress serial_address = SERIAL_ADDRESS_0);
+  int serialAvailable ();
+  size_t serialWrite (uint8_t c);
+  int serialRead ();
+  void serialFlush ();
 
   // Serial Settings
   const static uint8_t BYTE_MAX_VALUE = 0xFF;
@@ -388,7 +387,6 @@ private:
     uint32_t bytes;
   };
   const static uint8_t VERSION = 0x21;
-
 
   // Velocity Dependent Driver Feature Control Register Set
   const static uint8_t ADDRESS_IHOLD_IRUN = 0x10;
@@ -528,47 +526,47 @@ private:
   };
   const static uint8_t ADDRESS_PWM_AUTO = 0x72;
 
-  void setOperationModeToSerial(SerialAddress serial_address);
+  void setOperationModeToSerial (SerialAddress serial_address);
 
-  void setRegistersToDefaults();
-  void readAndStoreRegisters();
+  void setRegistersToDefaults ();
+  void readAndStoreRegisters ();
 
-  bool serialOperationMode();
+  bool serialOperationMode ();
 
-  void minimizeMotorCurrent();
+  void minimizeMotorCurrent ();
 
-  uint32_t reverseData(uint32_t data);
-  template<typename Datagram>
-  uint8_t calculateCrc(Datagram & datagram,
-    uint8_t datagram_size);
-  template<typename Datagram>
-  void sendDatagramUnidirectional(Datagram & datagram,
-    uint8_t datagram_size);
-  template<typename Datagram>
-  UartError sendDatagramBidirectional(Datagram & datagram,
-    uint8_t datagram_size);
+  uint32_t reverseData (uint32_t data);
+  template <typename Datagram>
+  uint8_t calculateCrc (Datagram &datagram,
+                        uint8_t datagram_size);
+  template <typename Datagram>
+  void sendDatagramUnidirectional (Datagram &datagram,
+                                   uint8_t datagram_size);
+  template <typename Datagram>
+  UartError sendDatagramBidirectional (Datagram &datagram,
+                                       uint8_t datagram_size);
 
-  void write(uint8_t register_address,
-    uint32_t data);
-  uint32_t read(uint8_t register_address);
+  void write (uint8_t register_address,
+              uint32_t data);
+  uint32_t read (uint8_t register_address);
 
-  uint8_t percentToCurrentSetting(uint8_t percent);
-  uint8_t currentSettingToPercent(uint8_t current_setting);
-  uint8_t percentToHoldDelaySetting(uint8_t percent);
-  uint8_t holdDelaySettingToPercent(uint8_t hold_delay_setting);
+  uint8_t percentToCurrentSetting (uint8_t percent);
+  uint8_t currentSettingToPercent (uint8_t current_setting);
+  uint8_t percentToHoldDelaySetting (uint8_t percent);
+  uint8_t holdDelaySettingToPercent (uint8_t hold_delay_setting);
 
-  uint8_t pwmAmplitudeToPwmAmpl(uint8_t pwm_amplitude);
-  uint8_t pwmAmplitudeToPwmGrad(uint8_t pwm_amplitude);
+  uint8_t pwmAmplitudeToPwmAmpl (uint8_t pwm_amplitude);
+  uint8_t pwmAmplitudeToPwmGrad (uint8_t pwm_amplitude);
 
-  void writeStoredGlobalConfig();
-  uint32_t readGlobalConfigBytes();
-  void writeStoredDriverCurrent();
-  void writeStoredChopperConfig();
-  uint32_t readChopperConfigBytes();
-  void writeStoredPwmConfig();
-  uint32_t readPwmConfigBytes();
+  void writeStoredGlobalConfig ();
+  uint32_t readGlobalConfigBytes ();
+  void writeStoredDriverCurrent ();
+  void writeStoredChopperConfig ();
+  uint32_t readChopperConfigBytes ();
+  void writeStoredPwmConfig ();
+  uint32_t readPwmConfigBytes ();
 
-  uint32_t constrain_(uint32_t value, uint32_t low, uint32_t high);
+  uint32_t constrain_ (uint32_t value, uint32_t low, uint32_t high);
 };
 
 #endif

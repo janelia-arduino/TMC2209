@@ -6,7 +6,7 @@
 // See this reference for more details:
 // https://www.arduino.cc/reference/en/language/functions/communication/serial/
 
-UART & serial_stream = Serial1;
+UART &serial_stream = Serial1;
 
 const long SERIAL_BAUD_RATE = 115200;
 const int DELAY = 3000;
@@ -14,34 +14,35 @@ const int DELAY = 3000;
 // Instantiate TMC2209
 TMC2209 stepper_driver;
 
-
-void setup()
+void
+setup ()
 {
-  Serial.begin(SERIAL_BAUD_RATE);
+  Serial.begin (SERIAL_BAUD_RATE);
 
   // Start Serial1 on pins 0 (RX) and 1 (TX)
-  Serial1.begin(SERIAL_BAUD_RATE);
-  stepper_driver.setup(serial_stream);
+  Serial1.begin (SERIAL_BAUD_RATE);
+  stepper_driver.setup (serial_stream);
 }
 
-void loop()
+void
+loop ()
 {
-  if (stepper_driver.isSetupAndCommunicating())
-  {
-    Serial.println("Stepper driver is setup and communicating!");
-    Serial.println("Try turning driver power off to see what happens.");
-  }
-  else if (stepper_driver.isCommunicatingButNotSetup())
-  {
-    Serial.println("Stepper driver is communicating but not setup!");
-    Serial.println("Running setup again...");
-    stepper_driver.setup(serial_stream);
-  }
+  if (stepper_driver.isSetupAndCommunicating ())
+    {
+      Serial.println ("Stepper driver is setup and communicating!");
+      Serial.println ("Try turning driver power off to see what happens.");
+    }
+  else if (stepper_driver.isCommunicatingButNotSetup ())
+    {
+      Serial.println ("Stepper driver is communicating but not setup!");
+      Serial.println ("Running setup again...");
+      stepper_driver.setup (serial_stream);
+    }
   else
-  {
-    Serial.println("Stepper driver is not communicating!");
-    Serial.println("Try turning driver power on to see what happens.");
-  }
-  Serial.println();
-  delay(DELAY);
+    {
+      Serial.println ("Stepper driver is not communicating!");
+      Serial.println ("Try turning driver power on to see what happens.");
+    }
+  Serial.println ();
+  delay (DELAY);
 }

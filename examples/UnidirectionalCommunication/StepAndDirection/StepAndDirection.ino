@@ -9,7 +9,7 @@
 // To make this library work with those boards, refer to this library example:
 // examples/UnidirectionalCommunication/SoftwareSerial
 
-HardwareSerial & serial_stream = Serial3;
+HardwareSerial &serial_stream = Serial3;
 
 const uint8_t STEP_PIN = 2;
 const uint8_t DIRECTION_PIN = 3;
@@ -21,31 +21,32 @@ const uint16_t STOP_DURATION = 1000;
 const uint8_t RUN_CURRENT_PERCENT = 100;
 const long SERIAL_BAUD_RATE = 115200;
 
-
 // Instantiate TMC2209
 TMC2209 stepper_driver;
 
-void setup()
+void
+setup ()
 {
-  serial_stream.begin(SERIAL_BAUD_RATE);
-  stepper_driver.setup(serial_stream);
+  serial_stream.begin (SERIAL_BAUD_RATE);
+  stepper_driver.setup (serial_stream);
 
-  pinMode(STEP_PIN, OUTPUT);
-  pinMode(DIRECTION_PIN, OUTPUT);
+  pinMode (STEP_PIN, OUTPUT);
+  pinMode (DIRECTION_PIN, OUTPUT);
 
-  stepper_driver.setRunCurrent(RUN_CURRENT_PERCENT);
-  stepper_driver.enableCoolStep();
-  stepper_driver.enable();
+  stepper_driver.setRunCurrent (RUN_CURRENT_PERCENT);
+  stepper_driver.enableCoolStep ();
+  stepper_driver.enable ();
 }
 
-void loop()
+void
+loop ()
 {
   // One step takes two iterations through the for loop
-  for (uint32_t i=0; i<STEP_COUNT*2; ++i)
-  {
-    digitalWrite(STEP_PIN, !digitalRead(STEP_PIN));
-    delayMicroseconds(HALF_STEP_DURATION_MICROSECONDS);
-  }
-  digitalWrite(DIRECTION_PIN, !digitalRead(DIRECTION_PIN));
-  delay(STOP_DURATION);
+  for (uint32_t i = 0; i < STEP_COUNT * 2; ++i)
+    {
+      digitalWrite (STEP_PIN, !digitalRead (STEP_PIN));
+      delayMicroseconds (HALF_STEP_DURATION_MICROSECONDS);
+    }
+  digitalWrite (DIRECTION_PIN, !digitalRead (DIRECTION_PIN));
+  delay (STOP_DURATION);
 }
