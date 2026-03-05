@@ -11,3 +11,5 @@
 .\#*
 .pio
 .venv
+.pixi
+.pixi/

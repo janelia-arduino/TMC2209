@@ -1,0 +1,96 @@
+[workspace]
+name = "TMC2209"
+version = "11.0.0"
+description = "Arduino library for communicating with the Trinamic TMC2209 stepper driver."
+authors = ["Peter Polidoro <peter@polidoro.io>"]
+channels = ["conda-forge"]
+
+# Supported pixi platforms. Including these ensures pixi.lock can be solved
+# for each OS/arch (Linux/macOS/Windows).
+platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
+
+[dependencies]
+# PlatformIO CLI (conda-forge, noarch). Provides the `pio` command.
+platformio = ">=6.1.19,<7"
+# Explicit Python for repo helper scripts (tools/pio_task.py)
+python = ">=3.12,<=3.14"
+git = "*"
+
+# --------------------------------------------------------------------------------------
+# git archive
+# --------------------------------------------------------------------------------------
+
+[tasks.archive]
+description = "Export the git repository at the tip of the current branch."
+cmd = "git archive --format=zip --output=../TMC2209.zip HEAD"
+
+# --------------------------------------------------------------------------------------
+# PlatformIO helper tasks (build examples + run host tests)
+# --------------------------------------------------------------------------------------
+
+[tasks.ports]
+description = "List connected devices/ports (COM3, /dev/ttyACM0, /dev/cu.usbmodem*, etc.)"
+cmd = "pio device list"
+
+[tasks.pio-version]
+description = "Show PlatformIO version (helps debug env issues)"
+cmd = "pio --version"
+
+[tasks.test]
+description = "Run host/native unit tests"
+cmd = "pio test -e native"
+
+# Build an example without editing platformio.ini (cross-platform)
+[tasks.build]
+args = [
+  { arg = "example", default = "examples/UnidirectionalCommunication/MoveAtVelocity" },
+  { arg = "env", default = "teensy40" },
+]
+cmd = "python tools/pio_task.py build --example {{ example }} --env {{ env }}"
+
+[tasks.clean]
+args = [
+  { arg = "example", default = "examples/UnidirectionalCommunication/MoveAtVelocity" },
+  { arg = "env", default = "teensy40" },
+]
+cmd = "python tools/pio_task.py clean --example {{ example }} --env {{ env }}"
+
+[tasks.upload]
+args = [
+  { arg = "example", default = "examples/UnidirectionalCommunication/MoveAtVelocity" },
+  { arg = "env", default = "teensy40" },
+  { arg = "port", default = "/dev/ttyACM0" },
+]
+cmd = "python tools/pio_task.py upload --example {{ example }} --env {{ env }} --port {{ port }}"
+
+# Clean + Upload (upload implicitly builds)
+[tasks.flash]
+args = [
+  { arg = "example", default = "examples/UnidirectionalCommunication/MoveAtVelocity" },
+  { arg = "env", default = "teensy40" },
+  { arg = "port", default = "/dev/ttyACM0" },
+]
+cmd = "python tools/pio_task.py flash --example {{ example }} --env {{ env }} --port {{ port }}"
+
+# Clean + Build (compile only)
+[tasks.rebuild]
+args = [
+  { arg = "example", default = "examples/UnidirectionalCommunication/MoveAtVelocity" },
+  { arg = "env", default = "teensy40" },
+]
+cmd = "python tools/pio_task.py rebuild --example {{ example }} --env {{ env }}"
+
+# Delete the per-example build directory (useful if you suspect stale artifacts)
+[tasks.deepclean]
+args = [
+  { arg = "example", default = "examples/UnidirectionalCommunication/MoveAtVelocity" },
+]
+cmd = "python tools/pio_task.py deepclean --example {{ example }}"
+
+# Serial monitor
+[tasks.monitor]
+args = [
+  { arg = "port", default = "/dev/ttyACM0" },
+  { arg = "baud", default = "115200" },
+]
+cmd = "pio device monitor --port {{ port }} --baud {{ baud }} --echo --eol=LF"
