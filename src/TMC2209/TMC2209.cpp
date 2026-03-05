@@ -76,7 +76,7 @@ TMC2209::enable ()
     {
       digitalWrite (hardware_enable_pin_, LOW);
     }
-  chopper_config_.toff = toff_;
+  chopconf_.toff (toff_);
   writeStoredChopperConfig ();
 }
 
@@ -87,7 +87,7 @@ TMC2209::disable ()
     {
       digitalWrite (hardware_enable_pin_, HIGH);
     }
-  chopper_config_.toff = TOFF_DISABLE;
+  chopconf_.toff (TOFF_DISABLE);
   writeStoredChopperConfig ();
 }
 
@@ -115,48 +115,48 @@ TMC2209::setMicrostepsPerStepPowerOfTwo (uint8_t exponent)
     {
     case 0:
       {
-        chopper_config_.mres = MRES_001;
+        chopconf_.mres (tmc2209::reg::Mres::M1);
         break;
       }
     case 1:
       {
-        chopper_config_.mres = MRES_002;
+        chopconf_.mres (tmc2209::reg::Mres::M2);
         break;
       }
     case 2:
       {
-        chopper_config_.mres = MRES_004;
+        chopconf_.mres (tmc2209::reg::Mres::M4);
         break;
       }
     case 3:
       {
-        chopper_config_.mres = MRES_008;
+        chopconf_.mres (tmc2209::reg::Mres::M8);
         break;
       }
     case 4:
       {
-        chopper_config_.mres = MRES_016;
+        chopconf_.mres (tmc2209::reg::Mres::M16);
         break;
       }
     case 5:
       {
-        chopper_config_.mres = MRES_032;
+        chopconf_.mres (tmc2209::reg::Mres::M32);
         break;
       }
     case 6:
       {
-        chopper_config_.mres = MRES_064;
+        chopconf_.mres (tmc2209::reg::Mres::M64);
         break;
       }
     case 7:
       {
-        chopper_config_.mres = MRES_128;
+        chopconf_.mres (tmc2209::reg::Mres::M128);
         break;
       }
     case 8:
     default:
       {
-        chopper_config_.mres = MRES_256;
+        chopconf_.mres (tmc2209::reg::Mres::M256);
         break;
       }
     }
@@ -236,91 +236,91 @@ TMC2209::setRMSCurrent (uint16_t mA, float rSense, float holdMultiplier)
 void
 TMC2209::enableDoubleEdge ()
 {
-  chopper_config_.double_edge = DOUBLE_EDGE_ENABLE;
+  chopconf_.double_edge (true);
   writeStoredChopperConfig ();
 }
 
 void
 TMC2209::disableDoubleEdge ()
 {
-  chopper_config_.double_edge = DOUBLE_EDGE_DISABLE;
+  chopconf_.double_edge (false);
   writeStoredChopperConfig ();
 }
 
 void
 TMC2209::enableVSense ()
 {
-  chopper_config_.vsense = VSENSE_ENABLE;
+  chopconf_.vsense (true);
   writeStoredChopperConfig ();
 }
 
 void
 TMC2209::disableVSense ()
 {
-  chopper_config_.vsense = VSENSE_DISABLE;
+  chopconf_.vsense (false);
   writeStoredChopperConfig ();
 }
 
 void
 TMC2209::enableInverseMotorDirection ()
 {
-  global_config_.shaft = 1;
+  gconf_.shaft (true);
   writeStoredGlobalConfig ();
 }
 
 void
 TMC2209::disableInverseMotorDirection ()
 {
-  global_config_.shaft = 0;
+  gconf_.shaft (false);
   writeStoredGlobalConfig ();
 }
 
 void
 TMC2209::setStandstillMode (TMC2209::StandstillMode mode)
 {
-  pwm_config_.freewheel = mode;
+  pwmconf_.freewheel (static_cast<uint32_t> (mode));
   writeStoredPwmConfig ();
 }
 
 void
 TMC2209::enableAutomaticCurrentScaling ()
 {
-  pwm_config_.pwm_autoscale = STEPPER_DRIVER_FEATURE_ON;
+  pwmconf_.pwm_autoscale (true);
   writeStoredPwmConfig ();
 }
 
 void
 TMC2209::disableAutomaticCurrentScaling ()
 {
-  pwm_config_.pwm_autoscale = STEPPER_DRIVER_FEATURE_OFF;
+  pwmconf_.pwm_autoscale (false);
   writeStoredPwmConfig ();
 }
 
 void
 TMC2209::enableAutomaticGradientAdaptation ()
 {
-  pwm_config_.pwm_autograd = STEPPER_DRIVER_FEATURE_ON;
+  pwmconf_.pwm_autograd (true);
   writeStoredPwmConfig ();
 }
 
 void
 TMC2209::disableAutomaticGradientAdaptation ()
 {
-  pwm_config_.pwm_autograd = STEPPER_DRIVER_FEATURE_OFF;
+  pwmconf_.pwm_autograd (false);
   writeStoredPwmConfig ();
 }
 
 void
 TMC2209::setPwmOffset (uint8_t pwm_amplitude)
 {
-  pwm_config_.pwm_offset = pwm_amplitude;
+  pwmconf_.pwm_offset (pwm_amplitude);
   writeStoredPwmConfig ();
 }
 
 void
 TMC2209::setPwmGradient (uint8_t pwm_amplitude)
 {
-  pwm_config_.pwm_grad = pwm_amplitude;
+  pwmconf_.pwm_grad (pwm_amplitude);
   writeStoredPwmConfig ();
 }
 
@@ -358,14 +358,14 @@ TMC2209::moveUsingStepDirInterface ()
 void
 TMC2209::enableStealthChop ()
 {
-  global_config_.enable_spread_cycle = 0;
+  gconf_.enable_spread_cycle (false);
   writeStoredGlobalConfig ();
 }
 
 void
 TMC2209::disableStealthChop ()
 {
-  global_config_.enable_spread_cycle = 1;
+  gconf_.enable_spread_cycle (true);
   writeStoredGlobalConfig ();
 }
 
@@ -423,28 +423,28 @@ TMC2209::setCoolStepMeasurementCount (MeasurementCount measurement_count)
 void
 TMC2209::enableAnalogCurrentScaling ()
 {
-  global_config_.i_scale_analog = 1;
+  gconf_.i_scale_analog (true);
   writeStoredGlobalConfig ();
 }
 
 void
 TMC2209::disableAnalogCurrentScaling ()
 {
-  global_config_.i_scale_analog = 0;
+  gconf_.i_scale_analog (false);
   writeStoredGlobalConfig ();
 }
 
 void
 TMC2209::useExternalSenseResistors ()
 {
-  global_config_.internal_rsense = 0;
+  gconf_.internal_rsense (false);
   writeStoredGlobalConfig ();
 }
 
 void
 TMC2209::useInternalSenseResistors ()
 {
-  global_config_.internal_rsense = 1;
+  gconf_.internal_rsense (true);
   writeStoredGlobalConfig ();
 }
 
@@ -648,49 +648,49 @@ uint16_t
 TMC2209::getMicrostepsPerStep ()
 {
   uint16_t microsteps_per_step_exponent;
-  switch (chopper_config_.mres)
+  switch (chopconf_.mres ())
     {
-    case MRES_001:
+    case tmc2209::reg::Mres::M1:
       {
         microsteps_per_step_exponent = 0;
         break;
       }
-    case MRES_002:
+    case tmc2209::reg::Mres::M2:
       {
         microsteps_per_step_exponent = 1;
         break;
       }
-    case MRES_004:
+    case tmc2209::reg::Mres::M4:
       {
         microsteps_per_step_exponent = 2;
         break;
       }
-    case MRES_008:
+    case tmc2209::reg::Mres::M8:
       {
         microsteps_per_step_exponent = 3;
         break;
       }
-    case MRES_016:
+    case tmc2209::reg::Mres::M16:
       {
         microsteps_per_step_exponent = 4;
         break;
       }
-    case MRES_032:
+    case tmc2209::reg::Mres::M32:
       {
         microsteps_per_step_exponent = 5;
         break;
       }
-    case MRES_064:
+    case tmc2209::reg::Mres::M64:
       {
         microsteps_per_step_exponent = 6;
         break;
       }
-    case MRES_128:
+    case tmc2209::reg::Mres::M128:
       {
         microsteps_per_step_exponent = 7;
         break;
       }
-    case MRES_256:
+    case tmc2209::reg::Mres::M256:
     default:
       {
         microsteps_per_step_exponent = 8;
@@ -710,12 +710,12 @@ TMC2209::getSettings ()
     {
       readAndStoreRegisters ();
 
-      settings.is_setup = global_config_.pdn_disable;
-      settings.software_enabled = (chopper_config_.toff > TOFF_DISABLE);
+      settings.is_setup = gconf_.pdn_disable ();
+      settings.software_enabled = (chopconf_.toff () > TOFF_DISABLE);
       settings.microsteps_per_step = getMicrostepsPerStep ();
-      settings.inverse_motor_direction_enabled = global_config_.shaft;
-      settings.stealth_chop_enabled = not global_config_.enable_spread_cycle;
-      settings.standstill_mode = pwm_config_.freewheel;
+      settings.inverse_motor_direction_enabled = gconf_.shaft ();
+      settings.stealth_chop_enabled = not gconf_.enable_spread_cycle ();
+      settings.standstill_mode = static_cast<uint8_t> (pwmconf_.freewheel ());
       settings.irun_percent = currentSettingToPercent (driver_current_.irun);
       settings.irun_register_value = driver_current_.irun;
       settings.ihold_percent = currentSettingToPercent (driver_current_.ihold);
@@ -723,15 +723,15 @@ TMC2209::getSettings ()
       settings.iholddelay_percent
           = holdDelaySettingToPercent (driver_current_.iholddelay);
       settings.iholddelay_register_value = driver_current_.iholddelay;
-      settings.automatic_current_scaling_enabled = pwm_config_.pwm_autoscale;
+      settings.automatic_current_scaling_enabled = pwmconf_.pwm_autoscale ();
       settings.automatic_gradient_adaptation_enabled
-          = pwm_config_.pwm_autograd;
-      settings.pwm_offset = pwm_config_.pwm_offset;
-      settings.pwm_gradient = pwm_config_.pwm_grad;
+          = pwmconf_.pwm_autograd ();
+      settings.pwm_offset = static_cast<uint8_t> (pwmconf_.pwm_offset ());
+      settings.pwm_gradient = static_cast<uint8_t> (pwmconf_.pwm_grad ());
       settings.cool_step_enabled = cool_step_enabled_;
-      settings.analog_current_scaling_enabled = global_config_.i_scale_analog;
+      settings.analog_current_scaling_enabled = gconf_.i_scale_analog ();
       settings.internal_sense_resistors_enabled
-          = global_config_.internal_rsense;
+          = gconf_.internal_rsense ();
     }
   else
     {
@@ -740,7 +740,7 @@ TMC2209::getSettings ()
       settings.microsteps_per_step = 0;
       settings.inverse_motor_direction_enabled = false;
       settings.stealth_chop_enabled = false;
-      settings.standstill_mode = pwm_config_.freewheel;
+      settings.standstill_mode = static_cast<uint8_t> (pwmconf_.freewheel ());
       settings.irun_percent = 0;
       settings.irun_register_value = 0;
       settings.ihold_percent = 0;
@@ -931,11 +931,11 @@ TMC2209::setOperationModeToSerial (SerialAddress serial_address)
 {
   serial_address_ = serial_address;
 
-  global_config_.bytes = 0;
-  global_config_.i_scale_analog = 0;
-  global_config_.pdn_disable = 1;
-  global_config_.mstep_reg_select = 1;
-  global_config_.multistep_filt = 1;
+  gconf_.raw = 0;
+  gconf_.i_scale_analog (false);
+  gconf_.pdn_disable (true);
+  gconf_.mstep_reg_select (true);
+  gconf_.multistep_filt (true);
 
   writeStoredGlobalConfig ();
 }
@@ -949,15 +949,15 @@ TMC2209::setRegistersToDefaults ()
   driver_current_.iholddelay = IHOLDDELAY_DEFAULT;
   write (ADDRESS_IHOLD_IRUN, driver_current_.bytes);
 
-  chopper_config_.bytes = CHOPPER_CONFIG_DEFAULT;
-  chopper_config_.tbl = TBL_DEFAULT;
-  chopper_config_.hend = HEND_DEFAULT;
-  chopper_config_.hstart = HSTART_DEFAULT;
-  chopper_config_.toff = TOFF_DEFAULT;
-  write (ADDRESS_CHOPCONF, chopper_config_.bytes);
+  chopconf_.raw = CHOPPER_CONFIG_DEFAULT;
+  chopconf_.tbl (TBL_DEFAULT);
+  chopconf_.hend (HEND_DEFAULT);
+  chopconf_.hstart (HSTART_DEFAULT);
+  chopconf_.toff (TOFF_DEFAULT);
+  write (ADDRESS_CHOPCONF, chopconf_.raw);
 
-  pwm_config_.bytes = PWM_CONFIG_DEFAULT;
-  write (ADDRESS_PWMCONF, pwm_config_.bytes);
+  pwmconf_.raw = PWM_CONFIG_DEFAULT;
+  write (ADDRESS_PWMCONF, pwmconf_.raw);
 
   cool_config_.bytes = COOLCONF_DEFAULT;
   write (ADDRESS_COOLCONF, cool_config_.bytes);
@@ -973,18 +973,18 @@ TMC2209::setRegistersToDefaults ()
 void
 TMC2209::readAndStoreRegisters ()
 {
-  global_config_.bytes = readGlobalConfigBytes ();
-  chopper_config_.bytes = readChopperConfigBytes ();
-  pwm_config_.bytes = readPwmConfigBytes ();
+  gconf_.raw = readGlobalConfigBytes ();
+  chopconf_.raw = readChopperConfigBytes ();
+  pwmconf_.raw = readPwmConfigBytes ();
 }
 
 bool
 TMC2209::serialOperationMode ()
 {
-  GlobalConfig global_config;
-  global_config.bytes = readGlobalConfigBytes ();
+  tmc2209::reg::GCONF gconf;
+  gconf.raw = readGlobalConfigBytes ();
 
-  return global_config.pdn_disable;
+  return gconf.pdn_disable ();
 }
 
 void
@@ -1036,7 +1036,7 @@ TMC2209::calculateCrc (Datagram &datagram, uint8_t datagram_size)
 }
 
 template <typename Datagram>
-TMC2209::UartError
+void
 TMC2209::sendDatagramUnidirectional (Datagram &datagram, uint8_t datagram_size)
 {
   uint8_t byte;
@@ -1151,7 +1151,7 @@ TMC2209::holdDelaySettingToPercent (uint8_t hold_delay_setting)
 void
 TMC2209::writeStoredGlobalConfig ()
 {
-  write (ADDRESS_GCONF, global_config_.bytes);
+  write (ADDRESS_GCONF, gconf_.raw);
 }
 
 uint32_t
@@ -1182,7 +1182,7 @@ TMC2209::writeStoredDriverCurrent ()
 void
 TMC2209::writeStoredChopperConfig ()
 {
-  write (ADDRESS_CHOPCONF, chopper_config_.bytes);
+  write (ADDRESS_CHOPCONF, chopconf_.raw);
 }
 
 uint32_t
@@ -1194,7 +1194,7 @@ TMC2209::readChopperConfigBytes ()
 void
 TMC2209::writeStoredPwmConfig ()
 {
-  write (ADDRESS_PWMCONF, pwm_config_.bytes);
+  write (ADDRESS_PWMCONF, pwmconf_.raw);
 }
 
 uint32_t

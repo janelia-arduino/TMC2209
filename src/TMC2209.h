@@ -11,6 +11,8 @@
 
 #include "Result.hpp"
 
+#include "tmc2209_registers.hpp"
+
 #if !defined(ESP32) && !defined(ARDUINO_ARCH_SAMD) && !defined(ARDUINO_ARCH_RP2040) && !defined(ARDUINO_SAM_DUE) && !defined(ARDUINO_ARCH_RENESAS)
 #  define SOFTWARE_SERIAL_INCLUDED true
 #else
@@ -339,25 +341,7 @@ private:
 
   // General Configuration Registers
   const static uint8_t ADDRESS_GCONF = 0x00;
-  union GlobalConfig
-  {
-    struct
-    {
-      uint32_t i_scale_analog : 1;
-      uint32_t internal_rsense : 1;
-      uint32_t enable_spread_cycle : 1;
-      uint32_t shaft : 1;
-      uint32_t index_otpw : 1;
-      uint32_t index_step : 1;
-      uint32_t pdn_disable : 1;
-      uint32_t mstep_reg_select : 1;
-      uint32_t multistep_filt : 1;
-      uint32_t test_mode : 1;
-      uint32_t reserved : 22;
-    };
-    uint32_t bytes;
-  };
-  GlobalConfig global_config_;
+  tmc2209::reg::GCONF gconf_;
 
   const static uint8_t ADDRESS_GSTAT = 0x01;
   union GlobalStatusUnion
@@ -486,26 +470,7 @@ private:
 
   // Driver Register Set
   const static uint8_t ADDRESS_CHOPCONF = 0x6C;
-  union ChopperConfig
-  {
-    struct
-    {
-      uint32_t toff : 4;
-      uint32_t hstart : 3;
-      uint32_t hend : 4;
-      uint32_t reserved_0 : 4;
-      uint32_t tbl : 2;
-      uint32_t vsense : 1;
-      uint32_t reserved_1 : 6;
-      uint32_t mres : 4;
-      uint32_t interpolation : 1;
-      uint32_t double_edge : 1;
-      uint32_t diss2g : 1;
-      uint32_t diss2vs : 1;
-    };
-    uint32_t bytes;
-  };
-  ChopperConfig chopper_config_;
+  tmc2209::reg::CHOPCONF chopconf_;
   const static uint32_t CHOPPER_CONFIG_DEFAULT = 0x10000053;
   const static uint8_t TBL_DEFAULT = 0b10;
   const static uint8_t HEND_DEFAULT = 0;
@@ -513,19 +478,6 @@ private:
   const static uint8_t TOFF_DEFAULT = 3;
   const static uint8_t TOFF_DISABLE = 0;
   uint8_t toff_ = TOFF_DEFAULT;
-  const static uint8_t MRES_256 = 0b0000;
-  const static uint8_t MRES_128 = 0b0001;
-  const static uint8_t MRES_064 = 0b0010;
-  const static uint8_t MRES_032 = 0b0011;
-  const static uint8_t MRES_016 = 0b0100;
-  const static uint8_t MRES_008 = 0b0101;
-  const static uint8_t MRES_004 = 0b0110;
-  const static uint8_t MRES_002 = 0b0111;
-  const static uint8_t MRES_001 = 0b1000;
-  const static uint8_t DOUBLE_EDGE_DISABLE = 0;
-  const static uint8_t DOUBLE_EDGE_ENABLE = 1;
-  const static uint8_t VSENSE_DISABLE = 0;
-  const static uint8_t VSENSE_ENABLE = 1;
 
   const static size_t MICROSTEPS_PER_STEP_MIN = 1;
   const static size_t MICROSTEPS_PER_STEP_MAX = 256;
@@ -541,23 +493,7 @@ private:
   };
 
   const static uint8_t ADDRESS_PWMCONF = 0x70;
-  union PwmConfig
-  {
-    struct
-    {
-      uint32_t pwm_offset : 8;
-      uint32_t pwm_grad : 8;
-      uint32_t pwm_freq : 2;
-      uint32_t pwm_autoscale : 1;
-      uint32_t pwm_autograd : 1;
-      uint32_t freewheel : 2;
-      uint32_t reserved : 2;
-      uint32_t pwm_reg : 4;
-      uint32_t pwm_lim : 4;
-    };
-    uint32_t bytes;
-  };
-  PwmConfig pwm_config_;
+  tmc2209::reg::PWMCONF pwmconf_;
   const static uint32_t PWM_CONFIG_DEFAULT = 0xC10D0024;
   const static uint8_t PWM_OFFSET_MIN = 0;
   const static uint8_t PWM_OFFSET_MAX = 255;

@@ -2,6 +2,7 @@
 
 #include <TMC2209.h>
 #include <tmc_bits.hpp>
+#include <tmc2209_registers.hpp>
 
 #include "FakeSerial.hpp"
 
@@ -151,6 +152,79 @@ void test_tmc_bits_field_does_not_clobber_other_bits()
 }
 
 
+void test_reg_gconf_encodes_expected_bits()
+{
+  tmc2209::reg::GCONF g;
+
+  g.pdn_disable(true)
+    .mstep_reg_select(true)
+    .multistep_filt(true)
+    .shaft(true);
+
+  // Bits: PDN_DISABLE(6) + MSTEP_REG_SELECT(7) + MULTISTEP_FILT(8) + SHAFT(3)
+  TEST_ASSERT_EQUAL_HEX32(0x000001C8u, g.raw);
+
+  TEST_ASSERT_TRUE(g.pdn_disable());
+  TEST_ASSERT_TRUE(g.mstep_reg_select());
+  TEST_ASSERT_TRUE(g.multistep_filt());
+  TEST_ASSERT_TRUE(g.shaft());
+  TEST_ASSERT_FALSE(g.enable_spread_cycle());
+}
+
+void test_reg_chopconf_encodes_expected_fields()
+{
+  tmc2209::reg::CHOPCONF c;
+
+  c.toff(3)
+    .hstart(5)
+    .hend(10)
+    .tbl(2)
+    .vsense(true)
+    .mres(tmc2209::reg::Mres::M16)
+    .interpolation(true)
+    .double_edge(true)
+    .diss2g(false)
+    .diss2vs(false);
+
+  TEST_ASSERT_EQUAL_HEX32(0x34030553u, c.raw);
+
+  TEST_ASSERT_EQUAL_UINT32(3u, c.toff());
+  TEST_ASSERT_EQUAL_UINT32(5u, c.hstart());
+  TEST_ASSERT_EQUAL_UINT32(10u, c.hend());
+  TEST_ASSERT_EQUAL_UINT32(2u, c.tbl());
+  TEST_ASSERT_TRUE(c.vsense());
+  TEST_ASSERT_EQUAL_UINT8(static_cast<uint8_t>(tmc2209::reg::Mres::M16),
+    static_cast<uint8_t>(c.mres()));
+  TEST_ASSERT_TRUE(c.interpolation());
+  TEST_ASSERT_TRUE(c.double_edge());
+}
+
+void test_reg_pwmconf_encodes_expected_fields()
+{
+  tmc2209::reg::PWMCONF p;
+
+  p.pwm_offset(0x24)
+    .pwm_grad(0x14)
+    .pwm_freq(2)
+    .pwm_autoscale(true)
+    .pwm_autograd(false)
+    .freewheel(1)
+    .pwm_reg(1)
+    .pwm_lim(12);
+
+  TEST_ASSERT_EQUAL_HEX32(0xC1161424u, p.raw);
+
+  TEST_ASSERT_EQUAL_UINT32(0x24u, p.pwm_offset());
+  TEST_ASSERT_EQUAL_UINT32(0x14u, p.pwm_grad());
+  TEST_ASSERT_EQUAL_UINT32(2u, p.pwm_freq());
+  TEST_ASSERT_TRUE(p.pwm_autoscale());
+  TEST_ASSERT_FALSE(p.pwm_autograd());
+  TEST_ASSERT_EQUAL_UINT32(1u, p.freewheel());
+  TEST_ASSERT_EQUAL_UINT32(1u, p.pwm_reg());
+  TEST_ASSERT_EQUAL_UINT32(12u, p.pwm_lim());
+}
+
+
 int main(int argc, char **argv)
 {
   (void)argc;
@@ -166,6 +240,9 @@ int main(int argc, char **argv)
   RUN_TEST(test_tmc_bits_bit_get_set);
   RUN_TEST(test_tmc_bits_field_get_set_and_masks);
   RUN_TEST(test_tmc_bits_field_does_not_clobber_other_bits);
+  RUN_TEST(test_reg_gconf_encodes_expected_bits);
+  RUN_TEST(test_reg_chopconf_encodes_expected_fields);
+  RUN_TEST(test_reg_pwmconf_encodes_expected_fields);
 
   return UNITY_END();
 }
