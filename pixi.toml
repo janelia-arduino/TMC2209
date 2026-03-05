@@ -14,6 +14,7 @@ platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
 platformio = ">=6.1.19,<7"
 # Explicit Python for repo helper scripts (tools/pio_task.py)
 python = ">=3.12,<=3.14"
+clang-tools = "*"
 git = "*"
 
 # --------------------------------------------------------------------------------------
@@ -23,6 +24,26 @@ git = "*"
 [tasks.archive]
 description = "Export the git repository at the tip of the current branch."
 cmd = "git archive --format=zip --output=../TMC2209.zip HEAD"
+
+# --------------------------------------------------------------------------------------
+# clang-format
+# --------------------------------------------------------------------------------------
+
+[tasks.format]
+description = "Format staged changes only (git clang-format) for C/C++/Arduino (.ino)."
+cmd = "git clang-format --staged --style=file --binary clang-format --extensions c,cc,cpp,cxx,h,hh,hpp,hxx,ino"
+
+[tasks.format-wip]
+description = "Format working tree changes (allows unstaged files) for C/C++/Arduino (.ino)."
+cmd = "git clang-format --style=file --binary clang-format --extensions c,cc,cpp,cxx,h,hh,hpp,hxx,ino --force"
+
+[tasks.format-all]
+description = "Reformat ALL tracked C/C++/Arduino files in the repo."
+cmd = "python tools/clang_format_all.py"
+
+[tasks.format-check]
+description = "Check formatting (no writes). Fails if files need reformatting."
+cmd = "python tools/clang_format_all.py --check"
 
 # --------------------------------------------------------------------------------------
 # PlatformIO helper tasks (build examples + run host tests)
@@ -94,3 +115,18 @@ args = [
   { arg = "baud", default = "115200" },
 ]
 cmd = "pio device monitor --port {{ port }} --baud {{ baud }} --echo --eol=LF"
+
+# --------------------------------------------------------------------------------------
+# Version synchronization helpers
+#
+# Keep README.org, library.properties, and pixi.toml in sync (mostly version numbers).
+# --------------------------------------------------------------------------------------
+
+[tasks.check-version]
+description = "Verify version numbers match across library.properties, README.org, and pixi.toml."
+cmd = "python tools/version_sync.py check"
+
+[tasks.set-version]
+description = "Update version numbers in library.properties, README.org, and pixi.toml."
+args = ["version"]
+cmd = "python tools/version_sync.py set {{ version }}"

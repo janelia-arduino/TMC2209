@@ -1,0 +1,18 @@
+# clang-format configuration for the TMC2209 Arduino library.
+#
+# The existing codebase uses a GNU-ish style with spaces before parentheses
+# (e.g. `foo (bar)`), 2-space indents, and braces on their own lines.
+#
+# This file is used by:
+#   - pixi run format
+#   - pixi run format-wip
+#   - pixi run format-all
+#   - pixi run format-check
+#
+BasedOnStyle: GNU
+IndentWidth: 2
+TabWidth: 2
+UseTab: Never
+ColumnLimit: 0
+SpaceBeforeParens: Always
+SortIncludes: false

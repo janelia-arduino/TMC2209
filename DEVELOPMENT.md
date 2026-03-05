@@ -50,6 +50,47 @@ pixi run ports
 pixi run monitor --port /dev/ttyACM0 --baud 115200
 ```
 
+### Format code
+
+Format just the staged changes (recommended before committing):
+
+```bash
+pixi run format
+```
+
+Format working-tree changes (includes unstaged files):
+
+```bash
+pixi run format-wip
+```
+
+Format **all** tracked C/C++/Arduino files:
+
+```bash
+pixi run format-all
+```
+
+Check formatting without writing (useful for quick checks):
+
+```bash
+pixi run format-check
+```
+
+### Keep version numbers in sync
+
+Check that version numbers match across `library.properties`, `.metadata/README.org`,
+and `pixi.toml`:
+
+```bash
+pixi run check-version
+```
+
+Set version numbers (example):
+
+```bash
+pixi run set-version -- 11.0.1
+```
+
 ## Notes
 
 - The `tools/pio_task.py` wrapper sets `PLATFORMIO_SRC_DIR` and `PLATFORMIO_BUILD_DIR`
