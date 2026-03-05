@@ -148,6 +148,130 @@ struct GCONF
   }
 };
 
+
+// --------------------------------------------------------------------------
+// IHOLD_IRUN (0x10)
+// --------------------------------------------------------------------------
+struct IHOLD_IRUN
+{
+  uint32_t raw{ 0 };
+
+  using IHOLD = tmc::bits::Field<0, 5>;
+  using IRUN = tmc::bits::Field<8, 5>;
+  using IHOLDDELAY = tmc::bits::Field<16, 4>;
+
+  IHOLD_IRUN &
+  ihold (uint32_t v)
+  {
+    IHOLD::set (raw, v);
+    return *this;
+  }
+  uint32_t
+  ihold () const
+  {
+    return IHOLD::get (raw);
+  }
+
+  IHOLD_IRUN &
+  irun (uint32_t v)
+  {
+    IRUN::set (raw, v);
+    return *this;
+  }
+  uint32_t
+  irun () const
+  {
+    return IRUN::get (raw);
+  }
+
+  IHOLD_IRUN &
+  iholddelay (uint32_t v)
+  {
+    IHOLDDELAY::set (raw, v);
+    return *this;
+  }
+  uint32_t
+  iholddelay () const
+  {
+    return IHOLDDELAY::get (raw);
+  }
+};
+
+// --------------------------------------------------------------------------
+// COOLCONF (0x42)
+// --------------------------------------------------------------------------
+struct COOLCONF
+{
+  uint32_t raw{ 0 };
+
+  using SEMIN = tmc::bits::Field<0, 4>;
+  using SEUP = tmc::bits::Field<5, 2>;
+  using SEMAX = tmc::bits::Field<8, 4>;
+  using SEDN = tmc::bits::Field<13, 2>;
+  using SEIMIN = tmc::bits::Bit<15>;
+
+  COOLCONF &
+  semin (uint32_t v)
+  {
+    SEMIN::set (raw, v);
+    return *this;
+  }
+  uint32_t
+  semin () const
+  {
+    return SEMIN::get (raw);
+  }
+
+  COOLCONF &
+  seup (uint32_t v)
+  {
+    SEUP::set (raw, v);
+    return *this;
+  }
+  uint32_t
+  seup () const
+  {
+    return SEUP::get (raw);
+  }
+
+  COOLCONF &
+  semax (uint32_t v)
+  {
+    SEMAX::set (raw, v);
+    return *this;
+  }
+  uint32_t
+  semax () const
+  {
+    return SEMAX::get (raw);
+  }
+
+  COOLCONF &
+  sedn (uint32_t v)
+  {
+    SEDN::set (raw, v);
+    return *this;
+  }
+  uint32_t
+  sedn () const
+  {
+    return SEDN::get (raw);
+  }
+
+  COOLCONF &
+  seimin (bool v)
+  {
+    SEIMIN::set (raw, v);
+    return *this;
+  }
+  bool
+  seimin () const
+  {
+    return SEIMIN::get (raw);
+  }
+};
+
+
 // --------------------------------------------------------------------------
 // CHOPCONF (0x6C)
 // --------------------------------------------------------------------------

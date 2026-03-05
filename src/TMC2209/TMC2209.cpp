@@ -167,7 +167,7 @@ void
 TMC2209::setRunCurrent (uint8_t percent)
 {
   uint8_t run_current = percentToCurrentSetting (percent);
-  driver_current_.irun = run_current;
+  ihold_irun_.irun (run_current);
   writeStoredDriverCurrent ();
 }
 
@@ -176,7 +176,7 @@ TMC2209::setHoldCurrent (uint8_t percent)
 {
   uint8_t hold_current = percentToCurrentSetting (percent);
 
-  driver_current_.ihold = hold_current;
+  ihold_irun_.ihold (hold_current);
   writeStoredDriverCurrent ();
 }
 
@@ -185,7 +185,7 @@ TMC2209::setHoldDelay (uint8_t percent)
 {
   uint8_t hold_delay = percentToHoldDelaySetting (percent);
 
-  driver_current_.iholddelay = hold_delay;
+  ihold_irun_.iholddelay (hold_delay);
   writeStoredDriverCurrent ();
 }
 
@@ -198,9 +198,9 @@ TMC2209::setAllCurrentValues (uint8_t run_current_percent,
   uint8_t hold_current = percentToCurrentSetting (hold_current_percent);
   uint8_t hold_delay = percentToHoldDelaySetting (hold_delay_percent);
 
-  driver_current_.irun = run_current;
-  driver_current_.ihold = hold_current;
-  driver_current_.iholddelay = hold_delay;
+  ihold_irun_.irun (run_current);
+  ihold_irun_.ihold (hold_current);
+  ihold_irun_.iholddelay (hold_delay);
   writeStoredDriverCurrent ();
 }
 
@@ -228,8 +228,8 @@ TMC2209::setRMSCurrent (uint16_t mA, float rSense, float holdMultiplier)
       CS = 31;
     }
 
-  driver_current_.irun = CS;
-  driver_current_.ihold = CS * holdMultiplier;
+  ihold_irun_.irun (CS);
+  ihold_irun_.ihold (static_cast<uint32_t> (CS * holdMultiplier));
   writeStoredDriverCurrent ();
 }
 
@@ -391,33 +391,33 @@ void
 TMC2209::enableCoolStep (uint8_t lower_threshold, uint8_t upper_threshold)
 {
   lower_threshold = constrain_ (lower_threshold, SEMIN_MIN, SEMIN_MAX);
-  cool_config_.semin = lower_threshold;
+  coolconf_.semin (lower_threshold);
   upper_threshold = constrain_ (upper_threshold, SEMAX_MIN, SEMAX_MAX);
-  cool_config_.semax = upper_threshold;
-  write (ADDRESS_COOLCONF, cool_config_.bytes);
+  coolconf_.semax (upper_threshold);
+  write (ADDRESS_COOLCONF, coolconf_.raw);
   cool_step_enabled_ = true;
 }
 
 void
 TMC2209::disableCoolStep ()
 {
-  cool_config_.semin = SEMIN_OFF;
-  write (ADDRESS_COOLCONF, cool_config_.bytes);
+  coolconf_.semin (SEMIN_OFF);
+  write (ADDRESS_COOLCONF, coolconf_.raw);
   cool_step_enabled_ = false;
 }
 
 void
 TMC2209::setCoolStepCurrentIncrement (CurrentIncrement current_increment)
 {
-  cool_config_.seup = current_increment;
-  write (ADDRESS_COOLCONF, cool_config_.bytes);
+  coolconf_.seup (static_cast<uint32_t> (current_increment));
+  write (ADDRESS_COOLCONF, coolconf_.raw);
 }
 
 void
 TMC2209::setCoolStepMeasurementCount (MeasurementCount measurement_count)
 {
-  cool_config_.sedn = measurement_count;
-  write (ADDRESS_COOLCONF, cool_config_.bytes);
+  coolconf_.sedn (static_cast<uint32_t> (measurement_count));
+  write (ADDRESS_COOLCONF, coolconf_.raw);
 }
 
 void
@@ -716,13 +716,13 @@ TMC2209::getSettings ()
       settings.inverse_motor_direction_enabled = gconf_.shaft ();
       settings.stealth_chop_enabled = not gconf_.enable_spread_cycle ();
       settings.standstill_mode = static_cast<uint8_t> (pwmconf_.freewheel ());
-      settings.irun_percent = currentSettingToPercent (driver_current_.irun);
-      settings.irun_register_value = driver_current_.irun;
-      settings.ihold_percent = currentSettingToPercent (driver_current_.ihold);
-      settings.ihold_register_value = driver_current_.ihold;
+      settings.irun_percent = currentSettingToPercent (ihold_irun_.irun ());
+      settings.irun_register_value = ihold_irun_.irun ();
+      settings.ihold_percent = currentSettingToPercent (ihold_irun_.ihold ());
+      settings.ihold_register_value = ihold_irun_.ihold ();
       settings.iholddelay_percent
-          = holdDelaySettingToPercent (driver_current_.iholddelay);
-      settings.iholddelay_register_value = driver_current_.iholddelay;
+          = holdDelaySettingToPercent (ihold_irun_.iholddelay ());
+      settings.iholddelay_register_value = ihold_irun_.iholddelay ();
       settings.automatic_current_scaling_enabled = pwmconf_.pwm_autoscale ();
       settings.automatic_gradient_adaptation_enabled
           = pwmconf_.pwm_autograd ();
@@ -943,11 +943,11 @@ TMC2209::setOperationModeToSerial (SerialAddress serial_address)
 void
 TMC2209::setRegistersToDefaults ()
 {
-  driver_current_.bytes = 0;
-  driver_current_.ihold = IHOLD_DEFAULT;
-  driver_current_.irun = IRUN_DEFAULT;
-  driver_current_.iholddelay = IHOLDDELAY_DEFAULT;
-  write (ADDRESS_IHOLD_IRUN, driver_current_.bytes);
+  ihold_irun_.raw = 0;
+  ihold_irun_.ihold (IHOLD_DEFAULT);
+  ihold_irun_.irun (IRUN_DEFAULT);
+  ihold_irun_.iholddelay (IHOLDDELAY_DEFAULT);
+  write (ADDRESS_IHOLD_IRUN, ihold_irun_.raw);
 
   chopconf_.raw = CHOPPER_CONFIG_DEFAULT;
   chopconf_.tbl (TBL_DEFAULT);
@@ -959,8 +959,8 @@ TMC2209::setRegistersToDefaults ()
   pwmconf_.raw = PWM_CONFIG_DEFAULT;
   write (ADDRESS_PWMCONF, pwmconf_.raw);
 
-  cool_config_.bytes = COOLCONF_DEFAULT;
-  write (ADDRESS_COOLCONF, cool_config_.bytes);
+  coolconf_.raw = COOLCONF_DEFAULT;
+  write (ADDRESS_COOLCONF, coolconf_.raw);
 
   write (ADDRESS_TPOWERDOWN, TPOWERDOWN_DEFAULT);
   write (ADDRESS_TPWMTHRS, TPWMTHRS_DEFAULT);
@@ -990,8 +990,8 @@ TMC2209::serialOperationMode ()
 void
 TMC2209::minimizeMotorCurrent ()
 {
-  driver_current_.irun = CURRENT_SETTING_MIN;
-  driver_current_.ihold = CURRENT_SETTING_MIN;
+  ihold_irun_.irun (CURRENT_SETTING_MIN);
+  ihold_irun_.ihold (CURRENT_SETTING_MIN);
   writeStoredDriverCurrent ();
 }
 
@@ -1163,19 +1163,19 @@ TMC2209::readGlobalConfigBytes ()
 void
 TMC2209::writeStoredDriverCurrent ()
 {
-  write (ADDRESS_IHOLD_IRUN, driver_current_.bytes);
+  write (ADDRESS_IHOLD_IRUN, ihold_irun_.raw);
 
-  if (driver_current_.irun >= SEIMIN_UPPER_CURRENT_LIMIT)
+  if (ihold_irun_.irun () >= SEIMIN_UPPER_CURRENT_LIMIT)
     {
-      cool_config_.seimin = SEIMIN_UPPER_SETTING;
+      coolconf_.seimin ((SEIMIN_UPPER_SETTING) != 0);
     }
   else
     {
-      cool_config_.seimin = SEIMIN_LOWER_SETTING;
+      coolconf_.seimin ((SEIMIN_LOWER_SETTING) != 0);
     }
   if (cool_step_enabled_)
     {
-      write (ADDRESS_COOLCONF, cool_config_.bytes);
+      write (ADDRESS_COOLCONF, coolconf_.raw);
     }
 }
 

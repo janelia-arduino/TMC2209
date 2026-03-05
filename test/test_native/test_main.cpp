@@ -239,6 +239,35 @@ test_reg_pwmconf_encodes_expected_fields ()
   TEST_ASSERT_EQUAL_UINT32 (12u, p.pwm_lim ());
 }
 
+void
+test_reg_ihold_irun_encodes_expected_fields ()
+{
+  tmc2209::reg::IHOLD_IRUN r;
+
+  r.ihold (16).irun (31).iholddelay (1);
+
+  TEST_ASSERT_EQUAL_HEX32 (0x00011F10u, r.raw);
+  TEST_ASSERT_EQUAL_UINT32 (16u, r.ihold ());
+  TEST_ASSERT_EQUAL_UINT32 (31u, r.irun ());
+  TEST_ASSERT_EQUAL_UINT32 (1u, r.iholddelay ());
+}
+
+void
+test_reg_coolconf_encodes_expected_fields ()
+{
+  tmc2209::reg::COOLCONF c;
+
+  c.semin (1).seup (2).semax (15).sedn (3).seimin (true);
+
+  TEST_ASSERT_EQUAL_HEX32 (0x0000EF41u, c.raw);
+  TEST_ASSERT_EQUAL_UINT32 (1u, c.semin ());
+  TEST_ASSERT_EQUAL_UINT32 (2u, c.seup ());
+  TEST_ASSERT_EQUAL_UINT32 (15u, c.semax ());
+  TEST_ASSERT_EQUAL_UINT32 (3u, c.sedn ());
+  TEST_ASSERT_TRUE (c.seimin ());
+}
+
+
 int
 main (int argc, char **argv)
 {
@@ -258,6 +287,8 @@ main (int argc, char **argv)
   RUN_TEST (test_reg_gconf_encodes_expected_bits);
   RUN_TEST (test_reg_chopconf_encodes_expected_fields);
   RUN_TEST (test_reg_pwmconf_encodes_expected_fields);
+  RUN_TEST (test_reg_ihold_irun_encodes_expected_fields);
+  RUN_TEST (test_reg_coolconf_encodes_expected_fields);
 
   return UNITY_END ();
 }

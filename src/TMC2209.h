@@ -390,20 +390,7 @@ private:
 
   // Velocity Dependent Driver Feature Control Register Set
   const static uint8_t ADDRESS_IHOLD_IRUN = 0x10;
-  union DriverCurrent
-  {
-    struct
-    {
-      uint32_t ihold : 5;
-      uint32_t reserved_0 : 3;
-      uint32_t irun : 5;
-      uint32_t reserved_1 : 3;
-      uint32_t iholddelay : 4;
-      uint32_t reserved_2 : 12;
-    };
-    uint32_t bytes;
-  };
-  DriverCurrent driver_current_;
+  tmc2209::reg::IHOLD_IRUN ihold_irun_;
   const static uint8_t PERCENT_MIN = 0;
   const static uint8_t PERCENT_MAX = 100;
   const static uint8_t CURRENT_SETTING_MIN = 0;
@@ -435,23 +422,7 @@ private:
 
   const static uint8_t ADDRESS_COOLCONF = 0x42;
   const static uint8_t COOLCONF_DEFAULT = 0;
-  union CoolConfig
-  {
-    struct
-    {
-      uint32_t semin : 4;
-      uint32_t reserved_0 : 1;
-      uint32_t seup : 2;
-      uint32_t reserved_1 : 1;
-      uint32_t semax : 4;
-      uint32_t reserved_2 : 1;
-      uint32_t sedn : 2;
-      uint32_t seimin : 1;
-      uint32_t reserved_3 : 16;
-    };
-    uint32_t bytes;
-  };
-  CoolConfig cool_config_;
+  tmc2209::reg::COOLCONF coolconf_;
   bool cool_step_enabled_;
   const static uint8_t SEIMIN_UPPER_CURRENT_LIMIT = 20;
   const static uint8_t SEIMIN_LOWER_SETTING = 0;
