@@ -337,10 +337,12 @@ TMC2209::setReplyDelay (uint8_t reply_delay)
     {
       reply_delay = REPLY_DELAY_MAX;
     }
-  ReplyDelay reply_delay_data;
-  reply_delay_data.bytes = 0;
-  reply_delay_data.replydelay = reply_delay;
-  write (ADDRESS_REPLYDELAY, reply_delay_data.bytes);
+
+  tmc2209::reg::REPLYDELAY reply_delay_data;
+  reply_delay_data.raw = 0;
+  reply_delay_data.replydelay (reply_delay);
+
+  write (ADDRESS_REPLYDELAY, reply_delay_data.raw);
 }
 
 void
@@ -453,10 +455,10 @@ TMC2209::useInternalSenseResistors ()
 uint8_t
 TMC2209::getVersion ()
 {
-  Input input;
-  input.bytes = read (ADDRESS_IOIN);
+  tmc2209::reg::IOIN input;
+  input.raw = read (ADDRESS_IOIN);
 
-  return input.version;
+  return static_cast<uint8_t> (input.version ());
 }
 
 TMC2209::Result<uint32_t>
@@ -638,10 +640,10 @@ TMC2209::isCommunicatingButNotSetup ()
 bool
 TMC2209::hardwareDisabled ()
 {
-  Input input;
-  input.bytes = read (ADDRESS_IOIN);
+  tmc2209::reg::IOIN input;
+  input.raw = read (ADDRESS_IOIN);
 
-  return input.enn;
+  return input.enn ();
 }
 
 uint16_t
@@ -762,37 +764,60 @@ TMC2209::getSettings ()
 TMC2209::Status
 TMC2209::getStatus ()
 {
-  DriveStatus drive_status;
-  drive_status.bytes = 0;
-  drive_status.bytes = read (ADDRESS_DRV_STATUS);
-  return drive_status.status;
+  tmc2209::reg::DRV_STATUS drive_status;
+  drive_status.raw = read (ADDRESS_DRV_STATUS);
+
+  Status status{};
+  status.over_temperature_warning = drive_status.over_temperature_warning ();
+  status.over_temperature_shutdown = drive_status.over_temperature_shutdown ();
+  status.short_to_ground_a = drive_status.short_to_ground_a ();
+  status.short_to_ground_b = drive_status.short_to_ground_b ();
+  status.low_side_short_a = drive_status.low_side_short_a ();
+  status.low_side_short_b = drive_status.low_side_short_b ();
+  status.open_load_a = drive_status.open_load_a ();
+  status.open_load_b = drive_status.open_load_b ();
+  status.over_temperature_120c = drive_status.over_temperature_120c ();
+  status.over_temperature_143c = drive_status.over_temperature_143c ();
+  status.over_temperature_150c = drive_status.over_temperature_150c ();
+  status.over_temperature_157c = drive_status.over_temperature_157c ();
+  status.current_scaling
+      = static_cast<uint8_t> (drive_status.current_scaling ());
+  status.stealth_chop_mode = drive_status.stealth_chop_mode ();
+  status.standstill = drive_status.standstill ();
+
+  return status;
 }
 
 TMC2209::GlobalStatus
 TMC2209::getGlobalStatus ()
 {
-  GlobalStatusUnion global_status_union;
-  global_status_union.bytes = 0;
-  global_status_union.bytes = read (ADDRESS_GSTAT);
-  return global_status_union.global_status;
+  tmc2209::reg::GSTAT gstat;
+  gstat.raw = read (ADDRESS_GSTAT);
+
+  GlobalStatus status{};
+  status.reset = gstat.reset ();
+  status.drv_err = gstat.drv_err ();
+  status.uv_cp = gstat.uv_cp ();
+
+  return status;
 }
 
 void
 TMC2209::clearReset ()
 {
-  GlobalStatusUnion global_status_union;
-  global_status_union.bytes = 0;
-  global_status_union.global_status.reset = 1;
-  write (ADDRESS_GSTAT, global_status_union.bytes);
+  tmc2209::reg::GSTAT gstat;
+  gstat.raw = 0;
+  gstat.reset (true);
+  write (ADDRESS_GSTAT, gstat.raw);
 }
 
 void
 TMC2209::clearDriveError ()
 {
-  GlobalStatusUnion global_status_union;
-  global_status_union.bytes = 0;
-  global_status_union.global_status.drv_err = 1;
-  write (ADDRESS_GSTAT, global_status_union.bytes);
+  tmc2209::reg::GSTAT gstat;
+  gstat.raw = 0;
+  gstat.drv_err (true);
+  write (ADDRESS_GSTAT, gstat.raw);
 }
 
 uint8_t
@@ -816,37 +841,37 @@ TMC2209::getStallGuardResult ()
 uint8_t
 TMC2209::getPwmScaleSum ()
 {
-  PwmScale pwm_scale;
-  pwm_scale.bytes = read (ADDRESS_PWM_SCALE);
+  tmc2209::reg::PWM_SCALE pwm_scale;
+  pwm_scale.raw = read (ADDRESS_PWM_SCALE);
 
-  return pwm_scale.pwm_scale_sum;
+  return static_cast<uint8_t> (pwm_scale.pwm_scale_sum ());
 }
 
 int16_t
 TMC2209::getPwmScaleAuto ()
 {
-  PwmScale pwm_scale;
-  pwm_scale.bytes = read (ADDRESS_PWM_SCALE);
+  tmc2209::reg::PWM_SCALE pwm_scale;
+  pwm_scale.raw = read (ADDRESS_PWM_SCALE);
 
-  return pwm_scale.pwm_scale_auto;
+  return static_cast<int16_t> (pwm_scale.pwm_scale_auto ());
 }
 
 uint8_t
 TMC2209::getPwmOffsetAuto ()
 {
-  PwmAuto pwm_auto;
-  pwm_auto.bytes = read (ADDRESS_PWM_AUTO);
+  tmc2209::reg::PWM_AUTO pwm_auto;
+  pwm_auto.raw = read (ADDRESS_PWM_AUTO);
 
-  return pwm_auto.pwm_offset_auto;
+  return static_cast<uint8_t> (pwm_auto.pwm_offset_auto ());
 }
 
 uint8_t
 TMC2209::getPwmGradientAuto ()
 {
-  PwmAuto pwm_auto;
-  pwm_auto.bytes = read (ADDRESS_PWM_AUTO);
+  tmc2209::reg::PWM_AUTO pwm_auto;
+  pwm_auto.raw = read (ADDRESS_PWM_AUTO);
 
-  return pwm_auto.pwm_gradient_auto;
+  return static_cast<uint8_t> (pwm_auto.pwm_gradient_auto ());
 }
 
 uint16_t

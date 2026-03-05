@@ -149,6 +149,204 @@ struct GCONF
 };
 
 
+
+
+// --------------------------------------------------------------------------
+// GSTAT (0x01)
+// --------------------------------------------------------------------------
+struct GSTAT
+{
+  uint32_t raw{ 0 };
+
+  using RESET = tmc::bits::Bit<0>;
+  using DRV_ERR = tmc::bits::Bit<1>;
+  using UV_CP = tmc::bits::Bit<2>;
+
+  GSTAT &
+  reset (bool v)
+  {
+    RESET::set (raw, v);
+    return *this;
+  }
+  bool
+  reset () const
+  {
+    return RESET::get (raw);
+  }
+
+  GSTAT &
+  drv_err (bool v)
+  {
+    DRV_ERR::set (raw, v);
+    return *this;
+  }
+  bool
+  drv_err () const
+  {
+    return DRV_ERR::get (raw);
+  }
+
+  GSTAT &
+  uv_cp (bool v)
+  {
+    UV_CP::set (raw, v);
+    return *this;
+  }
+  bool
+  uv_cp () const
+  {
+    return UV_CP::get (raw);
+  }
+};
+
+// --------------------------------------------------------------------------
+// REPLYDELAY (0x03)
+// --------------------------------------------------------------------------
+struct REPLYDELAY
+{
+  uint32_t raw{ 0 };
+
+  using REPLYDELAY_FIELD = tmc::bits::Field<8, 4>;
+
+  REPLYDELAY &
+  replydelay (uint32_t v)
+  {
+    REPLYDELAY_FIELD::set (raw, v);
+    return *this;
+  }
+  uint32_t
+  replydelay () const
+  {
+    return REPLYDELAY_FIELD::get (raw);
+  }
+};
+
+// --------------------------------------------------------------------------
+// IOIN (0x06)
+// --------------------------------------------------------------------------
+struct IOIN
+{
+  uint32_t raw{ 0 };
+
+  using ENN = tmc::bits::Bit<0>;
+  using MS1 = tmc::bits::Bit<2>;
+  using MS2 = tmc::bits::Bit<3>;
+  using DIAG = tmc::bits::Bit<4>;
+  using PDN_SERIAL = tmc::bits::Bit<6>;
+  using STEP = tmc::bits::Bit<7>;
+  using SPREAD_EN = tmc::bits::Bit<8>;
+  using DIR = tmc::bits::Bit<9>;
+  using VERSION = tmc::bits::Field<24, 8>;
+
+  IOIN &
+  enn (bool v)
+  {
+    ENN::set (raw, v);
+    return *this;
+  }
+  bool
+  enn () const
+  {
+    return ENN::get (raw);
+  }
+
+  IOIN &
+  ms1 (bool v)
+  {
+    MS1::set (raw, v);
+    return *this;
+  }
+  bool
+  ms1 () const
+  {
+    return MS1::get (raw);
+  }
+
+  IOIN &
+  ms2 (bool v)
+  {
+    MS2::set (raw, v);
+    return *this;
+  }
+  bool
+  ms2 () const
+  {
+    return MS2::get (raw);
+  }
+
+  IOIN &
+  diag (bool v)
+  {
+    DIAG::set (raw, v);
+    return *this;
+  }
+  bool
+  diag () const
+  {
+    return DIAG::get (raw);
+  }
+
+  IOIN &
+  pdn_serial (bool v)
+  {
+    PDN_SERIAL::set (raw, v);
+    return *this;
+  }
+  bool
+  pdn_serial () const
+  {
+    return PDN_SERIAL::get (raw);
+  }
+
+  IOIN &
+  step (bool v)
+  {
+    STEP::set (raw, v);
+    return *this;
+  }
+  bool
+  step () const
+  {
+    return STEP::get (raw);
+  }
+
+  IOIN &
+  spread_en (bool v)
+  {
+    SPREAD_EN::set (raw, v);
+    return *this;
+  }
+  bool
+  spread_en () const
+  {
+    return SPREAD_EN::get (raw);
+  }
+
+  IOIN &
+  dir (bool v)
+  {
+    DIR::set (raw, v);
+    return *this;
+  }
+  bool
+  dir () const
+  {
+    return DIR::get (raw);
+  }
+
+  IOIN &
+  version (uint32_t v)
+  {
+    VERSION::set (raw, v);
+    return *this;
+  }
+  uint32_t
+  version () const
+  {
+    return VERSION::get (raw);
+  }
+};
+
 // --------------------------------------------------------------------------
 // IHOLD_IRUN (0x10)
 // --------------------------------------------------------------------------
@@ -438,6 +636,203 @@ struct CHOPCONF
   }
 };
 
+
+
+// --------------------------------------------------------------------------
+// DRV_STATUS (0x6F)
+// --------------------------------------------------------------------------
+struct DRV_STATUS
+{
+  uint32_t raw{ 0 };
+
+  using OTW = tmc::bits::Bit<0>;
+  using OTS = tmc::bits::Bit<1>;
+  using S2GA = tmc::bits::Bit<2>;
+  using S2GB = tmc::bits::Bit<3>;
+  using S2VSA = tmc::bits::Bit<4>;
+  using S2VSB = tmc::bits::Bit<5>;
+  using OLA = tmc::bits::Bit<6>;
+  using OLB = tmc::bits::Bit<7>;
+  using T120 = tmc::bits::Bit<8>;
+  using T143 = tmc::bits::Bit<9>;
+  using T150 = tmc::bits::Bit<10>;
+  using T157 = tmc::bits::Bit<11>;
+  using CS_ACTUAL = tmc::bits::Field<16, 5>;
+  using STEALTH = tmc::bits::Bit<30>;
+  using STST = tmc::bits::Bit<31>;
+
+  bool
+  over_temperature_warning () const
+  {
+    return OTW::get (raw);
+  }
+  bool
+  over_temperature_shutdown () const
+  {
+    return OTS::get (raw);
+  }
+  bool
+  short_to_ground_a () const
+  {
+    return S2GA::get (raw);
+  }
+  bool
+  short_to_ground_b () const
+  {
+    return S2GB::get (raw);
+  }
+  bool
+  low_side_short_a () const
+  {
+    return S2VSA::get (raw);
+  }
+  bool
+  low_side_short_b () const
+  {
+    return S2VSB::get (raw);
+  }
+  bool
+  open_load_a () const
+  {
+    return OLA::get (raw);
+  }
+  bool
+  open_load_b () const
+  {
+    return OLB::get (raw);
+  }
+  bool
+  over_temperature_120c () const
+  {
+    return T120::get (raw);
+  }
+  bool
+  over_temperature_143c () const
+  {
+    return T143::get (raw);
+  }
+  bool
+  over_temperature_150c () const
+  {
+    return T150::get (raw);
+  }
+  bool
+  over_temperature_157c () const
+  {
+    return T157::get (raw);
+  }
+
+  DRV_STATUS &
+  current_scaling (uint32_t v)
+  {
+    CS_ACTUAL::set (raw, v);
+    return *this;
+  }
+  uint32_t
+  current_scaling () const
+  {
+    return CS_ACTUAL::get (raw);
+  }
+
+  DRV_STATUS &
+  stealth_chop_mode (bool v)
+  {
+    STEALTH::set (raw, v);
+    return *this;
+  }
+  bool
+  stealth_chop_mode () const
+  {
+    return STEALTH::get (raw);
+  }
+
+  DRV_STATUS &
+  standstill (bool v)
+  {
+    STST::set (raw, v);
+    return *this;
+  }
+  bool
+  standstill () const
+  {
+    return STST::get (raw);
+  }
+
+  // For unit tests: allow setting individual status bits.
+  DRV_STATUS &
+  over_temperature_warning (bool v)
+  {
+    OTW::set (raw, v);
+    return *this;
+  }
+  DRV_STATUS &
+  over_temperature_shutdown (bool v)
+  {
+    OTS::set (raw, v);
+    return *this;
+  }
+  DRV_STATUS &
+  short_to_ground_a (bool v)
+  {
+    S2GA::set (raw, v);
+    return *this;
+  }
+  DRV_STATUS &
+  short_to_ground_b (bool v)
+  {
+    S2GB::set (raw, v);
+    return *this;
+  }
+  DRV_STATUS &
+  low_side_short_a (bool v)
+  {
+    S2VSA::set (raw, v);
+    return *this;
+  }
+  DRV_STATUS &
+  low_side_short_b (bool v)
+  {
+    S2VSB::set (raw, v);
+    return *this;
+  }
+  DRV_STATUS &
+  open_load_a (bool v)
+  {
+    OLA::set (raw, v);
+    return *this;
+  }
+  DRV_STATUS &
+  open_load_b (bool v)
+  {
+    OLB::set (raw, v);
+    return *this;
+  }
+  DRV_STATUS &
+  over_temperature_120c (bool v)
+  {
+    T120::set (raw, v);
+    return *this;
+  }
+  DRV_STATUS &
+  over_temperature_143c (bool v)
+  {
+    T143::set (raw, v);
+    return *this;
+  }
+  DRV_STATUS &
+  over_temperature_150c (bool v)
+  {
+    T150::set (raw, v);
+    return *this;
+  }
+  DRV_STATUS &
+  over_temperature_157c (bool v)
+  {
+    T157::set (raw, v);
+    return *this;
+  }
+};
+
 // --------------------------------------------------------------------------
 // PWMCONF (0x70)
 // --------------------------------------------------------------------------
@@ -548,6 +943,78 @@ struct PWMCONF
   pwm_lim () const
   {
     return PWM_LIM::get (raw);
+  }
+};
+
+
+
+// --------------------------------------------------------------------------
+// PWM_SCALE (0x71)
+// --------------------------------------------------------------------------
+struct PWM_SCALE
+{
+  uint32_t raw{ 0 };
+
+  using PWM_SCALE_SUM = tmc::bits::Field<0, 8>;
+  using PWM_SCALE_AUTO = tmc::bits::Field<16, 9>;
+
+  PWM_SCALE &
+  pwm_scale_sum (uint32_t v)
+  {
+    PWM_SCALE_SUM::set (raw, v);
+    return *this;
+  }
+  uint32_t
+  pwm_scale_sum () const
+  {
+    return PWM_SCALE_SUM::get (raw);
+  }
+
+  PWM_SCALE &
+  pwm_scale_auto (uint32_t v)
+  {
+    PWM_SCALE_AUTO::set (raw, v);
+    return *this;
+  }
+  uint32_t
+  pwm_scale_auto () const
+  {
+    return PWM_SCALE_AUTO::get (raw);
+  }
+};
+
+// --------------------------------------------------------------------------
+// PWM_AUTO (0x72)
+// --------------------------------------------------------------------------
+struct PWM_AUTO
+{
+  uint32_t raw{ 0 };
+
+  using PWM_OFS_AUTO = tmc::bits::Field<0, 8>;
+  using PWM_GRAD_AUTO = tmc::bits::Field<16, 8>;
+
+  PWM_AUTO &
+  pwm_offset_auto (uint32_t v)
+  {
+    PWM_OFS_AUTO::set (raw, v);
+    return *this;
+  }
+  uint32_t
+  pwm_offset_auto () const
+  {
+    return PWM_OFS_AUTO::get (raw);
+  }
+
+  PWM_AUTO &
+  pwm_gradient_auto (uint32_t v)
+  {
+    PWM_GRAD_AUTO::set (raw, v);
+    return *this;
+  }
+  uint32_t
+  pwm_gradient_auto () const
+  {
+    return PWM_GRAD_AUTO::get (raw);
   }
 };
 

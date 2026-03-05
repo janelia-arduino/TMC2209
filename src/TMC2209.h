@@ -223,33 +223,30 @@ public:
 
   struct Status
   {
-    uint32_t over_temperature_warning : 1;
-    uint32_t over_temperature_shutdown : 1;
-    uint32_t short_to_ground_a : 1;
-    uint32_t short_to_ground_b : 1;
-    uint32_t low_side_short_a : 1;
-    uint32_t low_side_short_b : 1;
-    uint32_t open_load_a : 1;
-    uint32_t open_load_b : 1;
-    uint32_t over_temperature_120c : 1;
-    uint32_t over_temperature_143c : 1;
-    uint32_t over_temperature_150c : 1;
-    uint32_t over_temperature_157c : 1;
-    uint32_t reserved0 : 4;
-    uint32_t current_scaling : 5;
-    uint32_t reserved1 : 9;
-    uint32_t stealth_chop_mode : 1;
-    uint32_t standstill : 1;
+    bool over_temperature_warning;
+    bool over_temperature_shutdown;
+    bool short_to_ground_a;
+    bool short_to_ground_b;
+    bool low_side_short_a;
+    bool low_side_short_b;
+    bool open_load_a;
+    bool open_load_b;
+    bool over_temperature_120c;
+    bool over_temperature_143c;
+    bool over_temperature_150c;
+    bool over_temperature_157c;
+    uint8_t current_scaling;
+    bool stealth_chop_mode;
+    bool standstill;
   };
   const static uint8_t CURRENT_SCALING_MAX = 31;
   Status getStatus ();
 
   struct GlobalStatus
   {
-    uint32_t reset : 1;
-    uint32_t drv_err : 1;
-    uint32_t uv_cp : 1;
-    uint32_t reserved : 29;
+    bool reset;
+    bool drv_err;
+    bool uv_cp;
   };
   GlobalStatus getGlobalStatus ();
   void clearReset ();
@@ -343,49 +340,12 @@ private:
   tmc2209::reg::GCONF gconf_;
 
   const static uint8_t ADDRESS_GSTAT = 0x01;
-  union GlobalStatusUnion
-  {
-    struct
-    {
-      GlobalStatus global_status;
-    };
-    uint32_t bytes;
-  };
 
   const static uint8_t ADDRESS_IFCNT = 0x02;
 
   const static uint8_t ADDRESS_REPLYDELAY = 0x03;
-  union ReplyDelay
-  {
-    struct
-    {
-      uint32_t reserved_0 : 8;
-      uint32_t replydelay : 4;
-      uint32_t reserved_1 : 20;
-    };
-    uint32_t bytes;
-  };
 
   const static uint8_t ADDRESS_IOIN = 0x06;
-  union Input
-  {
-    struct
-    {
-      uint32_t enn : 1;
-      uint32_t reserved_0 : 1;
-      uint32_t ms1 : 1;
-      uint32_t ms2 : 1;
-      uint32_t diag : 1;
-      uint32_t reserved_1 : 1;
-      uint32_t pdn_serial : 1;
-      uint32_t step : 1;
-      uint32_t spread_en : 1;
-      uint32_t dir : 1;
-      uint32_t reserved_2 : 14;
-      uint32_t version : 8;
-    };
-    uint32_t bytes;
-  };
   const static uint8_t VERSION = 0x21;
 
   // Velocity Dependent Driver Feature Control Register Set
@@ -452,14 +412,6 @@ private:
   const static size_t MICROSTEPS_PER_STEP_MAX = 256;
 
   const static uint8_t ADDRESS_DRV_STATUS = 0x6F;
-  union DriveStatus
-  {
-    struct
-    {
-      Status status;
-    };
-    uint32_t bytes;
-  };
 
   const static uint8_t ADDRESS_PWMCONF = 0x70;
   tmc2209::reg::PWMCONF pwmconf_;
@@ -471,30 +423,8 @@ private:
   const static uint8_t PWM_GRAD_MAX = 255;
   const static uint8_t PWM_GRAD_DEFAULT = 0x14;
 
-  union PwmScale
-  {
-    struct
-    {
-      uint32_t pwm_scale_sum : 8;
-      uint32_t reserved_0 : 8;
-      uint32_t pwm_scale_auto : 9;
-      uint32_t reserved_1 : 7;
-    };
-    uint32_t bytes;
-  };
   const static uint8_t ADDRESS_PWM_SCALE = 0x71;
 
-  union PwmAuto
-  {
-    struct
-    {
-      uint32_t pwm_offset_auto : 8;
-      uint32_t reserved_0 : 8;
-      uint32_t pwm_gradient_auto : 8;
-      uint32_t reserved_1 : 8;
-    };
-    uint32_t bytes;
-  };
   const static uint8_t ADDRESS_PWM_AUTO = 0x72;
 
   void setOperationModeToSerial (SerialAddress serial_address);

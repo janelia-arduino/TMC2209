@@ -268,6 +268,116 @@ test_reg_coolconf_encodes_expected_fields ()
 }
 
 
+
+void
+test_reg_gstat_encodes_expected_bits ()
+{
+  tmc2209::reg::GSTAT g;
+
+  g.reset (true).drv_err (true).uv_cp (false);
+
+  TEST_ASSERT_EQUAL_HEX32 (0x00000003u, g.raw);
+  TEST_ASSERT_TRUE (g.reset ());
+  TEST_ASSERT_TRUE (g.drv_err ());
+  TEST_ASSERT_FALSE (g.uv_cp ());
+}
+
+void
+test_reg_replydelay_encodes_expected_field ()
+{
+  tmc2209::reg::REPLYDELAY r;
+
+  r.replydelay (0xFu);
+  TEST_ASSERT_EQUAL_HEX32 (0x00000F00u, r.raw);
+  TEST_ASSERT_EQUAL_UINT32 (0xFu, r.replydelay ());
+
+  // Field is 4 bits wide; value is masked.
+  r.raw = 0;
+  r.replydelay (0xABu);
+  TEST_ASSERT_EQUAL_HEX32 (0x00000B00u, r.raw);
+  TEST_ASSERT_EQUAL_UINT32 (0xBu, r.replydelay ());
+}
+
+void
+test_reg_ioin_encodes_expected_fields ()
+{
+  tmc2209::reg::IOIN ioin;
+  ioin.raw = 0;
+
+  ioin.enn (true)
+      .ms1 (true)
+      .ms2 (false)
+      .diag (true)
+      .pdn_serial (true)
+      .step (false)
+      .spread_en (true)
+      .dir (true)
+      .version (0x21);
+
+  TEST_ASSERT_EQUAL_HEX32 (0x21000355u, ioin.raw);
+  TEST_ASSERT_TRUE (ioin.enn ());
+  TEST_ASSERT_TRUE (ioin.ms1 ());
+  TEST_ASSERT_FALSE (ioin.ms2 ());
+  TEST_ASSERT_TRUE (ioin.diag ());
+  TEST_ASSERT_TRUE (ioin.pdn_serial ());
+  TEST_ASSERT_FALSE (ioin.step ());
+  TEST_ASSERT_TRUE (ioin.spread_en ());
+  TEST_ASSERT_TRUE (ioin.dir ());
+  TEST_ASSERT_EQUAL_UINT32 (0x21u, ioin.version ());
+}
+
+void
+test_reg_drv_status_encodes_expected_fields ()
+{
+  tmc2209::reg::DRV_STATUS s;
+  s.raw = 0;
+
+  s.over_temperature_warning (true)
+      .short_to_ground_a (true)
+      .open_load_b (true)
+      .over_temperature_150c (true)
+      .current_scaling (31)
+      .stealth_chop_mode (true)
+      .standstill (true);
+
+  TEST_ASSERT_EQUAL_HEX32 (0xC01F0485u, s.raw);
+
+  TEST_ASSERT_TRUE (s.over_temperature_warning ());
+  TEST_ASSERT_FALSE (s.over_temperature_shutdown ());
+  TEST_ASSERT_TRUE (s.short_to_ground_a ());
+  TEST_ASSERT_TRUE (s.open_load_b ());
+  TEST_ASSERT_TRUE (s.over_temperature_150c ());
+  TEST_ASSERT_EQUAL_UINT32 (31u, s.current_scaling ());
+  TEST_ASSERT_TRUE (s.stealth_chop_mode ());
+  TEST_ASSERT_TRUE (s.standstill ());
+}
+
+void
+test_reg_pwm_scale_encodes_expected_fields ()
+{
+  tmc2209::reg::PWM_SCALE p;
+
+  p.pwm_scale_sum (0xAA).pwm_scale_auto (0x1FF);
+
+  TEST_ASSERT_EQUAL_HEX32 (0x01FF00AAu, p.raw);
+  TEST_ASSERT_EQUAL_UINT32 (0xAAu, p.pwm_scale_sum ());
+  TEST_ASSERT_EQUAL_UINT32 (0x1FFu, p.pwm_scale_auto ());
+}
+
+void
+test_reg_pwm_auto_encodes_expected_fields ()
+{
+  tmc2209::reg::PWM_AUTO p;
+
+  p.pwm_offset_auto (0x24).pwm_gradient_auto (0x14);
+
+  TEST_ASSERT_EQUAL_HEX32 (0x00140024u, p.raw);
+  TEST_ASSERT_EQUAL_UINT32 (0x24u, p.pwm_offset_auto ());
+  TEST_ASSERT_EQUAL_UINT32 (0x14u, p.pwm_gradient_auto ());
+}
+
+
+
 int
 main (int argc, char **argv)
 {
@@ -289,6 +399,12 @@ main (int argc, char **argv)
   RUN_TEST (test_reg_pwmconf_encodes_expected_fields);
   RUN_TEST (test_reg_ihold_irun_encodes_expected_fields);
   RUN_TEST (test_reg_coolconf_encodes_expected_fields);
+  RUN_TEST (test_reg_gstat_encodes_expected_bits);
+  RUN_TEST (test_reg_replydelay_encodes_expected_field);
+  RUN_TEST (test_reg_ioin_encodes_expected_fields);
+  RUN_TEST (test_reg_drv_status_encodes_expected_fields);
+  RUN_TEST (test_reg_pwm_scale_encodes_expected_fields);
+  RUN_TEST (test_reg_pwm_auto_encodes_expected_fields);
 
   return UNITY_END ();
 }
