@@ -282,9 +282,6 @@ private:
   void serialFlush ();
 
   // Serial Settings
-  const static uint8_t BYTE_MAX_VALUE = 0xFF;
-  const static uint8_t BITS_PER_BYTE = 8;
-
   const static uint32_t ECHO_DELAY_INC_MICROSECONDS = 1;
   const static uint32_t ECHO_DELAY_MAX_MICROSECONDS = 4000;
 
@@ -296,44 +293,6 @@ private:
 
   const static uint8_t MAX_READ_RETRIES = 5;
   const static uint32_t READ_RETRY_DELAY_MS = 20;
-
-  // Datagrams
-  const static uint8_t WRITE_READ_REPLY_DATAGRAM_SIZE = 8;
-  const static uint8_t DATA_SIZE = 4;
-  union WriteReadReplyDatagram
-  {
-    struct
-    {
-      uint64_t sync : 4;
-      uint64_t reserved : 4;
-      uint64_t serial_address : 8;
-      uint64_t register_address : 7;
-      uint64_t rw : 1;
-      uint64_t data : 32;
-      uint64_t crc : 8;
-    };
-    uint64_t bytes;
-  };
-
-  const static uint8_t SYNC = 0b101;
-  const static uint8_t RW_READ = 0;
-  const static uint8_t RW_WRITE = 1;
-  const static uint8_t READ_REPLY_SERIAL_ADDRESS = 0b11111111;
-
-  const static uint8_t READ_REQUEST_DATAGRAM_SIZE = 4;
-  union ReadRequestDatagram
-  {
-    struct
-    {
-      uint32_t sync : 4;
-      uint32_t reserved : 4;
-      uint32_t serial_address : 8;
-      uint32_t register_address : 7;
-      uint32_t rw : 1;
-      uint32_t crc : 8;
-    };
-    uint32_t bytes;
-  };
 
   // General Configuration Registers
   const static uint8_t ADDRESS_GCONF = 0x00;
@@ -436,15 +395,10 @@ private:
 
   void minimizeMotorCurrent ();
 
-  uint32_t reverseData (uint32_t data);
-  template <typename Datagram>
-  uint8_t calculateCrc (Datagram &datagram,
-                        uint8_t datagram_size);
-  template <typename Datagram>
-  void sendDatagramUnidirectional (Datagram &datagram,
+  void serialDrain ();
+  void sendDatagramUnidirectional (const uint8_t *datagram_bytes,
                                    uint8_t datagram_size);
-  template <typename Datagram>
-  UartError sendDatagramBidirectional (Datagram &datagram,
+  UartError sendDatagramBidirectional (const uint8_t *datagram_bytes,
                                        uint8_t datagram_size);
 
   void write (uint8_t register_address,

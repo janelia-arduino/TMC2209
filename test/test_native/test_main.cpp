@@ -1,6 +1,7 @@
 #include <unity.h>
 
 #include <TMC2209.h>
+#include <TMC2209/Protocol.hpp>
 #include <tmc_bits.hpp>
 #include <tmc2209_registers.hpp>
 
@@ -117,6 +118,51 @@ test_readRegister_retries_after_crc_mismatch ()
   TEST_ASSERT_EQUAL_UINT8_MESSAGE (static_cast<uint8_t> (TMC2209::UartError::None),
                                    static_cast<uint8_t> (tmc.getLastUartError ()),
                                    "expected getLastUartError() to be cleared on success");
+}
+
+void
+test_protocol_read_request_pack_is_explicit_and_crc_valid ()
+{
+  const auto datagram
+      = tmc2209::protocol::ReadRequestDatagram::make (0x02u, 0x6Cu);
+
+  TEST_ASSERT_EQUAL_UINT8 (0x05u, datagram.bytes[0]);
+  TEST_ASSERT_EQUAL_UINT8 (0x02u, datagram.bytes[1]);
+  TEST_ASSERT_EQUAL_UINT8 (0x6Cu, datagram.bytes[2]);
+  TEST_ASSERT_EQUAL_UINT8 (tmc2209::protocol::SYNC, datagram.sync ());
+  TEST_ASSERT_EQUAL_UINT8 (0x02u, datagram.serialAddress ());
+  TEST_ASSERT_EQUAL_UINT8 (0x6Cu, datagram.registerAddress ());
+  TEST_ASSERT_EQUAL_UINT8 (tmc2209::protocol::RW_READ, datagram.rw ());
+  TEST_ASSERT_TRUE (datagram.hasValidCrc ());
+}
+
+void
+test_protocol_write_datagram_pack_is_explicit_and_big_endian ()
+{
+  const auto datagram = tmc2209::protocol::WriteReadReplyDatagram::makeWrite (
+      0x03u, 0x6Cu, 0x12345678u);
+
+  TEST_ASSERT_EQUAL_UINT8 (0x05u, datagram.bytes[0]);
+  TEST_ASSERT_EQUAL_UINT8 (0x03u, datagram.bytes[1]);
+  TEST_ASSERT_EQUAL_UINT8 (0xECu, datagram.bytes[2]);
+  TEST_ASSERT_EQUAL_UINT8 (0x12u, datagram.bytes[3]);
+  TEST_ASSERT_EQUAL_UINT8 (0x34u, datagram.bytes[4]);
+  TEST_ASSERT_EQUAL_UINT8 (0x56u, datagram.bytes[5]);
+  TEST_ASSERT_EQUAL_UINT8 (0x78u, datagram.bytes[6]);
+  TEST_ASSERT_EQUAL_UINT8 (tmc2209::protocol::RW_WRITE, datagram.rw ());
+  TEST_ASSERT_EQUAL_HEX32 (0x12345678u, datagram.data ());
+  TEST_ASSERT_TRUE (datagram.hasValidCrc ());
+}
+
+void
+test_protocol_crc_detects_corruption ()
+{
+  auto datagram = tmc2209::protocol::WriteReadReplyDatagram::makeReadReply (
+      0x06u, 0x21000000u);
+
+  TEST_ASSERT_TRUE (datagram.hasValidCrc ());
+  datagram.bytes[tmc2209::protocol::WriteReadReplyDatagram::kSize - 1] ^= 0x01u;
+  TEST_ASSERT_FALSE (datagram.hasValidCrc ());
 }
 
 void
@@ -391,6 +437,9 @@ main (int argc, char **argv)
   RUN_TEST (test_read_retries_after_reply_timeout);
   RUN_TEST (test_readRegister_reports_timeout_error_when_no_reply);
   RUN_TEST (test_readRegister_retries_after_crc_mismatch);
+  RUN_TEST (test_protocol_read_request_pack_is_explicit_and_crc_valid);
+  RUN_TEST (test_protocol_write_datagram_pack_is_explicit_and_big_endian);
+  RUN_TEST (test_protocol_crc_detects_corruption);
   RUN_TEST (test_tmc_bits_bit_get_set);
   RUN_TEST (test_tmc_bits_field_get_set_and_masks);
   RUN_TEST (test_tmc_bits_field_does_not_clobber_other_bits);

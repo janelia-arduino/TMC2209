@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "Arduino.h"
+#include "TMC2209/Protocol.hpp"
 
 // A very small host-side serial simulator for exercising the TMC2209 UART
 // protocol logic in unit tests.
@@ -109,39 +110,6 @@ public:
   }
 
 private:
-  static constexpr uint8_t SYNC_NIBBLE = 0b101; // library uses 0b101
-
-  // CRC algorithm matches the implementation in TMC2209.cpp.
-  static uint8_t
-  crc8_tmc_ (const uint8_t *bytes, size_t count_without_crc)
-  {
-    uint8_t crc = 0;
-    for (size_t i = 0; i < count_without_crc; ++i)
-      {
-        uint8_t byte = bytes[i];
-        for (uint8_t j = 0; j < 8; ++j)
-          {
-            if ((crc >> 7) ^ (byte & 0x01))
-              {
-                crc = static_cast<uint8_t> ((crc << 1) ^ 0x07);
-              }
-            else
-              {
-                crc = static_cast<uint8_t> (crc << 1);
-              }
-            byte >>= 1;
-          }
-      }
-    return crc;
-  }
-
-  static uint32_t
-  reverse_u32_ (uint32_t data)
-  {
-    // Mirror of TMC2209::reverseData()
-    return ((data & 0x000000FFu) << 24) | ((data & 0x0000FF00u) << 8) | ((data & 0x00FF0000u) >> 8) | ((data & 0xFF000000u) >> 24);
-  }
-
   void
   maybe_handle_read_request_ (const std::vector<uint8_t> &frame)
   {
@@ -151,27 +119,25 @@ private:
     //  byte2: [rw:1][register_address:7]  (rw=0 for read)
     //  byte3: crc
 
-    if (frame.size () != 4)
+    if (frame.size () != tmc2209::protocol::ReadRequestDatagram::kSize)
       {
         return;
       }
 
-    const uint8_t byte0 = frame[0];
-    const uint8_t sync = (byte0 & 0x0F);
-    if (sync != SYNC_NIBBLE)
+    tmc2209::protocol::ReadRequestDatagram request{};
+    for (size_t i = 0; i < tmc2209::protocol::ReadRequestDatagram::kSize; ++i)
+      {
+        request.bytes[i] = frame[i];
+      }
+
+    if ((request.sync () != tmc2209::protocol::SYNC)
+        || (request.rw () != tmc2209::protocol::RW_READ)
+        || !request.hasValidCrc ())
       {
         return;
       }
 
-    const uint8_t byte2 = frame[2];
-    const uint8_t rw = (byte2 >> 7) & 0x01;
-    if (rw != 0)
-      {
-        // Not a read request.
-        return;
-      }
-
-    const uint8_t register_address = (byte2 & 0x7F);
+    const uint8_t register_address = request.registerAddress ();
 
     // We detected a read request.
     ++read_request_count_;
@@ -185,31 +151,19 @@ private:
     auto it = register_map_.find (register_address);
     uint32_t value = (it != register_map_.end ()) ? it->second : 0u;
 
-    // Build a write/read reply datagram (8 bytes) with a valid CRC.
-    // We don't strictly need to match every header field because the library
-    // currently only validates CRC, but we keep it realistic.
-    uint8_t reply[8] = {};
-    reply[0] = SYNC_NIBBLE;      // reserved nibble is 0
-    reply[1] = 0xFF;             // READ_REPLY_SERIAL_ADDRESS
-    reply[2] = register_address; // rw bit 0 for read
-
-    const uint32_t data_field = reverse_u32_ (value);
-    reply[3] = static_cast<uint8_t> (data_field & 0xFF);
-    reply[4] = static_cast<uint8_t> ((data_field >> 8) & 0xFF);
-    reply[5] = static_cast<uint8_t> ((data_field >> 16) & 0xFF);
-    reply[6] = static_cast<uint8_t> ((data_field >> 24) & 0xFF);
-
-    reply[7] = crc8_tmc_ (reply, 7);
+    auto reply = tmc2209::protocol::WriteReadReplyDatagram::makeReadReply (
+        register_address, value);
 
     if (corrupt_crc_remaining_ > 0)
       {
         // Flip a bit to force a CRC mismatch.
-        reply[7] ^= 0x01;
+        reply.bytes[tmc2209::protocol::WriteReadReplyDatagram::kSize - 1]
+            ^= 0x01;
         --corrupt_crc_remaining_;
       }
 
     // Enqueue reply after the echo bytes already placed in RX.
-    for (uint8_t b : reply)
+    for (uint8_t b : reply.bytes)
       {
         rx_.push_back (b);
       }
