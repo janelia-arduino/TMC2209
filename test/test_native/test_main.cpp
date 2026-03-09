@@ -1,6 +1,8 @@
 #include <unity.h>
 
+#define private public
 #include <TMC2209.h>
+#undef private
 #include <TMC2209/Protocol.hpp>
 #include <tmc_bits.hpp>
 #include <tmc2209_registers.hpp>
@@ -163,6 +165,17 @@ test_protocol_crc_detects_corruption ()
   TEST_ASSERT_TRUE (datagram.hasValidCrc ());
   datagram.bytes[tmc2209::protocol::WriteReadReplyDatagram::kSize - 1] ^= 0x01u;
   TEST_ASSERT_FALSE (datagram.hasValidCrc ());
+}
+
+void
+test_setRMSCurrent_clamps_very_low_requests_to_zero ()
+{
+  TMC2209 tmc;
+
+  tmc.setRMSCurrent (0, 0.11f, 0.5f);
+
+  TEST_ASSERT_EQUAL_UINT32 (0u, tmc.ihold_irun_.irun ());
+  TEST_ASSERT_EQUAL_UINT32 (0u, tmc.ihold_irun_.ihold ());
 }
 
 void
@@ -408,6 +421,21 @@ test_reg_pwm_scale_encodes_expected_fields ()
   TEST_ASSERT_EQUAL_HEX32 (0x01FF00AAu, p.raw);
   TEST_ASSERT_EQUAL_UINT32 (0xAAu, p.pwm_scale_sum ());
   TEST_ASSERT_EQUAL_UINT32 (0x1FFu, p.pwm_scale_auto ());
+  TEST_ASSERT_EQUAL_INT16 (-1, p.pwm_scale_auto_signed ());
+}
+
+void
+test_getPwmScaleAuto_decodes_signed_pwm_scale_auto_field ()
+{
+  FakeSerial serial;
+
+  serial.set_register_value (0x71, 0x01FF0000u);
+
+  TMC2209 tmc;
+  tmc.setup (serial, TMC2209::SERIAL_ADDRESS_0);
+  serial.reset ();
+
+  TEST_ASSERT_EQUAL_INT16 (-1, tmc.getPwmScaleAuto ());
 }
 
 void
@@ -440,6 +468,7 @@ main (int argc, char **argv)
   RUN_TEST (test_protocol_read_request_pack_is_explicit_and_crc_valid);
   RUN_TEST (test_protocol_write_datagram_pack_is_explicit_and_big_endian);
   RUN_TEST (test_protocol_crc_detects_corruption);
+  RUN_TEST (test_setRMSCurrent_clamps_very_low_requests_to_zero);
   RUN_TEST (test_tmc_bits_bit_get_set);
   RUN_TEST (test_tmc_bits_field_get_set_and_masks);
   RUN_TEST (test_tmc_bits_field_does_not_clobber_other_bits);
@@ -453,6 +482,7 @@ main (int argc, char **argv)
   RUN_TEST (test_reg_ioin_encodes_expected_fields);
   RUN_TEST (test_reg_drv_status_encodes_expected_fields);
   RUN_TEST (test_reg_pwm_scale_encodes_expected_fields);
+  RUN_TEST (test_getPwmScaleAuto_decodes_signed_pwm_scale_auto_field);
   RUN_TEST (test_reg_pwm_auto_encodes_expected_fields);
 
   return UNITY_END ();

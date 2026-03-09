@@ -981,6 +981,20 @@ struct PWM_SCALE
   {
     return PWM_SCALE_AUTO::get (raw);
   }
+
+  int16_t
+  pwm_scale_auto_signed () const
+  {
+    const uint16_t value
+        = static_cast<uint16_t> (PWM_SCALE_AUTO::get (raw) & 0x1FFu);
+
+    if ((value & 0x100u) != 0)
+      {
+        return static_cast<int16_t> (value | 0xFE00u);
+      }
+
+    return static_cast<int16_t> (value);
+  }
 };
 
 // --------------------------------------------------------------------------

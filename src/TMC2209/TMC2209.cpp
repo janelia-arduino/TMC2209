@@ -212,26 +212,41 @@ TMC2209::setRMSCurrent (uint16_t mA, float rSense, float holdMultiplier)
   // Taken from
   // https://github.com/teemuatlut/TMCStepper/blob/74e8e6881adc9241c2e626071e7328d7652f361a/src/source/TMCStepper.cpp#L41.
 
-  uint8_t CS = 32.0 * 1.41421 * mA / 1000.0 * (rSense + 0.02) / 0.325 - 1;
+  auto clampCurrentScale = [] (int value) -> uint8_t {
+    if (value < 0)
+      {
+        return 0;
+      }
+    if (value > 31)
+      {
+        return 31;
+      }
+    return static_cast<uint8_t> (value);
+  };
+
+  int CS = static_cast<int> (
+      32.0f * 1.41421f * mA / 1000.0f * (rSense + 0.02f) / 0.325f - 1.0f);
+
   // If Current Scale is too low, turn on high sensitivity R_sense and
-  // calculate again
+  // calculate again.
   if (CS < 16)
     {
       enableVSense ();
-      CS = 32.0 * 1.41421 * mA / 1000.0 * (rSense + 0.02) / 0.180 - 1;
+      CS = static_cast<int> (
+          32.0f * 1.41421f * mA / 1000.0f * (rSense + 0.02f) / 0.180f
+          - 1.0f);
     }
   else
     { // If CS >= 16, turn off high_sense_r
       disableVSense ();
     }
 
-  if (CS > 31)
-    {
-      CS = 31;
-    }
+  const uint8_t clamped_cs = clampCurrentScale (CS);
+  int hold_current = static_cast<int> (clamped_cs * holdMultiplier);
+  const uint8_t clamped_hold_current = clampCurrentScale (hold_current);
 
-  ihold_irun_.irun (CS);
-  ihold_irun_.ihold (static_cast<uint32_t> (CS * holdMultiplier));
+  ihold_irun_.irun (clamped_cs);
+  ihold_irun_.ihold (clamped_hold_current);
   writeStoredDriverCurrent ();
 }
 
@@ -843,7 +858,7 @@ TMC2209::getPwmScaleAuto ()
   tmc2209::reg::PWM_SCALE pwm_scale;
   pwm_scale.raw = read (ADDRESS_PWM_SCALE);
 
-  return static_cast<int16_t> (pwm_scale.pwm_scale_auto ());
+  return pwm_scale.pwm_scale_auto_signed ();
 }
 
 uint8_t
