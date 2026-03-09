@@ -11,6 +11,14 @@
 
 #include "Result.hpp"
 
+#include "Device.hpp"
+#include "Driver.hpp"
+#include "Registers.hpp"
+#include "UartBus.hpp"
+#include "UartBusParameters.hpp"
+#include "UartParameters.hpp"
+
+#include "TMC2209/UartEngine.hpp"
 #include "tmc2209_registers.hpp"
 
 #if !defined(ESP32) && !defined(ARDUINO_ARCH_SAMD) && !defined(ARDUINO_ARCH_RP2040) && !defined(ARDUINO_SAM_DUE) && !defined(ARDUINO_ARCH_RENESAS)
@@ -22,7 +30,7 @@
 #include <SoftwareSerial.h>
 #endif
 
-class TMC2209
+class TMC2209 : private tmc2209::UartEngineIo
 {
 public:
   TMC2209 ();
@@ -32,6 +40,15 @@ public:
   using UartError = tmc2209::UartError;
   template <typename T>
   using Result = tmc2209::Result<T>;
+  using UartBus = tmc2209::UartBus;
+  using Device = tmc2209::Device;
+  using Driver = tmc2209::Driver;
+  using Registers = tmc2209::Registers;
+  using UartParameters = tmc2209::UartParameters;
+  using UartBusParameters = tmc2209::UartBusParameters;
+
+  Driver driver;
+  Registers registers;
 
   enum SerialAddress
   {
@@ -176,6 +193,15 @@ public:
   Result<uint32_t> readRegister (uint8_t register_address);
   Result<void> writeRegister (uint8_t register_address, uint32_t data);
 
+  // Non-blocking register transactions backed by the shared UART engine.
+  Result<void> startRead (uint8_t register_address);
+  Result<void> startWrite (uint8_t register_address, uint32_t data);
+  void poll ();
+  bool busy () const;
+  bool resultReady () const;
+  Result<uint32_t> takeReadResult ();
+  Result<void> takeWriteResult ();
+
   // Retrieve and clear the last UART error observed by the library.
   UartError getLastUartError () const;
   void clearLastUartError ();
@@ -266,6 +292,9 @@ public:
   uint16_t getMicrostepCounter ();
 
 private:
+  tmc2209::UartBus facade_bus_;
+  tmc2209::Device facade_device_;
+
   HardwareSerial *hardware_serial_ptr_;
 #if SOFTWARE_SERIAL_INCLUDED
   SoftwareSerial *software_serial_ptr_;
@@ -274,25 +303,22 @@ private:
   int16_t hardware_enable_pin_;
 
   UartError last_uart_error_;
+  tmc2209::UartEngine uart_engine_;
 
   void initialize (SerialAddress serial_address = SERIAL_ADDRESS_0);
+  bool serialTransportConfigured () const;
   int serialAvailable ();
   size_t serialWrite (uint8_t c);
   int serialRead ();
   void serialFlush ();
 
-  // Serial Settings
-  const static uint32_t ECHO_DELAY_INC_MICROSECONDS = 1;
-  const static uint32_t ECHO_DELAY_MAX_MICROSECONDS = 4000;
-
-  const static uint32_t REPLY_DELAY_INC_MICROSECONDS = 1;
-  const static uint32_t REPLY_DELAY_MAX_MICROSECONDS = 10000;
+  int uartAvailable () override;
+  int uartRead () override;
+  size_t uartWrite (uint8_t c) override;
+  void uartFlush () override;
 
   const static uint8_t STEPPER_DRIVER_FEATURE_OFF = 0;
   const static uint8_t STEPPER_DRIVER_FEATURE_ON = 1;
-
-  const static uint8_t MAX_READ_RETRIES = 5;
-  const static uint32_t READ_RETRY_DELAY_MS = 20;
 
   // General Configuration Registers
   const static uint8_t ADDRESS_GCONF = 0x00;
@@ -394,12 +420,6 @@ private:
   bool serialOperationMode ();
 
   void minimizeMotorCurrent ();
-
-  void serialDrain ();
-  void sendDatagramUnidirectional (const uint8_t *datagram_bytes,
-                                   uint8_t datagram_size);
-  UartError sendDatagramBidirectional (const uint8_t *datagram_bytes,
-                                       uint8_t datagram_size);
 
   void write (uint8_t register_address,
               uint32_t data);

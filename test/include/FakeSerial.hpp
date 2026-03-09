@@ -1,8 +1,9 @@
 #pragma once
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <deque>
+#include <initializer_list>
 #include <unordered_map>
 #include <vector>
 
@@ -16,22 +17,28 @@
 // - Echoes all written bytes back into the RX queue (coupled one-wire style).
 // - Detects 4-byte TMC2209 read-request datagrams and can enqueue a valid
 //   8-byte reply datagram with correct CRC.
+// - Detects 8-byte write datagrams and updates an internal per-device register
+//   map so later reads can observe the writes.
 // - Can be configured to only start replying after N read requests, enabling
 //   retry behavior tests.
+// - Can inject stale RX garbage and corrupt echo bytes for engine tests.
 class FakeSerial : public HardwareSerial
 {
 public:
   FakeSerial () = default;
 
-  // Reset RX/TX buffers and request counters.
+  // Reset RX/TX buffers and request counters. Register contents persist across
+  // reset() so tests can ignore setup traffic without losing virtual state.
   void
   reset ()
   {
     rx_.clear ();
     tx_.clear ();
     current_frame_.clear ();
+    current_frame_echo_corrupted_ = false;
     read_request_count_ = 0;
     corrupt_crc_remaining_ = corrupt_crc_for_first_replies_;
+    corrupt_echo_remaining_ = corrupt_echo_for_first_read_requests_;
   }
 
   // Configure: only respond starting with this read request attempt.
@@ -52,17 +59,82 @@ public:
     corrupt_crc_remaining_ = replies;
   }
 
+  // Configure: corrupt the echoed first byte for the first N valid read
+  // requests. The request still reaches the virtual device, but the RX echo no
+  // longer matches the transmitted bytes.
+  void
+  corrupt_echo_for_first_read_requests (unsigned int requests)
+  {
+    corrupt_echo_for_first_read_requests_ = requests;
+    corrupt_echo_remaining_ = requests;
+  }
+
+  // Inject stale bytes into the RX queue before the next transaction.
+  void
+  queue_rx_byte (uint8_t value)
+  {
+    rx_.push_back (value);
+  }
+
+  void
+  queue_rx_bytes (std::initializer_list<uint8_t> bytes)
+  {
+    for (uint8_t b : bytes)
+      {
+        rx_.push_back (b);
+      }
+  }
+
   unsigned int
   read_request_count () const
   {
     return read_request_count_;
   }
 
-  // Set a register value to return for reads of that register.
+  const std::vector<uint8_t> &
+  tx_bytes () const
+  {
+    return tx_;
+  }
+
+  // Set a default register value returned for reads of that register on any
+  // serial address unless overridden by the address-specific overload below.
   void
   set_register_value (uint8_t register_address, uint32_t value)
   {
-    register_map_[register_address] = value;
+    default_register_map_[register_address] = value;
+  }
+
+  // Set a register value for a specific UART serial address.
+  void
+  set_register_value (uint8_t serial_address,
+                      uint8_t register_address,
+                      uint32_t value)
+  {
+    addressed_register_map_[make_key_ (serial_address, register_address)]
+        = value;
+  }
+
+  uint32_t
+  register_value (uint8_t serial_address,
+                  uint8_t register_address,
+                  uint32_t fallback = 0u) const
+  {
+    const auto specific
+        = addressed_register_map_.find (make_key_ (serial_address,
+                                                   register_address));
+    if (specific != addressed_register_map_.end ())
+      {
+        return specific->second;
+      }
+
+    const auto generic = default_register_map_.find (register_address);
+    if (generic != default_register_map_.end ())
+      {
+        return generic->second;
+      }
+
+    return fallback;
   }
 
   // HardwareSerial interface
@@ -79,7 +151,7 @@ public:
       {
         return -1;
       }
-    uint8_t b = rx_.front ();
+    const uint8_t b = rx_.front ();
     rx_.pop_front ();
     return b;
   }
@@ -90,15 +162,20 @@ public:
     tx_.push_back (c);
 
     // Coupled one-wire behavior: everything written is echoed back.
-    rx_.push_back (c);
-
-    // Track outgoing frames in 4-byte chunks to detect read requests.
-    current_frame_.push_back (c);
-    if (current_frame_.size () == 4)
+    uint8_t echoed = c;
+    if (current_frame_.empty ())
       {
-        maybe_handle_read_request_ (current_frame_);
-        current_frame_.clear ();
+        current_frame_echo_corrupted_ = false;
+        if (corrupt_echo_remaining_ > 0)
+          {
+            echoed ^= 0x01u;
+            current_frame_echo_corrupted_ = true;
+          }
       }
+    rx_.push_back (echoed);
+
+    current_frame_.push_back (c);
+    maybe_complete_frame_ ();
 
     return 1;
   }
@@ -110,18 +187,26 @@ public:
   }
 
 private:
-  void
-  maybe_handle_read_request_ (const std::vector<uint8_t> &frame)
+  static uint16_t
+  make_key_ (uint8_t serial_address, uint8_t register_address)
   {
-    // Read request datagram is 4 bytes:
-    //  byte0: [reserved:4][sync:4]
-    //  byte1: serial_address
-    //  byte2: [rw:1][register_address:7]  (rw=0 for read)
-    //  byte3: crc
+    return static_cast<uint16_t> ((uint16_t (serial_address) << 8)
+                                  | uint16_t (register_address));
+  }
 
+  void
+  clear_current_frame_ ()
+  {
+    current_frame_.clear ();
+    current_frame_echo_corrupted_ = false;
+  }
+
+  bool
+  is_valid_read_request_frame_ (const std::vector<uint8_t> &frame) const
+  {
     if (frame.size () != tmc2209::protocol::ReadRequestDatagram::kSize)
       {
-        return;
+        return false;
       }
 
     tmc2209::protocol::ReadRequestDatagram request{};
@@ -130,54 +215,113 @@ private:
         request.bytes[i] = frame[i];
       }
 
-    if ((request.sync () != tmc2209::protocol::SYNC)
-        || (request.rw () != tmc2209::protocol::RW_READ)
-        || !request.hasValidCrc ())
+    return (request.sync () == tmc2209::protocol::SYNC)
+           && (request.rw () == tmc2209::protocol::RW_READ)
+           && request.hasValidCrc ();
+  }
+
+  void
+  maybe_complete_frame_ ()
+  {
+    if ((current_frame_.size () == tmc2209::protocol::ReadRequestDatagram::kSize)
+        && is_valid_read_request_frame_ (current_frame_))
       {
+        maybe_handle_read_request_ (current_frame_);
+        clear_current_frame_ ();
         return;
       }
 
-    const uint8_t register_address = request.registerAddress ();
+    if (current_frame_.size ()
+        == tmc2209::protocol::WriteReadReplyDatagram::kSize)
+      {
+        maybe_handle_write_datagram_ (current_frame_);
+        clear_current_frame_ ();
+        return;
+      }
 
-    // We detected a read request.
+    if (current_frame_.size () > tmc2209::protocol::WriteReadReplyDatagram::kSize)
+      {
+        clear_current_frame_ ();
+      }
+  }
+
+  void
+  maybe_handle_read_request_ (const std::vector<uint8_t> &frame)
+  {
+    tmc2209::protocol::ReadRequestDatagram request{};
+    for (size_t i = 0; i < tmc2209::protocol::ReadRequestDatagram::kSize; ++i)
+      {
+        request.bytes[i] = frame[i];
+      }
+
+    if (current_frame_echo_corrupted_ && (corrupt_echo_remaining_ > 0))
+      {
+        --corrupt_echo_remaining_;
+      }
+
     ++read_request_count_;
 
     if (read_request_count_ < reply_after_attempt_)
       {
-        // Simulate a dropped/no-reply transaction.
         return;
       }
 
-    auto it = register_map_.find (register_address);
-    uint32_t value = (it != register_map_.end ()) ? it->second : 0u;
+    const uint8_t serial_address = request.serialAddress ();
+    const uint8_t register_address = request.registerAddress ();
+    const uint32_t value = register_value (serial_address, register_address);
 
     auto reply = tmc2209::protocol::WriteReadReplyDatagram::makeReadReply (
         register_address, value);
 
     if (corrupt_crc_remaining_ > 0)
       {
-        // Flip a bit to force a CRC mismatch.
         reply.bytes[tmc2209::protocol::WriteReadReplyDatagram::kSize - 1]
-            ^= 0x01;
+            ^= 0x01u;
         --corrupt_crc_remaining_;
       }
 
-    // Enqueue reply after the echo bytes already placed in RX.
     for (uint8_t b : reply.bytes)
       {
         rx_.push_back (b);
       }
   }
 
+  void
+  maybe_handle_write_datagram_ (const std::vector<uint8_t> &frame)
+  {
+    tmc2209::protocol::WriteReadReplyDatagram datagram{};
+    for (size_t i = 0; i < tmc2209::protocol::WriteReadReplyDatagram::kSize;
+         ++i)
+      {
+        datagram.bytes[i] = frame[i];
+      }
+
+    if ((datagram.sync () != tmc2209::protocol::SYNC)
+        || (datagram.rw () != tmc2209::protocol::RW_WRITE)
+        || !datagram.hasValidCrc ())
+      {
+        return;
+      }
+
+    addressed_register_map_[make_key_ (datagram.serialAddress (),
+                                       datagram.registerAddress ())]
+        = datagram.data ();
+  }
+
   std::deque<uint8_t> rx_;
   std::vector<uint8_t> tx_;
   std::vector<uint8_t> current_frame_;
+  bool current_frame_echo_corrupted_{ false };
 
-  std::unordered_map<uint8_t, uint32_t> register_map_;
+  std::unordered_map<uint8_t, uint32_t> default_register_map_;
+  std::unordered_map<uint16_t, uint32_t> addressed_register_map_;
 
   unsigned int reply_after_attempt_{ 1 };
   unsigned int read_request_count_{ 0 };
 
   unsigned int corrupt_crc_for_first_replies_{ 0 };
   unsigned int corrupt_crc_remaining_{ 0 };
+
+  unsigned int corrupt_echo_for_first_read_requests_{ 0 };
+  unsigned int corrupt_echo_remaining_{ 0 };
 };

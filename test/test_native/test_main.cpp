@@ -13,10 +13,50 @@
 void
 setUp (void)
 {
+  arduino_test::reset_time ();
 }
 void
 tearDown (void)
 {
+}
+
+static void
+poll_until_result_ready (TMC2209 &tmc, uint32_t timeout_us = 250000u)
+{
+  const uint32_t start = micros ();
+  while (!tmc.resultReady ())
+    {
+      tmc.poll ();
+      if (!tmc.resultReady ())
+        {
+          delayMicroseconds (1);
+        }
+
+      if ((micros () - start) > timeout_us)
+        {
+          TEST_FAIL_MESSAGE ("timed out waiting for UART engine result");
+        }
+    }
+}
+
+static void
+poll_until_bus_result_ready (tmc2209::UartBus &bus,
+                             uint32_t timeout_us = 250000u)
+{
+  const uint32_t start = micros ();
+  while (!bus.resultReady ())
+    {
+      bus.poll ();
+      if (!bus.resultReady ())
+        {
+          delayMicroseconds (1);
+        }
+
+      if ((micros () - start) > timeout_us)
+        {
+          TEST_FAIL_MESSAGE ("timed out waiting for shared UART bus result");
+        }
+    }
 }
 
 void
@@ -120,6 +160,119 @@ test_readRegister_retries_after_crc_mismatch ()
   TEST_ASSERT_EQUAL_UINT8_MESSAGE (static_cast<uint8_t> (TMC2209::UartError::None),
                                    static_cast<uint8_t> (tmc.getLastUartError ()),
                                    "expected getLastUartError() to be cleared on success");
+}
+
+void
+test_nonblocking_startRead_poll_takeReadResult_succeeds ()
+{
+  FakeSerial serial;
+  const uint32_t ioin_value = 0x21000000u;
+  serial.set_register_value (0x06, ioin_value);
+
+  TMC2209 tmc;
+  tmc.setup (serial, TMC2209::SERIAL_ADDRESS_0);
+  serial.reset ();
+
+  const auto start_result = tmc.startRead (0x06);
+  TEST_ASSERT_TRUE_MESSAGE (start_result.ok (), "expected startRead to succeed");
+  TEST_ASSERT_TRUE_MESSAGE (tmc.busy (), "expected UART engine to be busy after startRead");
+
+  poll_until_result_ready (tmc);
+
+  const auto result = tmc.takeReadResult ();
+  TEST_ASSERT_TRUE_MESSAGE (result.ok (), "expected takeReadResult to succeed");
+  TEST_ASSERT_EQUAL_HEX32 (ioin_value, result.value);
+  TEST_ASSERT_FALSE_MESSAGE (tmc.busy (), "expected UART engine to be idle after takeReadResult");
+}
+
+void
+test_nonblocking_startWrite_poll_takeWriteResult_succeeds ()
+{
+  FakeSerial serial;
+
+  TMC2209 tmc;
+  tmc.setup (serial, TMC2209::SERIAL_ADDRESS_0);
+  serial.reset ();
+
+  const auto start_result = tmc.startWrite (0x10u, 0x12345678u);
+  TEST_ASSERT_TRUE_MESSAGE (start_result.ok (), "expected startWrite to succeed");
+
+  poll_until_result_ready (tmc, 1000u);
+
+  const auto result = tmc.takeWriteResult ();
+  TEST_ASSERT_TRUE_MESSAGE (result.ok (), "expected takeWriteResult to succeed");
+
+  const auto expected = tmc2209::protocol::WriteReadReplyDatagram::makeWrite (
+      0x00u, 0x10u, 0x12345678u);
+  TEST_ASSERT_EQUAL_UINT (tmc2209::protocol::WriteReadReplyDatagram::kSize,
+                          serial.tx_bytes ().size ());
+  for (size_t i = 0; i < serial.tx_bytes ().size (); ++i)
+    {
+      TEST_ASSERT_EQUAL_UINT8_MESSAGE (expected.bytes[i], serial.tx_bytes ()[i],
+                                       "unexpected transmitted write byte");
+    }
+}
+
+void
+test_nonblocking_startRead_returns_busy_while_transaction_active ()
+{
+  FakeSerial serial;
+  serial.set_register_value (0x06, 0x21000000u);
+
+  TMC2209 tmc;
+  tmc.setup (serial, TMC2209::SERIAL_ADDRESS_0);
+  serial.reset ();
+
+  TEST_ASSERT_TRUE (tmc.startRead (0x06).ok ());
+
+  const auto busy_result = tmc.startWrite (0x10u, 0x12345678u);
+  TEST_ASSERT_FALSE_MESSAGE (busy_result.ok (), "expected concurrent transaction start to fail");
+  TEST_ASSERT_EQUAL_UINT8 (static_cast<uint8_t> (TMC2209::UartError::Busy),
+                           static_cast<uint8_t> (busy_result.error));
+}
+
+void
+test_nonblocking_read_drains_stale_rx_bytes_before_transaction ()
+{
+  FakeSerial serial;
+  serial.set_register_value (0x06, 0x21000000u);
+
+  TMC2209 tmc;
+  tmc.setup (serial, TMC2209::SERIAL_ADDRESS_0);
+  serial.reset ();
+
+  serial.queue_rx_bytes ({ 0xAAu, 0xBBu, 0xCCu });
+
+  TEST_ASSERT_TRUE (tmc.startRead (0x06).ok ());
+  poll_until_result_ready (tmc);
+
+  const auto result = tmc.takeReadResult ();
+  TEST_ASSERT_TRUE_MESSAGE (result.ok (), "expected stale RX bytes to be drained before read");
+  TEST_ASSERT_EQUAL_HEX32 (0x21000000u, result.value);
+  TEST_ASSERT_EQUAL_UINT_MESSAGE (1u, serial.read_request_count (),
+                                  "expected a single successful request after draining RX garbage");
+}
+
+void
+test_nonblocking_read_reports_echo_corruption_after_retries ()
+{
+  FakeSerial serial;
+  serial.set_register_value (0x06, 0x21000000u);
+  serial.corrupt_echo_for_first_read_requests (5);
+
+  TMC2209 tmc;
+  tmc.setup (serial, TMC2209::SERIAL_ADDRESS_0);
+  serial.reset ();
+
+  TEST_ASSERT_TRUE (tmc.startRead (0x06).ok ());
+  poll_until_result_ready (tmc, 150000u);
+
+  const auto result = tmc.takeReadResult ();
+  TEST_ASSERT_FALSE_MESSAGE (result.ok (), "expected read to fail when every echo is corrupted");
+  TEST_ASSERT_EQUAL_UINT8 (static_cast<uint8_t> (TMC2209::UartError::RxGarbage),
+                           static_cast<uint8_t> (result.error));
+  TEST_ASSERT_EQUAL_UINT_MESSAGE (5u, serial.read_request_count (),
+                                  "expected retries until the read attempt budget is exhausted");
 }
 
 void
@@ -452,6 +605,179 @@ test_reg_pwm_auto_encodes_expected_fields ()
 
 
 
+void
+test_uartbus_devices_read_address_specific_register_values ()
+{
+  FakeSerial serial;
+  serial.set_register_value (0x00u, 0x06u, 0x21000000u);
+  serial.set_register_value (0x01u, 0x06u, 0x11000000u);
+
+  tmc2209::UartBus bus;
+  bus.setup (serial);
+  tmc2209::Device dev0 (bus, 0x00u);
+  tmc2209::Device dev1 (bus, 0x01u);
+
+  const auto res0 = dev0.readRegister (0x06u);
+  const auto res1 = dev1.readRegister (0x06u);
+
+  TEST_ASSERT_TRUE (res0.ok ());
+  TEST_ASSERT_TRUE (res1.ok ());
+  TEST_ASSERT_EQUAL_HEX32 (0x21000000u, res0.value);
+  TEST_ASSERT_EQUAL_HEX32 (0x11000000u, res1.value);
+
+  const auto req0 = tmc2209::protocol::ReadRequestDatagram::make (0x00u, 0x06u);
+  const auto req1 = tmc2209::protocol::ReadRequestDatagram::make (0x01u, 0x06u);
+
+  TEST_ASSERT_EQUAL_UINT (8u, serial.tx_bytes ().size ());
+  for (size_t i = 0; i < 4u; ++i)
+    {
+      TEST_ASSERT_EQUAL_UINT8 (req0.bytes[i], serial.tx_bytes ()[i]);
+      TEST_ASSERT_EQUAL_UINT8 (req1.bytes[i], serial.tx_bytes ()[i + 4u]);
+    }
+}
+
+void
+test_uartbus_shared_bus_scopes_results_to_the_started_device ()
+{
+  FakeSerial serial;
+  serial.set_register_value (0x00u, 0x06u, 0x21000000u);
+
+  tmc2209::UartBus bus;
+  bus.setup (serial);
+  tmc2209::Device dev0 (bus, 0x00u);
+  tmc2209::Device dev1 (bus, 0x01u);
+
+  TEST_ASSERT_TRUE (dev0.startRead (0x06u).ok ());
+
+  const auto busy_result = dev1.startRead (0x06u);
+  TEST_ASSERT_FALSE (busy_result.ok ());
+  TEST_ASSERT_EQUAL_UINT8 (static_cast<uint8_t> (tmc2209::UartError::Busy),
+                           static_cast<uint8_t> (busy_result.error));
+
+  poll_until_bus_result_ready (bus);
+
+  TEST_ASSERT_TRUE (dev0.resultReady ());
+  TEST_ASSERT_FALSE (dev1.resultReady ());
+
+  const auto wrong_result = dev1.takeReadResult ();
+  TEST_ASSERT_FALSE (wrong_result.ok ());
+  TEST_ASSERT_EQUAL_UINT8 (static_cast<uint8_t> (tmc2209::UartError::Busy),
+                           static_cast<uint8_t> (wrong_result.error));
+
+  const auto good_result = dev0.takeReadResult ();
+  TEST_ASSERT_TRUE (good_result.ok ());
+  TEST_ASSERT_EQUAL_HEX32 (0x21000000u, good_result.value);
+}
+
+void
+test_registers_typed_helpers_read_ioin_version ()
+{
+  FakeSerial serial;
+  serial.set_register_value (0x00u, 0x06u, 0x21000000u);
+
+  tmc2209::UartBus bus;
+  bus.setup (serial);
+  tmc2209::Device device (bus, 0x00u);
+  tmc2209::Registers registers (device);
+
+  const auto ioin = registers.readIoin ();
+  TEST_ASSERT_TRUE (ioin.ok ());
+  TEST_ASSERT_EQUAL_UINT8 (0x21u,
+                           static_cast<uint8_t> (ioin.value.version ()));
+}
+
+void
+test_driver_initialize_configures_serial_mode_defaults ()
+{
+  FakeSerial serial;
+
+  tmc2209::UartBus bus;
+  bus.setup (serial);
+  tmc2209::Device device (bus, 0x00u);
+  tmc2209::Registers registers (device);
+  tmc2209::Driver driver (device, registers);
+
+  const auto init_result = driver.initialize ();
+  TEST_ASSERT_TRUE (init_result.ok ());
+
+  const auto gconf = registers.readGconf ();
+  TEST_ASSERT_TRUE (gconf.ok ());
+  TEST_ASSERT_TRUE (gconf.value.pdn_disable ());
+  TEST_ASSERT_TRUE (gconf.value.mstep_reg_select ());
+  TEST_ASSERT_TRUE (gconf.value.multistep_filt ());
+
+  const auto ihold_irun = registers.readIholdIrun ();
+  TEST_ASSERT_TRUE (ihold_irun.ok ());
+  TEST_ASSERT_EQUAL_UINT32 (0u, ihold_irun.value.irun ());
+  TEST_ASSERT_EQUAL_UINT32 (0u, ihold_irun.value.ihold ());
+
+  const auto chopconf = registers.readChopconf ();
+  TEST_ASSERT_TRUE (chopconf.ok ());
+  TEST_ASSERT_EQUAL_UINT32 (0u, chopconf.value.toff ());
+
+  const auto pwmconf = registers.readPwmconf ();
+  TEST_ASSERT_TRUE (pwmconf.ok ());
+  TEST_ASSERT_FALSE (pwmconf.value.pwm_autoscale ());
+  TEST_ASSERT_FALSE (pwmconf.value.pwm_autograd ());
+}
+
+void
+test_facade_exposes_driver_and_registers_on_internal_bus ()
+{
+  FakeSerial serial;
+  serial.set_register_value (0x01u, 0x06u, 0x21000000u);
+
+  TMC2209 tmc;
+  tmc.setup (serial, TMC2209::SERIAL_ADDRESS_1);
+  serial.reset ();
+
+  const auto ioin = tmc.registers.readIoin ();
+  TEST_ASSERT_TRUE (ioin.ok ());
+  TEST_ASSERT_EQUAL_UINT8 (0x21u,
+                           static_cast<uint8_t> (ioin.value.version ()));
+
+  const auto expected_read = tmc2209::protocol::ReadRequestDatagram::make (
+      0x01u, 0x06u);
+  TEST_ASSERT_EQUAL_UINT (4u, serial.tx_bytes ().size ());
+  for (size_t i = 0; i < 4u; ++i)
+    {
+      TEST_ASSERT_EQUAL_UINT8 (expected_read.bytes[i], serial.tx_bytes ()[i]);
+    }
+
+  serial.reset ();
+  TEST_ASSERT_TRUE (tmc.driver.disable ().ok ());
+  const auto chopconf = tmc.registers.readChopconf ();
+  TEST_ASSERT_TRUE (chopconf.ok ());
+  TEST_ASSERT_EQUAL_UINT32 (0u, chopconf.value.toff ());
+}
+
+void
+test_driver_microsteps_follows_legacy_power_of_two_flooring ()
+{
+  FakeSerial serial;
+
+  tmc2209::UartBus bus;
+  bus.setup (serial);
+  tmc2209::Device device (bus, 0x00u);
+  tmc2209::Registers registers (device);
+  tmc2209::Driver driver (device, registers);
+
+  TEST_ASSERT_TRUE (driver.initialize ().ok ());
+
+  TEST_ASSERT_TRUE (driver.setMicrostepsPerStep (5u).ok ());
+  auto microsteps = driver.getMicrostepsPerStep ();
+  TEST_ASSERT_TRUE (microsteps.ok ());
+  TEST_ASSERT_EQUAL_UINT16 (4u, microsteps.value);
+
+  TEST_ASSERT_TRUE (driver.setMicrostepsPerStep (999u).ok ());
+  microsteps = driver.getMicrostepsPerStep ();
+  TEST_ASSERT_TRUE (microsteps.ok ());
+  TEST_ASSERT_EQUAL_UINT16 (256u, microsteps.value);
+}
+
+
+
+
 int
 main (int argc, char **argv)
 {
@@ -465,6 +791,11 @@ main (int argc, char **argv)
   RUN_TEST (test_read_retries_after_reply_timeout);
   RUN_TEST (test_readRegister_reports_timeout_error_when_no_reply);
   RUN_TEST (test_readRegister_retries_after_crc_mismatch);
+  RUN_TEST (test_nonblocking_startRead_poll_takeReadResult_succeeds);
+  RUN_TEST (test_nonblocking_startWrite_poll_takeWriteResult_succeeds);
+  RUN_TEST (test_nonblocking_startRead_returns_busy_while_transaction_active);
+  RUN_TEST (test_nonblocking_read_drains_stale_rx_bytes_before_transaction);
+  RUN_TEST (test_nonblocking_read_reports_echo_corruption_after_retries);
   RUN_TEST (test_protocol_read_request_pack_is_explicit_and_crc_valid);
   RUN_TEST (test_protocol_write_datagram_pack_is_explicit_and_big_endian);
   RUN_TEST (test_protocol_crc_detects_corruption);
@@ -484,6 +815,12 @@ main (int argc, char **argv)
   RUN_TEST (test_reg_pwm_scale_encodes_expected_fields);
   RUN_TEST (test_getPwmScaleAuto_decodes_signed_pwm_scale_auto_field);
   RUN_TEST (test_reg_pwm_auto_encodes_expected_fields);
+  RUN_TEST (test_uartbus_devices_read_address_specific_register_values);
+  RUN_TEST (test_uartbus_shared_bus_scopes_results_to_the_started_device);
+  RUN_TEST (test_registers_typed_helpers_read_ioin_version);
+  RUN_TEST (test_driver_initialize_configures_serial_mode_defaults);
+  RUN_TEST (test_facade_exposes_driver_and_registers_on_internal_bus);
+  RUN_TEST (test_driver_microsteps_follows_legacy_power_of_two_flooring);
 
   return UNITY_END ();
 }

@@ -6,8 +6,8 @@
 // subset of types, macros, and functions that the library needs to compile
 // and link on the host.
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 
 // Common Arduino integer typedefs
 using uint8_t = std::uint8_t;
@@ -33,6 +33,28 @@ using int64_t = std::int64_t;
 #define INPUT 0x0
 #endif
 
+namespace arduino_test
+{
+inline uint64_t &
+fake_time_us ()
+{
+  static uint64_t value = 0;
+  return value;
+}
+
+inline void
+reset_time ()
+{
+  fake_time_us () = 0;
+}
+
+inline void
+advance_time_us (uint64_t us)
+{
+  fake_time_us () += us;
+}
+} // namespace arduino_test
+
 // Stubs (no-op) for GPIO and timing.
 inline void
 pinMode (uint8_t /*pin*/, uint8_t /*mode*/)
@@ -43,14 +65,27 @@ digitalWrite (uint8_t /*pin*/, uint8_t /*val*/)
 {
 }
 
-// Keep delays as no-ops for fast host tests.
-inline void
-delay (unsigned long /*ms*/)
+inline unsigned long
+micros ()
 {
+  return static_cast<unsigned long> (arduino_test::fake_time_us ());
+}
+
+inline unsigned long
+millis ()
+{
+  return static_cast<unsigned long> (arduino_test::fake_time_us () / 1000ULL);
+}
+
+inline void
+delay (unsigned long ms)
+{
+  arduino_test::advance_time_us (static_cast<uint64_t> (ms) * 1000ULL);
 }
 inline void
-delayMicroseconds (unsigned int /*us*/)
+delayMicroseconds (unsigned int us)
 {
+  arduino_test::advance_time_us (us);
 }
 
 // Arduino's map() helper.

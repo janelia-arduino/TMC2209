@@ -10,6 +10,10 @@
 
 TMC2209::TMC2209 ()
 {
+  facade_device_.bind (facade_bus_, 0u);
+  registers.bind (facade_device_);
+  driver.bind (facade_device_, registers);
+
   hardware_serial_ptr_ = nullptr;
 #if SOFTWARE_SERIAL_INCLUDED
   software_serial_ptr_ = nullptr;
@@ -18,13 +22,17 @@ TMC2209::TMC2209 ()
   hardware_enable_pin_ = -1;
   cool_step_enabled_ = false;
   last_uart_error_ = UartError::None;
+  uart_engine_.attach (this);
 }
 
 #if !defined(ARDUINO_ARCH_RENESAS)
 void
 TMC2209::setup (HardwareSerial &serial, SerialAddress serial_address)
 {
+  facade_bus_.setup (serial);
+  facade_device_.bind (facade_bus_, static_cast<uint8_t> (serial_address));
   hardware_serial_ptr_ = &serial;
+  uart_engine_.reset ();
 
   initialize (serial_address);
 }
@@ -33,21 +41,30 @@ TMC2209::setup (HardwareSerial &serial, SerialAddress serial_address)
 void
 TMC2209::setup (HardwareSerial &serial, SerialAddress serial_address)
 {
+  facade_bus_.setup (serial);
+  facade_device_.bind (facade_bus_, static_cast<uint8_t> (serial_address));
   hardware_serial_ptr_ = &serial;
+  uart_engine_.reset ();
   initialize (serial_address);
 }
 #elif defined(ARDUINO_ARCH_RP2040)
 void
 TMC2209::setup (SerialUART &serial, SerialAddress serial_address)
 {
+  facade_bus_.setup (serial);
+  facade_device_.bind (facade_bus_, static_cast<uint8_t> (serial_address));
   hardware_serial_ptr_ = &serial;
+  uart_engine_.reset ();
   initialize (serial_address);
 }
 #elif defined(ARDUINO_ARCH_RENESAS)
 void
 TMC2209::setup (UART &serial, SerialAddress serial_address)
 {
+  facade_bus_.setup (serial);
+  facade_device_.bind (facade_bus_, static_cast<uint8_t> (serial_address));
   hardware_serial_ptr_ = &serial;
+  uart_engine_.reset ();
   initialize (serial_address);
 }
 #endif
@@ -56,7 +73,10 @@ TMC2209::setup (UART &serial, SerialAddress serial_address)
 void
 TMC2209::setup (SoftwareSerial &serial, SerialAddress serial_address)
 {
+  facade_bus_.setup (serial);
+  facade_device_.bind (facade_bus_, static_cast<uint8_t> (serial_address));
   software_serial_ptr_ = &serial;
+  uart_engine_.reset ();
   initialize (serial_address);
 }
 #endif
@@ -483,103 +503,25 @@ TMC2209::readRegister (uint8_t register_address)
 {
   Result<uint32_t> result;
 
-  // Ensure a serial transport has been configured.
-  if (hardware_serial_ptr_ == nullptr
-#if SOFTWARE_SERIAL_INCLUDED
-      && software_serial_ptr_ == nullptr
-#endif
-  )
+  const auto start_result = startRead (register_address);
+  if (!start_result.ok ())
     {
-      result.error = UartError::NotInitialized;
+      result.value = 0;
+      result.error = start_result.error;
       last_uart_error_ = result.error;
       return result;
     }
 
-  const auto read_request_datagram = tmc2209::protocol::ReadRequestDatagram::make (
-      serial_address_, register_address);
-
-  UartError last_error = UartError::ReplyTimeout;
-
-  for (uint8_t retry = 0; retry < MAX_READ_RETRIES; retry++)
+  while (!resultReady ())
     {
-      const UartError send_error = sendDatagramBidirectional (
-          read_request_datagram.bytes, tmc2209::protocol::ReadRequestDatagram::kSize);
-      if (send_error != UartError::None)
+      poll ();
+      if (!resultReady ())
         {
-          last_error = send_error;
-          delay (READ_RETRY_DELAY_MS);
-          continue;
+          delayMicroseconds (1);
         }
-
-      uint32_t reply_delay = 0;
-      while ((serialAvailable ()
-              < tmc2209::protocol::WriteReadReplyDatagram::kSize)
-             and (reply_delay < REPLY_DELAY_MAX_MICROSECONDS))
-        {
-          delayMicroseconds (REPLY_DELAY_INC_MICROSECONDS);
-          reply_delay += REPLY_DELAY_INC_MICROSECONDS;
-        }
-
-      if (reply_delay >= REPLY_DELAY_MAX_MICROSECONDS)
-        {
-          last_error = UartError::ReplyTimeout;
-
-          // Drain any partial bytes that may have arrived so the next retry
-          // starts from a clean RX buffer.
-          serialDrain ();
-
-          delay (READ_RETRY_DELAY_MS);
-          continue;
-        }
-
-      tmc2209::protocol::WriteReadReplyDatagram read_reply_datagram{};
-      bool rx_garbage = false;
-      for (uint8_t i = 0; i < tmc2209::protocol::WriteReadReplyDatagram::kSize; ++i)
-        {
-          const int byte = serialRead ();
-          if (byte < 0)
-            {
-              rx_garbage = true;
-              break;
-            }
-          read_reply_datagram.bytes[i] = static_cast<uint8_t> (byte);
-        }
-
-      if (rx_garbage)
-        {
-          last_error = UartError::RxGarbage;
-          serialDrain ();
-          delay (READ_RETRY_DELAY_MS);
-          continue;
-        }
-
-      if (!read_reply_datagram.hasValidCrc ())
-        {
-          last_error = UartError::CrcMismatch;
-          delay (READ_RETRY_DELAY_MS);
-          continue;
-        }
-
-      // Sanity-check the reply frame header.
-      if (!read_reply_datagram.matchesReadReplyHeader (register_address))
-        {
-          last_error = UartError::UnexpectedFrame;
-
-          // Drain any leftover bytes so the next retry starts clean.
-          serialDrain ();
-
-          delay (READ_RETRY_DELAY_MS);
-          continue;
-        }
-
-      result.value = read_reply_datagram.data ();
-      result.error = UartError::None;
-      last_uart_error_ = result.error;
-      return result;
     }
 
-  result.value = 0;
-  result.error = last_error;
+  result = takeReadResult ();
   last_uart_error_ = result.error;
   return result;
 }
@@ -589,25 +531,96 @@ TMC2209::writeRegister (uint8_t register_address, uint32_t data)
 {
   Result<void> result;
 
-  // Ensure a serial transport has been configured.
-  if (hardware_serial_ptr_ == nullptr
-#if SOFTWARE_SERIAL_INCLUDED
-      && software_serial_ptr_ == nullptr
-#endif
-  )
+  const auto start_result = startWrite (register_address, data);
+  if (!start_result.ok ())
+    {
+      result.error = start_result.error;
+      last_uart_error_ = result.error;
+      return result;
+    }
+
+  while (!resultReady ())
+    {
+      poll ();
+      if (!resultReady ())
+        {
+          delayMicroseconds (1);
+        }
+    }
+
+  result = takeWriteResult ();
+  last_uart_error_ = result.error;
+  return result;
+}
+
+TMC2209::Result<void>
+TMC2209::startRead (uint8_t register_address)
+{
+  Result<void> result;
+
+  if (!serialTransportConfigured ())
     {
       result.error = UartError::NotInitialized;
       last_uart_error_ = result.error;
       return result;
     }
 
-  const auto write_datagram = tmc2209::protocol::WriteReadReplyDatagram::makeWrite (
-      serial_address_, register_address, data);
+  result = uart_engine_.startRead (serial_address_, register_address);
+  last_uart_error_ = result.error;
+  return result;
+}
 
-  sendDatagramUnidirectional (
-      write_datagram.bytes, tmc2209::protocol::WriteReadReplyDatagram::kSize);
+TMC2209::Result<void>
+TMC2209::startWrite (uint8_t register_address, uint32_t data)
+{
+  Result<void> result;
 
-  result.error = UartError::None;
+  if (!serialTransportConfigured ())
+    {
+      result.error = UartError::NotInitialized;
+      last_uart_error_ = result.error;
+      return result;
+    }
+
+  result = uart_engine_.startWrite (serial_address_, register_address, data);
+  last_uart_error_ = result.error;
+  return result;
+}
+
+void
+TMC2209::poll ()
+{
+  uart_engine_.poll ();
+  if (uart_engine_.resultReady ())
+    {
+      last_uart_error_ = uart_engine_.lastError ();
+    }
+}
+
+bool
+TMC2209::busy () const
+{
+  return uart_engine_.busy ();
+}
+
+bool
+TMC2209::resultReady () const
+{
+  return uart_engine_.resultReady ();
+}
+
+TMC2209::Result<uint32_t>
+TMC2209::takeReadResult ()
+{
+  Result<uint32_t> result = uart_engine_.takeReadResult ();
+  last_uart_error_ = result.error;
+  return result;
+}
+
+TMC2209::Result<void>
+TMC2209::takeWriteResult ()
+{
+  Result<void> result = uart_engine_.takeWriteResult ();
   last_uart_error_ = result.error;
   return result;
 }
@@ -899,6 +912,40 @@ TMC2209::initialize (SerialAddress serial_address)
   disableAutomaticGradientAdaptation ();
 }
 
+bool
+TMC2209::serialTransportConfigured () const
+{
+  return (hardware_serial_ptr_ != nullptr)
+#if SOFTWARE_SERIAL_INCLUDED
+         || (software_serial_ptr_ != nullptr)
+#endif
+      ;
+}
+
+int
+TMC2209::uartAvailable ()
+{
+  return serialAvailable ();
+}
+
+int
+TMC2209::uartRead ()
+{
+  return serialRead ();
+}
+
+size_t
+TMC2209::uartWrite (uint8_t c)
+{
+  return serialWrite (c);
+}
+
+void
+TMC2209::uartFlush ()
+{
+  serialFlush ();
+}
+
 int
 TMC2209::serialAvailable ()
 {
@@ -1026,85 +1073,9 @@ TMC2209::minimizeMotorCurrent ()
 }
 
 void
-TMC2209::serialDrain ()
-{
-  while (serialAvailable () > 0)
-    {
-      (void)serialRead ();
-    }
-}
-
-void
-TMC2209::sendDatagramUnidirectional (const uint8_t *datagram_bytes,
-                                     uint8_t datagram_size)
-{
-  if (datagram_bytes == nullptr)
-    {
-      return;
-    }
-
-  for (uint8_t i = 0; i < datagram_size; ++i)
-    {
-      serialWrite (datagram_bytes[i]);
-    }
-}
-
-TMC2209::UartError
-TMC2209::sendDatagramBidirectional (const uint8_t *datagram_bytes,
-                                    uint8_t datagram_size)
-{
-  if (datagram_bytes == nullptr)
-    {
-      return UartError::RxGarbage;
-    }
-
-  // Wait for the transmission of outgoing serial data to complete
-  serialFlush ();
-
-  // clear the serial receive buffer if necessary
-  serialDrain ();
-
-  // write datagram
-  for (uint8_t i = 0; i < datagram_size; ++i)
-    {
-      serialWrite (datagram_bytes[i]);
-    }
-
-  // Wait for the transmission of outgoing serial data to complete
-  serialFlush ();
-
-  // wait for bytes sent out on TX line to be echoed on RX line
-  uint32_t echo_delay = 0;
-  while ((serialAvailable () < datagram_size)
-         and (echo_delay < ECHO_DELAY_MAX_MICROSECONDS))
-    {
-      delayMicroseconds (ECHO_DELAY_INC_MICROSECONDS);
-      echo_delay += ECHO_DELAY_INC_MICROSECONDS;
-    }
-
-  if (echo_delay >= ECHO_DELAY_MAX_MICROSECONDS)
-    {
-      return UartError::EchoTimeout;
-    }
-
-  // clear RX buffer of echo bytes, but verify they match the request bytes.
-  for (uint8_t i = 0; i < datagram_size; ++i)
-    {
-      const int byte = serialRead ();
-      if ((byte < 0)
-          || (static_cast<uint8_t> (byte) != datagram_bytes[i]))
-        {
-          serialDrain ();
-          return UartError::RxGarbage;
-        }
-    }
-
-  return UartError::None;
-}
-
-void
 TMC2209::write (uint8_t register_address, uint32_t data)
 {
+
   (void)writeRegister (register_address, data);
 }
 
