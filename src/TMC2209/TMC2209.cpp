@@ -6,7 +6,6 @@
 // ----------------------------------------------------------------------------
 #include "TMC2209.h"
 
-#include "TMC2209/Protocol.hpp"
 
 TMC2209::TMC2209 ()
 {
@@ -14,15 +13,9 @@ TMC2209::TMC2209 ()
   registers.bind (facade_device_);
   driver.bind (facade_device_, registers);
 
-  hardware_serial_ptr_ = nullptr;
-#if SOFTWARE_SERIAL_INCLUDED
-  software_serial_ptr_ = nullptr;
-#endif
-  serial_address_ = SERIAL_ADDRESS_0;
   hardware_enable_pin_ = -1;
   cool_step_enabled_ = false;
   last_uart_error_ = UartError::None;
-  uart_engine_.attach (this);
 }
 
 #if !defined(ARDUINO_ARCH_RENESAS)
@@ -31,8 +24,7 @@ TMC2209::setup (HardwareSerial &serial, SerialAddress serial_address)
 {
   facade_bus_.setup (serial);
   facade_device_.bind (facade_bus_, static_cast<uint8_t> (serial_address));
-  hardware_serial_ptr_ = &serial;
-  uart_engine_.reset ();
+  last_uart_error_ = UartError::None;
 
   initialize (serial_address);
 }
@@ -43,8 +35,7 @@ TMC2209::setup (HardwareSerial &serial, SerialAddress serial_address)
 {
   facade_bus_.setup (serial);
   facade_device_.bind (facade_bus_, static_cast<uint8_t> (serial_address));
-  hardware_serial_ptr_ = &serial;
-  uart_engine_.reset ();
+  last_uart_error_ = UartError::None;
   initialize (serial_address);
 }
 #elif defined(ARDUINO_ARCH_RP2040)
@@ -53,8 +44,7 @@ TMC2209::setup (SerialUART &serial, SerialAddress serial_address)
 {
   facade_bus_.setup (serial);
   facade_device_.bind (facade_bus_, static_cast<uint8_t> (serial_address));
-  hardware_serial_ptr_ = &serial;
-  uart_engine_.reset ();
+  last_uart_error_ = UartError::None;
   initialize (serial_address);
 }
 #elif defined(ARDUINO_ARCH_RENESAS)
@@ -63,8 +53,7 @@ TMC2209::setup (UART &serial, SerialAddress serial_address)
 {
   facade_bus_.setup (serial);
   facade_device_.bind (facade_bus_, static_cast<uint8_t> (serial_address));
-  hardware_serial_ptr_ = &serial;
-  uart_engine_.reset ();
+  last_uart_error_ = UartError::None;
   initialize (serial_address);
 }
 #endif
@@ -75,8 +64,7 @@ TMC2209::setup (SoftwareSerial &serial, SerialAddress serial_address)
 {
   facade_bus_.setup (serial);
   facade_device_.bind (facade_bus_, static_cast<uint8_t> (serial_address));
-  software_serial_ptr_ = &serial;
-  uart_engine_.reset ();
+  last_uart_error_ = UartError::None;
   initialize (serial_address);
 }
 #endif
@@ -492,36 +480,19 @@ TMC2209::useInternalSenseResistors ()
 uint8_t
 TMC2209::getVersion ()
 {
-  tmc2209::reg::IOIN input;
-  input.raw = read (ADDRESS_IOIN);
-
-  return static_cast<uint8_t> (input.version ());
+  const auto result = driver.getVersion ();
+  last_uart_error_ = result.error;
+  if (!result.ok ())
+    {
+      return 0u;
+    }
+  return result.value;
 }
 
 TMC2209::Result<uint32_t>
 TMC2209::readRegister (uint8_t register_address)
 {
-  Result<uint32_t> result;
-
-  const auto start_result = startRead (register_address);
-  if (!start_result.ok ())
-    {
-      result.value = 0;
-      result.error = start_result.error;
-      last_uart_error_ = result.error;
-      return result;
-    }
-
-  while (!resultReady ())
-    {
-      poll ();
-      if (!resultReady ())
-        {
-          delayMicroseconds (1);
-        }
-    }
-
-  result = takeReadResult ();
+  Result<uint32_t> result = facade_device_.readRegister (register_address);
   last_uart_error_ = result.error;
   return result;
 }
@@ -529,26 +500,7 @@ TMC2209::readRegister (uint8_t register_address)
 TMC2209::Result<void>
 TMC2209::writeRegister (uint8_t register_address, uint32_t data)
 {
-  Result<void> result;
-
-  const auto start_result = startWrite (register_address, data);
-  if (!start_result.ok ())
-    {
-      result.error = start_result.error;
-      last_uart_error_ = result.error;
-      return result;
-    }
-
-  while (!resultReady ())
-    {
-      poll ();
-      if (!resultReady ())
-        {
-          delayMicroseconds (1);
-        }
-    }
-
-  result = takeWriteResult ();
+  Result<void> result = facade_device_.writeRegister (register_address, data);
   last_uart_error_ = result.error;
   return result;
 }
@@ -556,16 +508,7 @@ TMC2209::writeRegister (uint8_t register_address, uint32_t data)
 TMC2209::Result<void>
 TMC2209::startRead (uint8_t register_address)
 {
-  Result<void> result;
-
-  if (!serialTransportConfigured ())
-    {
-      result.error = UartError::NotInitialized;
-      last_uart_error_ = result.error;
-      return result;
-    }
-
-  result = uart_engine_.startRead (serial_address_, register_address);
+  Result<void> result = facade_device_.startRead (register_address);
   last_uart_error_ = result.error;
   return result;
 }
@@ -573,16 +516,7 @@ TMC2209::startRead (uint8_t register_address)
 TMC2209::Result<void>
 TMC2209::startWrite (uint8_t register_address, uint32_t data)
 {
-  Result<void> result;
-
-  if (!serialTransportConfigured ())
-    {
-      result.error = UartError::NotInitialized;
-      last_uart_error_ = result.error;
-      return result;
-    }
-
-  result = uart_engine_.startWrite (serial_address_, register_address, data);
+  Result<void> result = facade_device_.startWrite (register_address, data);
   last_uart_error_ = result.error;
   return result;
 }
@@ -590,29 +524,29 @@ TMC2209::startWrite (uint8_t register_address, uint32_t data)
 void
 TMC2209::poll ()
 {
-  uart_engine_.poll ();
-  if (uart_engine_.resultReady ())
+  facade_device_.poll ();
+  if (facade_device_.resultReady ())
     {
-      last_uart_error_ = uart_engine_.lastError ();
+      last_uart_error_ = facade_device_.lastError ();
     }
 }
 
 bool
 TMC2209::busy () const
 {
-  return uart_engine_.busy ();
+  return facade_bus_.busy (facade_device_.serialAddress ());
 }
 
 bool
 TMC2209::resultReady () const
 {
-  return uart_engine_.resultReady ();
+  return facade_device_.resultReady ();
 }
 
 TMC2209::Result<uint32_t>
 TMC2209::takeReadResult ()
 {
-  Result<uint32_t> result = uart_engine_.takeReadResult ();
+  Result<uint32_t> result = facade_device_.takeReadResult ();
   last_uart_error_ = result.error;
   return result;
 }
@@ -620,7 +554,7 @@ TMC2209::takeReadResult ()
 TMC2209::Result<void>
 TMC2209::takeWriteResult ()
 {
-  Result<void> result = uart_engine_.takeWriteResult ();
+  Result<void> result = facade_device_.takeWriteResult ();
   last_uart_error_ = result.error;
   return result;
 }
@@ -628,6 +562,11 @@ TMC2209::takeWriteResult ()
 TMC2209::UartError
 TMC2209::getLastUartError () const
 {
+  const auto bus_error = facade_bus_.lastError ();
+  if (bus_error != UartError::None)
+    {
+      return bus_error;
+    }
   return last_uart_error_;
 }
 
@@ -635,6 +574,7 @@ void
 TMC2209::clearLastUartError ()
 {
   last_uart_error_ = UartError::None;
+  facade_device_.clearLastError ();
 }
 
 bool
@@ -667,6 +607,24 @@ TMC2209::hardwareDisabled ()
 uint16_t
 TMC2209::getMicrostepsPerStep ()
 {
+  if (facade_bus_.isConfigured ())
+    {
+      const auto chopconf = registers.readChopconf ();
+      if (chopconf.ok ())
+        {
+          chopconf_ = chopconf.value;
+          if (chopconf_.toff () > 0u)
+            {
+              toff_ = static_cast<uint8_t> (chopconf_.toff ());
+            }
+          last_uart_error_ = UartError::None;
+        }
+      else
+        {
+          last_uart_error_ = chopconf.error;
+        }
+    }
+
   uint16_t microsteps_per_step_exponent;
   switch (chopconf_.mres ())
     {
@@ -912,101 +870,10 @@ TMC2209::initialize (SerialAddress serial_address)
   disableAutomaticGradientAdaptation ();
 }
 
-bool
-TMC2209::serialTransportConfigured () const
-{
-  return (hardware_serial_ptr_ != nullptr)
-#if SOFTWARE_SERIAL_INCLUDED
-         || (software_serial_ptr_ != nullptr)
-#endif
-      ;
-}
-
-int
-TMC2209::uartAvailable ()
-{
-  return serialAvailable ();
-}
-
-int
-TMC2209::uartRead ()
-{
-  return serialRead ();
-}
-
-size_t
-TMC2209::uartWrite (uint8_t c)
-{
-  return serialWrite (c);
-}
-
-void
-TMC2209::uartFlush ()
-{
-  serialFlush ();
-}
-
-int
-TMC2209::serialAvailable ()
-{
-  if (hardware_serial_ptr_ != nullptr)
-    {
-      return hardware_serial_ptr_->available ();
-    }
-#if SOFTWARE_SERIAL_INCLUDED
-  else if (software_serial_ptr_ != nullptr)
-    {
-      return software_serial_ptr_->available ();
-    }
-#endif
-  return 0;
-}
-
-size_t
-TMC2209::serialWrite (uint8_t c)
-{
-  if (hardware_serial_ptr_ != nullptr)
-    {
-      return hardware_serial_ptr_->write (c);
-    }
-#if SOFTWARE_SERIAL_INCLUDED
-  else if (software_serial_ptr_ != nullptr)
-    {
-      return software_serial_ptr_->write (c);
-    }
-#endif
-  return 0;
-}
-
-int
-TMC2209::serialRead ()
-{
-  if (hardware_serial_ptr_ != nullptr)
-    {
-      return hardware_serial_ptr_->read ();
-    }
-#if SOFTWARE_SERIAL_INCLUDED
-  else if (software_serial_ptr_ != nullptr)
-    {
-      return software_serial_ptr_->read ();
-    }
-#endif
-  return 0;
-}
-
-void
-TMC2209::serialFlush ()
-{
-  if (hardware_serial_ptr_ != nullptr)
-    {
-      return hardware_serial_ptr_->flush ();
-    }
-}
-
 void
 TMC2209::setOperationModeToSerial (SerialAddress serial_address)
 {
-  serial_address_ = serial_address;
+  (void)serial_address;
 
   gconf_.raw = 0;
   gconf_.i_scale_analog (false);
@@ -1050,9 +917,45 @@ TMC2209::setRegistersToDefaults ()
 void
 TMC2209::readAndStoreRegisters ()
 {
-  gconf_.raw = readGlobalConfigBytes ();
-  chopconf_.raw = readChopperConfigBytes ();
-  pwmconf_.raw = readPwmConfigBytes ();
+  const auto gconf = registers.readGconf ();
+  if (gconf.ok ())
+    {
+      gconf_ = gconf.value;
+      last_uart_error_ = UartError::None;
+    }
+
+  const auto ihold_irun = registers.readIholdIrun ();
+  if (ihold_irun.ok ())
+    {
+      ihold_irun_ = ihold_irun.value;
+      last_uart_error_ = UartError::None;
+    }
+
+  const auto coolconf = registers.readCoolconf ();
+  if (coolconf.ok ())
+    {
+      coolconf_ = coolconf.value;
+      cool_step_enabled_ = (coolconf_.semin () != SEMIN_OFF);
+      last_uart_error_ = UartError::None;
+    }
+
+  const auto chopconf = registers.readChopconf ();
+  if (chopconf.ok ())
+    {
+      chopconf_ = chopconf.value;
+      if (chopconf_.toff () > 0u)
+        {
+          toff_ = static_cast<uint8_t> (chopconf_.toff ());
+        }
+      last_uart_error_ = UartError::None;
+    }
+
+  const auto pwmconf = registers.readPwmconf ();
+  if (pwmconf.ok ())
+    {
+      pwmconf_ = pwmconf.value;
+      last_uart_error_ = UartError::None;
+    }
 }
 
 bool

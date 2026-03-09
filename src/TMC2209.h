@@ -18,7 +18,6 @@
 #include "UartBusParameters.hpp"
 #include "UartParameters.hpp"
 
-#include "TMC2209/UartEngine.hpp"
 #include "tmc2209_registers.hpp"
 
 #if !defined(ESP32) && !defined(ARDUINO_ARCH_SAMD) && !defined(ARDUINO_ARCH_RP2040) && !defined(ARDUINO_SAM_DUE) && !defined(ARDUINO_ARCH_RENESAS)
@@ -30,7 +29,7 @@
 #include <SoftwareSerial.h>
 #endif
 
-class TMC2209 : private tmc2209::UartEngineIo
+class TMC2209
 {
 public:
   TMC2209 ();
@@ -295,27 +294,10 @@ private:
   tmc2209::UartBus facade_bus_;
   tmc2209::Device facade_device_;
 
-  HardwareSerial *hardware_serial_ptr_;
-#if SOFTWARE_SERIAL_INCLUDED
-  SoftwareSerial *software_serial_ptr_;
-#endif
-  uint8_t serial_address_;
   int16_t hardware_enable_pin_;
-
   UartError last_uart_error_;
-  tmc2209::UartEngine uart_engine_;
 
   void initialize (SerialAddress serial_address = SERIAL_ADDRESS_0);
-  bool serialTransportConfigured () const;
-  int serialAvailable ();
-  size_t serialWrite (uint8_t c);
-  int serialRead ();
-  void serialFlush ();
-
-  int uartAvailable () override;
-  int uartRead () override;
-  size_t uartWrite (uint8_t c) override;
-  void uartFlush () override;
 
   const static uint8_t STEPPER_DRIVER_FEATURE_OFF = 0;
   const static uint8_t STEPPER_DRIVER_FEATURE_ON = 1;

@@ -777,6 +777,78 @@ test_driver_microsteps_follows_legacy_power_of_two_flooring ()
 
 
 
+void
+test_facade_nonblocking_and_subobjects_share_bus_state ()
+{
+  FakeSerial serial;
+  serial.set_register_value (0x00u, 0x06u, 0x21000000u);
+
+  TMC2209 tmc;
+  tmc.setup (serial, TMC2209::SERIAL_ADDRESS_0);
+  serial.reset ();
+
+  TEST_ASSERT_TRUE (tmc.startRead (0x06u).ok ());
+
+  const auto ioin = tmc.registers.readIoin ();
+  TEST_ASSERT_FALSE_MESSAGE (
+      ioin.ok (),
+      "expected facade and subobjects to share one in-flight UART transaction");
+  TEST_ASSERT_EQUAL_UINT8 (static_cast<uint8_t> (tmc2209::UartError::Busy),
+                           static_cast<uint8_t> (ioin.error));
+  TEST_ASSERT_EQUAL_UINT8 (static_cast<uint8_t> (tmc2209::UartError::Busy),
+                           static_cast<uint8_t> (tmc.getLastUartError ()));
+
+  poll_until_result_ready (tmc);
+
+  const auto result = tmc.takeReadResult ();
+  TEST_ASSERT_TRUE (result.ok ());
+  TEST_ASSERT_EQUAL_HEX32 (0x21000000u, result.value);
+}
+
+void
+test_facade_getSettings_tracks_subobject_register_changes ()
+{
+  FakeSerial serial;
+  serial.set_register_value (0x00u, 0x06u, 0x21000000u);
+
+  TMC2209 tmc;
+  tmc.setup (serial, TMC2209::SERIAL_ADDRESS_0);
+  serial.reset ();
+
+  TEST_ASSERT_TRUE (tmc.driver.setRunCurrent (50u).ok ());
+  TEST_ASSERT_TRUE (tmc.driver.setHoldCurrent (25u).ok ());
+
+  tmc2209::reg::COOLCONF coolconf;
+  coolconf.raw = 0u;
+  coolconf.semin (3u).semax (1u);
+  TEST_ASSERT_TRUE (tmc.registers.writeCoolconf (coolconf).ok ());
+
+  const auto ihold_irun = tmc.registers.readIholdIrun ();
+  TEST_ASSERT_TRUE (ihold_irun.ok ());
+
+  const auto settings = tmc.getSettings ();
+  TEST_ASSERT_TRUE (settings.is_communicating);
+  TEST_ASSERT_EQUAL_UINT8 (static_cast<uint8_t> (ihold_irun.value.irun ()),
+                           settings.irun_register_value);
+  TEST_ASSERT_EQUAL_UINT8 (static_cast<uint8_t> (ihold_irun.value.ihold ()),
+                           settings.ihold_register_value);
+  TEST_ASSERT_TRUE (settings.cool_step_enabled);
+}
+
+void
+test_facade_getMicrostepsPerStep_tracks_driver_changes_when_configured ()
+{
+  FakeSerial serial;
+  serial.set_register_value (0x00u, 0x06u, 0x21000000u);
+
+  TMC2209 tmc;
+  tmc.setup (serial, TMC2209::SERIAL_ADDRESS_0);
+  serial.reset ();
+
+  TEST_ASSERT_TRUE (tmc.driver.setMicrostepsPerStep (64u).ok ());
+  TEST_ASSERT_EQUAL_UINT16 (64u, tmc.getMicrostepsPerStep ());
+}
+
 
 int
 main (int argc, char **argv)
@@ -821,6 +893,9 @@ main (int argc, char **argv)
   RUN_TEST (test_driver_initialize_configures_serial_mode_defaults);
   RUN_TEST (test_facade_exposes_driver_and_registers_on_internal_bus);
   RUN_TEST (test_driver_microsteps_follows_legacy_power_of_two_flooring);
+  RUN_TEST (test_facade_nonblocking_and_subobjects_share_bus_state);
+  RUN_TEST (test_facade_getSettings_tracks_subobject_register_changes);
+  RUN_TEST (test_facade_getMicrostepsPerStep_tracks_driver_changes_when_configured);
 
   return UNITY_END ();
 }
