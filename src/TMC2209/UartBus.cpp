@@ -102,25 +102,35 @@ UartBus::isConfigured () const
 Result<uint32_t>
 UartBus::readRegister (uint8_t serial_address, uint8_t register_address)
 {
+  UartParameters parameters;
+  parameters.serial_address = serial_address;
+  return readRegister (parameters, register_address);
+}
+
+Result<uint32_t>
+UartBus::readRegister (const UartParameters &parameters,
+                       uint8_t register_address)
+{
   Result<uint32_t> result;
 
-  const auto start_result = startRead (serial_address, register_address);
+  const auto start_result = startRead (parameters.serial_address,
+                                       register_address);
   if (!start_result.ok ())
     {
       result.error = start_result.error;
       return result;
     }
 
-  while (!resultReady (serial_address))
+  while (!resultReady (parameters.serial_address))
     {
       poll ();
-      if (!resultReady (serial_address))
+      if (!resultReady (parameters.serial_address))
         {
           delayMicroseconds (1);
         }
     }
 
-  result = takeReadResult (serial_address);
+  result = takeReadResult (parameters.serial_address);
   last_uart_error_ = result.error;
   return result;
 }
@@ -129,6 +139,65 @@ Result<void>
 UartBus::writeRegister (uint8_t serial_address,
                         uint8_t register_address,
                         uint32_t data)
+{
+  UartParameters parameters;
+  parameters.serial_address = serial_address;
+  return writeRegister (parameters, register_address, data);
+}
+
+Result<void>
+UartBus::writeRegister (const UartParameters &parameters,
+                        uint8_t register_address,
+                        uint32_t data)
+{
+  Result<void> result;
+
+  Result<uint32_t> ifcnt_before;
+  if (parameters.verify_writes)
+    {
+      ifcnt_before = readRegister (parameters, IFCNT_REGISTER_ADDRESS);
+      if (!ifcnt_before.ok ())
+        {
+          result.error = ifcnt_before.error;
+          last_uart_error_ = result.error;
+          return result;
+        }
+    }
+
+  result = writeRegisterOnce_ (parameters.serial_address, register_address, data);
+  if (!result.ok ())
+    {
+      last_uart_error_ = result.error;
+      return result;
+    }
+
+  if (parameters.verify_writes)
+    {
+      const auto ifcnt_after = readRegister (parameters, IFCNT_REGISTER_ADDRESS);
+      if (!ifcnt_after.ok ())
+        {
+          result.error = ifcnt_after.error;
+          last_uart_error_ = result.error;
+          return result;
+        }
+
+      const uint8_t expected_ifcnt = static_cast<uint8_t> (ifcnt_before.value + 1u);
+      if (static_cast<uint8_t> (ifcnt_after.value) != expected_ifcnt)
+        {
+          result.error = UartError::WriteVerifyFailed;
+          last_uart_error_ = result.error;
+          return result;
+        }
+    }
+
+  last_uart_error_ = result.error;
+  return result;
+}
+
+Result<void>
+UartBus::writeRegisterOnce_ (uint8_t serial_address,
+                             uint8_t register_address,
+                             uint32_t data)
 {
   Result<void> result;
 
@@ -148,9 +217,7 @@ UartBus::writeRegister (uint8_t serial_address,
         }
     }
 
-  result = takeWriteResult (serial_address);
-  last_uart_error_ = result.error;
-  return result;
+  return takeWriteResult (serial_address);
 }
 
 Result<void>

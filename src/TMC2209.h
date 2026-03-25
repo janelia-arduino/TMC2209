@@ -29,6 +29,19 @@
 #include <SoftwareSerial.h>
 #endif
 
+namespace tmc2209
+{
+struct HealthStatus
+{
+  bool communication_ok{ false };
+  bool setup_ok{ false };
+  bool reset{ false };
+  bool driver_error{ false };
+  bool charge_pump_undervoltage{ false };
+  bool mirror_resync_required{ false };
+};
+}
+
 class TMC2209
 {
 public:
@@ -45,6 +58,7 @@ public:
   using Registers = tmc2209::Registers;
   using UartParameters = tmc2209::UartParameters;
   using UartBusParameters = tmc2209::UartBusParameters;
+  using HealthStatus = tmc2209::HealthStatus;
 
   Driver driver;
   Registers registers;
@@ -198,12 +212,37 @@ public:
   void poll ();
   bool busy () const;
   bool resultReady () const;
+  bool done () const;
   Result<uint32_t> takeReadResult ();
   Result<void> takeWriteResult ();
+
+  UartBus &
+  uartBus ()
+  {
+    return facade_bus_;
+  }
+  const UartBus &
+  uartBus () const
+  {
+    return facade_bus_;
+  }
+  Device &
+  device ()
+  {
+    return facade_device_;
+  }
+  const Device &
+  device () const
+  {
+    return facade_device_;
+  }
 
   // Retrieve and clear the last UART error observed by the library.
   UartError getLastUartError () const;
   void clearLastUartError ();
+  void enableWriteVerification ();
+  void disableWriteVerification ();
+  bool writeVerificationEnabled () const;
 
   // if driver is not communicating, check power and communication connections
   bool isCommunicating ();
@@ -276,6 +315,14 @@ public:
   GlobalStatus getGlobalStatus ();
   void clearReset ();
   void clearDriveError ();
+  HealthStatus readHealthStatus ();
+  void notePossibleMirrorDrift ();
+  bool mirrorResyncRequired () const;
+  bool reinitialize ();
+  bool recoverFromDeviceReset ();
+  bool recoverIfNeeded ();
+  bool recoverIfUnhealthy ();
+  bool resyncReadableConfiguration ();
 
   uint8_t getInterfaceTransmissionCounter ();
 
@@ -296,8 +343,10 @@ private:
 
   int16_t hardware_enable_pin_;
   UartError last_uart_error_;
+  bool mirror_resync_required_;
 
   void initialize (SerialAddress serial_address = SERIAL_ADDRESS_0);
+  bool replayCachedConfiguration_ ();
 
   const static uint8_t STEPPER_DRIVER_FEATURE_OFF = 0;
   const static uint8_t STEPPER_DRIVER_FEATURE_ON = 1;
@@ -311,6 +360,7 @@ private:
   const static uint8_t ADDRESS_IFCNT = 0x02;
 
   const static uint8_t ADDRESS_REPLYDELAY = 0x03;
+  uint32_t reply_delay_raw_ = 0u;
 
   const static uint8_t ADDRESS_IOIN = 0x06;
   const static uint8_t VERSION = 0x21;
@@ -330,21 +380,26 @@ private:
 
   const static uint8_t ADDRESS_TPOWERDOWN = 0x11;
   const static uint8_t TPOWERDOWN_DEFAULT = 20;
+  uint32_t tpowerdown_raw_ = TPOWERDOWN_DEFAULT;
 
   const static uint8_t ADDRESS_TSTEP = 0x12;
 
   const static uint8_t ADDRESS_TPWMTHRS = 0x13;
   const static uint32_t TPWMTHRS_DEFAULT = 0;
+  uint32_t tpwmthrs_raw_ = TPWMTHRS_DEFAULT;
 
   const static uint8_t ADDRESS_VACTUAL = 0x22;
   const static int32_t VACTUAL_DEFAULT = 0;
   const static int32_t VACTUAL_STEP_DIR_INTERFACE = 0;
+  uint32_t vactual_raw_ = static_cast<uint32_t> (VACTUAL_DEFAULT);
 
   // CoolStep and StallGuard Control Register Set
   const static uint8_t ADDRESS_TCOOLTHRS = 0x14;
   const static uint8_t TCOOLTHRS_DEFAULT = 0;
+  uint32_t tcoolthrs_raw_ = TCOOLTHRS_DEFAULT;
   const static uint8_t ADDRESS_SGTHRS = 0x40;
   const static uint8_t SGTHRS_DEFAULT = 0;
+  uint32_t sgthrs_raw_ = SGTHRS_DEFAULT;
   const static uint8_t ADDRESS_SG_RESULT = 0x41;
 
   const static uint8_t ADDRESS_COOLCONF = 0x42;

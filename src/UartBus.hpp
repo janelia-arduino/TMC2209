@@ -6,6 +6,7 @@
 #include "Result.hpp"
 #include "TMC2209/UartEngine.hpp"
 #include "UartBusParameters.hpp"
+#include "UartParameters.hpp"
 
 #if !defined(ESP32) && !defined(ARDUINO_ARCH_SAMD) && !defined(ARDUINO_ARCH_RP2040) && !defined(ARDUINO_SAM_DUE) && !defined(ARDUINO_ARCH_RENESAS)
 #define TMC2209_UARTBUS_SOFTWARE_SERIAL_INCLUDED true
@@ -46,7 +47,12 @@ public:
 
   Result<uint32_t> readRegister (uint8_t serial_address,
                                  uint8_t register_address);
+  Result<uint32_t> readRegister (const UartParameters &parameters,
+                                 uint8_t register_address);
   Result<void> writeRegister (uint8_t serial_address,
+                              uint8_t register_address,
+                              uint32_t data);
+  Result<void> writeRegister (const UartParameters &parameters,
                               uint8_t register_address,
                               uint32_t data);
 
@@ -59,6 +65,16 @@ public:
   bool busy (uint8_t serial_address) const;
   bool resultReady () const;
   bool resultReady (uint8_t serial_address) const;
+  bool
+  done () const
+  {
+    return resultReady ();
+  }
+  bool
+  done (uint8_t serial_address) const
+  {
+    return resultReady (serial_address);
+  }
   Result<uint32_t> takeReadResult ();
   Result<uint32_t> takeReadResult (uint8_t serial_address);
   Result<void> takeWriteResult ();
@@ -69,8 +85,12 @@ public:
 
 private:
   static constexpr uint8_t INVALID_SERIAL_ADDRESS = 0xFFu;
+  static constexpr uint8_t IFCNT_REGISTER_ADDRESS = 0x02u;
 
   bool serialTransportConfigured () const;
+  Result<void> writeRegisterOnce_ (uint8_t serial_address,
+                                   uint8_t register_address,
+                                   uint32_t data);
   int serialAvailable ();
   int serialRead ();
   size_t serialWrite (uint8_t c);

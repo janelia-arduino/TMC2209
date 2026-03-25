@@ -9,6 +9,7 @@ namespace tmc2209
 struct UartParameters
 {
   uint8_t serial_address{ 0 };
+  bool verify_writes{ false };
 };
 
 } // namespace tmc2209

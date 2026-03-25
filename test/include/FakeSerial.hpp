@@ -69,6 +69,15 @@ public:
     corrupt_echo_remaining_ = requests;
   }
 
+  // Configure: suppress IFCNT increments for the first N valid writes.
+  // Useful for exercising opt-in write verification failure behavior.
+  void
+  suppress_ifcnt_increment_for_first_writes (unsigned int writes)
+  {
+    suppress_ifcnt_increment_for_first_writes_ = writes;
+    suppress_ifcnt_increment_remaining_ = writes;
+  }
+
   // Inject stale bytes into the RX queue before the next transaction.
   void
   queue_rx_byte (uint8_t value)
@@ -303,9 +312,22 @@ private:
         return;
       }
 
-    addressed_register_map_[make_key_ (datagram.serialAddress (),
+    const uint8_t serial_address = datagram.serialAddress ();
+    addressed_register_map_[make_key_ (serial_address,
                                        datagram.registerAddress ())]
         = datagram.data ();
+
+    if (suppress_ifcnt_increment_remaining_ > 0)
+      {
+        --suppress_ifcnt_increment_remaining_;
+        return;
+      }
+
+    const uint16_t ifcnt_key = make_key_ (serial_address, 0x02u);
+    const uint8_t previous_ifcnt = static_cast<uint8_t> (
+        register_value (serial_address, 0x02u));
+    addressed_register_map_[ifcnt_key]
+        = static_cast<uint8_t> (previous_ifcnt + 1u);
   }
 
   std::deque<uint8_t> rx_;
@@ -324,4 +346,7 @@ private:
 
   unsigned int corrupt_echo_for_first_read_requests_{ 0 };
   unsigned int corrupt_echo_remaining_{ 0 };
+
+  unsigned int suppress_ifcnt_increment_for_first_writes_{ 0 };
+  unsigned int suppress_ifcnt_increment_remaining_{ 0 };
 };

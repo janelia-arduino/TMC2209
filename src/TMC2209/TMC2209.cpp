@@ -16,6 +16,7 @@ TMC2209::TMC2209 ()
   hardware_enable_pin_ = -1;
   cool_step_enabled_ = false;
   last_uart_error_ = UartError::None;
+  mirror_resync_required_ = false;
 }
 
 #if !defined(ARDUINO_ARCH_RENESAS)
@@ -543,6 +544,12 @@ TMC2209::resultReady () const
   return facade_device_.resultReady ();
 }
 
+bool
+TMC2209::done () const
+{
+  return resultReady ();
+}
+
 TMC2209::Result<uint32_t>
 TMC2209::takeReadResult ()
 {
@@ -575,6 +582,28 @@ TMC2209::clearLastUartError ()
 {
   last_uart_error_ = UartError::None;
   facade_device_.clearLastError ();
+}
+
+void
+TMC2209::enableWriteVerification ()
+{
+  UartParameters parameters = facade_device_.parameters ();
+  parameters.verify_writes = true;
+  facade_device_.setParameters (parameters);
+}
+
+void
+TMC2209::disableWriteVerification ()
+{
+  UartParameters parameters = facade_device_.parameters ();
+  parameters.verify_writes = false;
+  facade_device_.setParameters (parameters);
+}
+
+bool
+TMC2209::writeVerificationEnabled () const
+{
+  return facade_device_.parameters ().verify_writes;
 }
 
 bool
@@ -796,6 +825,206 @@ TMC2209::clearDriveError ()
   write (ADDRESS_GSTAT, gstat.raw);
 }
 
+TMC2209::HealthStatus
+TMC2209::readHealthStatus ()
+{
+  HealthStatus status;
+  const GlobalStatus global_status = getGlobalStatus ();
+  status.communication_ok = isCommunicating ();
+  status.setup_ok = isSetupAndCommunicating ();
+  status.reset = global_status.reset;
+  status.driver_error = global_status.drv_err;
+  status.charge_pump_undervoltage = global_status.uv_cp;
+  status.mirror_resync_required = mirrorResyncRequired ();
+  return status;
+}
+
+void
+TMC2209::notePossibleMirrorDrift ()
+{
+  mirror_resync_required_ = true;
+}
+
+bool
+TMC2209::mirrorResyncRequired () const
+{
+  return mirror_resync_required_;
+}
+
+bool
+TMC2209::reinitialize ()
+{
+  if (!isCommunicating ())
+    {
+      notePossibleMirrorDrift ();
+      return false;
+    }
+
+  if (!replayCachedConfiguration_ ())
+    {
+      notePossibleMirrorDrift ();
+      return false;
+    }
+
+  mirror_resync_required_ = false;
+  return isSetupAndCommunicating ();
+}
+
+bool
+TMC2209::recoverFromDeviceReset ()
+{
+  if (!isCommunicating ())
+    {
+      notePossibleMirrorDrift ();
+      return false;
+    }
+
+  const GlobalStatus global_status = getGlobalStatus ();
+  if (global_status.reset || global_status.drv_err || global_status.uv_cp
+      || mirrorResyncRequired ())
+    {
+      notePossibleMirrorDrift ();
+      return reinitialize ();
+    }
+
+  mirror_resync_required_ = false;
+  return true;
+}
+
+bool
+TMC2209::recoverIfNeeded ()
+{
+  if (!mirrorResyncRequired ())
+    {
+      return true;
+    }
+  return recoverFromDeviceReset ();
+}
+
+bool
+TMC2209::recoverIfUnhealthy ()
+{
+  const HealthStatus status = readHealthStatus ();
+  if (!status.communication_ok || !status.setup_ok || status.reset
+      || status.driver_error || status.charge_pump_undervoltage)
+    {
+      notePossibleMirrorDrift ();
+    }
+  return recoverIfNeeded ();
+}
+
+bool
+TMC2209::resyncReadableConfiguration ()
+{
+  if (!isCommunicating ())
+    {
+      notePossibleMirrorDrift ();
+      return false;
+    }
+
+  const auto gconf = registers.readGconf ();
+  if (!gconf.ok ())
+    {
+      last_uart_error_ = gconf.error;
+      notePossibleMirrorDrift ();
+      return false;
+    }
+  gconf_ = gconf.value;
+
+  const auto ihold_irun = registers.readIholdIrun ();
+  if (!ihold_irun.ok ())
+    {
+      last_uart_error_ = ihold_irun.error;
+      notePossibleMirrorDrift ();
+      return false;
+    }
+  ihold_irun_ = ihold_irun.value;
+
+  const auto coolconf = registers.readCoolconf ();
+  if (!coolconf.ok ())
+    {
+      last_uart_error_ = coolconf.error;
+      notePossibleMirrorDrift ();
+      return false;
+    }
+  coolconf_ = coolconf.value;
+  cool_step_enabled_ = (coolconf_.semin () != SEMIN_OFF);
+
+  const auto chopconf = registers.readChopconf ();
+  if (!chopconf.ok ())
+    {
+      last_uart_error_ = chopconf.error;
+      notePossibleMirrorDrift ();
+      return false;
+    }
+  chopconf_ = chopconf.value;
+  if (chopconf_.toff () > 0u)
+    {
+      toff_ = static_cast<uint8_t> (chopconf_.toff ());
+    }
+
+  const auto pwmconf = registers.readPwmconf ();
+  if (!pwmconf.ok ())
+    {
+      last_uart_error_ = pwmconf.error;
+      notePossibleMirrorDrift ();
+      return false;
+    }
+  pwmconf_ = pwmconf.value;
+
+  const auto reply_delay = readRegister (ADDRESS_REPLYDELAY);
+  if (!reply_delay.ok ())
+    {
+      notePossibleMirrorDrift ();
+      return false;
+    }
+  reply_delay_raw_ = reply_delay.value;
+
+  const auto tpowerdown = readRegister (ADDRESS_TPOWERDOWN);
+  if (!tpowerdown.ok ())
+    {
+      notePossibleMirrorDrift ();
+      return false;
+    }
+  tpowerdown_raw_ = tpowerdown.value;
+
+  const auto tpwmthrs = readRegister (ADDRESS_TPWMTHRS);
+  if (!tpwmthrs.ok ())
+    {
+      notePossibleMirrorDrift ();
+      return false;
+    }
+  tpwmthrs_raw_ = tpwmthrs.value;
+
+  const auto vactual = readRegister (ADDRESS_VACTUAL);
+  if (!vactual.ok ())
+    {
+      notePossibleMirrorDrift ();
+      return false;
+    }
+  vactual_raw_ = vactual.value;
+
+  const auto tcoolthrs = readRegister (ADDRESS_TCOOLTHRS);
+  if (!tcoolthrs.ok ())
+    {
+      notePossibleMirrorDrift ();
+      return false;
+    }
+  tcoolthrs_raw_ = tcoolthrs.value;
+
+  const auto sgthrs = readRegister (ADDRESS_SGTHRS);
+  if (!sgthrs.ok ())
+    {
+      notePossibleMirrorDrift ();
+      return false;
+    }
+  sgthrs_raw_ = sgthrs.value;
+
+  last_uart_error_ = UartError::None;
+  mirror_resync_required_ = false;
+  return true;
+}
+
 uint8_t
 TMC2209::getInterfaceTransmissionCounter ()
 {
@@ -860,6 +1089,7 @@ TMC2209::getMicrostepCounter ()
 void
 TMC2209::initialize (SerialAddress serial_address)
 {
+  mirror_resync_required_ = false;
   setOperationModeToSerial (serial_address);
   setRegistersToDefaults ();
   clearDriveError ();
@@ -978,7 +1208,29 @@ TMC2209::minimizeMotorCurrent ()
 void
 TMC2209::write (uint8_t register_address, uint32_t data)
 {
-
+  switch (register_address)
+    {
+    case ADDRESS_REPLYDELAY:
+      reply_delay_raw_ = data;
+      break;
+    case ADDRESS_TPOWERDOWN:
+      tpowerdown_raw_ = data;
+      break;
+    case ADDRESS_TPWMTHRS:
+      tpwmthrs_raw_ = data;
+      break;
+    case ADDRESS_VACTUAL:
+      vactual_raw_ = data;
+      break;
+    case ADDRESS_TCOOLTHRS:
+      tcoolthrs_raw_ = data;
+      break;
+    case ADDRESS_SGTHRS:
+      sgthrs_raw_ = data;
+      break;
+    default:
+      break;
+    }
   (void)writeRegister (register_address, data);
 }
 
@@ -1081,6 +1333,50 @@ uint32_t
 TMC2209::readPwmConfigBytes ()
 {
   return read (ADDRESS_PWMCONF);
+}
+
+bool
+TMC2209::replayCachedConfiguration_ ()
+{
+  writeStoredGlobalConfig ();
+  if (getLastUartError () != UartError::None)
+    {
+      return false;
+    }
+
+  writeStoredDriverCurrent ();
+  if (getLastUartError () != UartError::None)
+    {
+      return false;
+    }
+
+  writeStoredChopperConfig ();
+  if (getLastUartError () != UartError::None)
+    {
+      return false;
+    }
+
+  writeStoredPwmConfig ();
+  if (getLastUartError () != UartError::None)
+    {
+      return false;
+    }
+
+  write (ADDRESS_COOLCONF, coolconf_.raw);
+  if (getLastUartError () != UartError::None)
+    {
+      return false;
+    }
+
+  write (ADDRESS_REPLYDELAY, reply_delay_raw_);
+  write (ADDRESS_TPOWERDOWN, tpowerdown_raw_);
+  write (ADDRESS_TPWMTHRS, tpwmthrs_raw_);
+  write (ADDRESS_VACTUAL, vactual_raw_);
+  write (ADDRESS_TCOOLTHRS, tcoolthrs_raw_);
+  write (ADDRESS_SGTHRS, sgthrs_raw_);
+  clearReset ();
+  clearDriveError ();
+  return getLastUartError () == UartError::None;
 }
 
 uint32_t

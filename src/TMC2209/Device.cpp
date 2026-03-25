@@ -27,6 +27,12 @@ Device::bind (UartBus &bus, const UartParameters &parameters)
   parameters_ = parameters;
 }
 
+void
+Device::setParameters (const UartParameters &parameters)
+{
+  parameters_ = parameters;
+}
+
 bool
 Device::isBound () const
 {
@@ -54,7 +60,7 @@ Device::readRegister (uint8_t register_address) const
       result.error = UartError::NotInitialized;
       return result;
     }
-  return bus_->readRegister (parameters_.serial_address, register_address);
+  return bus_->readRegister (parameters_, register_address);
 }
 
 Result<void>
@@ -64,8 +70,7 @@ Device::writeRegister (uint8_t register_address, uint32_t data) const
     {
       return notInitialized_ ();
     }
-  return bus_->writeRegister (parameters_.serial_address, register_address,
-                              data);
+  return bus_->writeRegister (parameters_, register_address, data);
 }
 
 Result<void>

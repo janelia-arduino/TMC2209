@@ -687,6 +687,48 @@ test_registers_typed_helpers_read_ioin_version ()
 }
 
 void
+test_device_write_verification_succeeds_when_ifcnt_increments ()
+{
+  FakeSerial serial;
+
+  tmc2209::UartBus bus;
+  bus.setup (serial);
+
+  tmc2209::UartParameters parameters;
+  parameters.serial_address = 0x00u;
+  parameters.verify_writes = true;
+  tmc2209::Device device (bus, parameters);
+
+  const auto result = device.writeRegister (0x10u, 0x12345678u);
+  TEST_ASSERT_TRUE (result.ok ());
+  TEST_ASSERT_EQUAL_UINT8 (1u, static_cast<uint8_t> (
+                                   serial.register_value (0x00u,
+                                                          TMC2209::ADDRESS_IFCNT)));
+}
+
+void
+test_device_write_verification_reports_ifcnt_mismatch ()
+{
+  FakeSerial serial;
+  serial.suppress_ifcnt_increment_for_first_writes (1u);
+
+  tmc2209::UartBus bus;
+  bus.setup (serial);
+
+  tmc2209::UartParameters parameters;
+  parameters.serial_address = 0x00u;
+  parameters.verify_writes = true;
+  tmc2209::Device device (bus, parameters);
+
+  const auto result = device.writeRegister (0x10u, 0x12345678u);
+  TEST_ASSERT_FALSE (result.ok ());
+  TEST_ASSERT_EQUAL_UINT8 (static_cast<uint8_t> (tmc2209::UartError::WriteVerifyFailed),
+                           static_cast<uint8_t> (result.error));
+  TEST_ASSERT_EQUAL_UINT8 (static_cast<uint8_t> (tmc2209::UartError::WriteVerifyFailed),
+                           static_cast<uint8_t> (device.lastError ()));
+}
+
+void
 test_driver_initialize_configures_serial_mode_defaults ()
 {
   FakeSerial serial;
@@ -849,6 +891,178 @@ test_facade_getMicrostepsPerStep_tracks_driver_changes_when_configured ()
   TEST_ASSERT_EQUAL_UINT16 (64u, tmc.getMicrostepsPerStep ());
 }
 
+void
+test_facade_enableWriteVerification_uses_ifcnt_verification ()
+{
+  FakeSerial serial;
+  serial.set_register_value (0x00u, 0x06u, 0x21000000u);
+
+  TMC2209 tmc;
+  tmc.setup (serial, TMC2209::SERIAL_ADDRESS_0);
+  serial.reset ();
+
+  TEST_ASSERT_FALSE (tmc.writeVerificationEnabled ());
+  tmc.enableWriteVerification ();
+  TEST_ASSERT_TRUE (tmc.writeVerificationEnabled ());
+
+  const uint8_t ifcnt_before = static_cast<uint8_t> (
+      serial.register_value (0x00u, TMC2209::ADDRESS_IFCNT));
+  const auto result = tmc.writeRegister (0x10u, 0x12345678u);
+  TEST_ASSERT_TRUE (result.ok ());
+  TEST_ASSERT_EQUAL_UINT8 (
+      static_cast<uint8_t> (ifcnt_before + 1u),
+      static_cast<uint8_t> (serial.register_value (0x00u,
+                                                   TMC2209::ADDRESS_IFCNT)));
+}
+
+void
+test_family_style_done_aliases_follow_result_ready_state ()
+{
+  FakeSerial serial;
+  serial.set_register_value (0x00u, 0x06u, 0x21000000u);
+
+  TMC2209 tmc;
+  tmc.setup (serial, TMC2209::SERIAL_ADDRESS_0);
+  serial.reset ();
+
+  TEST_ASSERT_TRUE (tmc.startRead (0x06u).ok ());
+  TEST_ASSERT_FALSE (tmc.done ());
+  TEST_ASSERT_FALSE (tmc.uartBus ().done ());
+  TEST_ASSERT_FALSE (tmc.device ().done ());
+
+  poll_until_result_ready (tmc);
+
+  TEST_ASSERT_TRUE (tmc.done ());
+  TEST_ASSERT_TRUE (tmc.uartBus ().done ());
+  TEST_ASSERT_TRUE (tmc.device ().done ());
+
+  const auto result = tmc.takeReadResult ();
+  TEST_ASSERT_TRUE (result.ok ());
+  TEST_ASSERT_EQUAL_HEX32 (0x21000000u, result.value);
+}
+
+void
+test_recoverFromDeviceReset_replays_cached_configuration ()
+{
+  FakeSerial serial;
+  serial.set_register_value (0x00u, 0x06u, 0x21000000u);
+
+  TMC2209 tmc;
+  tmc.setup (serial, TMC2209::SERIAL_ADDRESS_0);
+  serial.reset ();
+
+  tmc.setReplyDelay (3u);
+  tmc.setPowerDownDelay (7u);
+  tmc.setStealthChopDurationThreshold (0x1234u);
+  tmc.setCoolStepDurationThreshold (0x2345u);
+  tmc.setStallGuardThreshold (0x17u);
+  tmc.setMicrostepsPerStep (64u);
+  tmc.setRunCurrent (61u);
+
+  tmc2209::reg::GSTAT gstat;
+  gstat.raw = 0u;
+  gstat.reset (true);
+
+  serial.set_register_value (0x00u, TMC2209::ADDRESS_GSTAT, gstat.raw);
+  serial.set_register_value (0x00u, TMC2209::ADDRESS_GCONF, 0u);
+  serial.set_register_value (0x00u, TMC2209::ADDRESS_CHOPCONF,
+                             TMC2209::CHOPPER_CONFIG_DEFAULT);
+  serial.set_register_value (0x00u, TMC2209::ADDRESS_PWMCONF,
+                             TMC2209::PWM_CONFIG_DEFAULT);
+  serial.set_register_value (0x00u, TMC2209::ADDRESS_IHOLD_IRUN, 0u);
+  serial.set_register_value (0x00u, TMC2209::ADDRESS_COOLCONF, 0u);
+  serial.set_register_value (0x00u, TMC2209::ADDRESS_REPLYDELAY, 0u);
+  serial.set_register_value (0x00u, TMC2209::ADDRESS_TPOWERDOWN,
+                             TMC2209::TPOWERDOWN_DEFAULT);
+  serial.set_register_value (0x00u, TMC2209::ADDRESS_TPWMTHRS, 0u);
+  serial.set_register_value (0x00u, TMC2209::ADDRESS_VACTUAL, 0u);
+  serial.set_register_value (0x00u, TMC2209::ADDRESS_TCOOLTHRS, 0u);
+  serial.set_register_value (0x00u, TMC2209::ADDRESS_SGTHRS, 0u);
+
+  TEST_ASSERT_TRUE (tmc.recoverFromDeviceReset ());
+  TEST_ASSERT_FALSE (tmc.mirrorResyncRequired ());
+
+  TEST_ASSERT_EQUAL_HEX32 (tmc.gconf_.raw,
+                           serial.register_value (0x00u,
+                                                  TMC2209::ADDRESS_GCONF));
+  TEST_ASSERT_EQUAL_HEX32 (tmc.ihold_irun_.raw,
+                           serial.register_value (0x00u,
+                                                  TMC2209::ADDRESS_IHOLD_IRUN));
+  TEST_ASSERT_EQUAL_HEX32 (tmc.chopconf_.raw,
+                           serial.register_value (0x00u,
+                                                  TMC2209::ADDRESS_CHOPCONF));
+  TEST_ASSERT_EQUAL_HEX32 (tmc.pwmconf_.raw,
+                           serial.register_value (0x00u,
+                                                  TMC2209::ADDRESS_PWMCONF));
+  TEST_ASSERT_EQUAL_HEX32 (tmc.coolconf_.raw,
+                           serial.register_value (0x00u,
+                                                  TMC2209::ADDRESS_COOLCONF));
+  TEST_ASSERT_EQUAL_HEX32 (tmc.reply_delay_raw_,
+                           serial.register_value (0x00u,
+                                                  TMC2209::ADDRESS_REPLYDELAY));
+  TEST_ASSERT_EQUAL_HEX32 (tmc.tpowerdown_raw_,
+                           serial.register_value (0x00u,
+                                                  TMC2209::ADDRESS_TPOWERDOWN));
+  TEST_ASSERT_EQUAL_HEX32 (tmc.tpwmthrs_raw_,
+                           serial.register_value (0x00u,
+                                                  TMC2209::ADDRESS_TPWMTHRS));
+  TEST_ASSERT_EQUAL_HEX32 (tmc.vactual_raw_,
+                           serial.register_value (0x00u,
+                                                  TMC2209::ADDRESS_VACTUAL));
+  TEST_ASSERT_EQUAL_HEX32 (tmc.tcoolthrs_raw_,
+                           serial.register_value (0x00u,
+                                                  TMC2209::ADDRESS_TCOOLTHRS));
+  TEST_ASSERT_EQUAL_HEX32 (tmc.sgthrs_raw_,
+                           serial.register_value (0x00u,
+                                                  TMC2209::ADDRESS_SGTHRS));
+}
+
+void
+test_resyncReadableConfiguration_refreshes_cached_state_from_device ()
+{
+  FakeSerial serial;
+  serial.set_register_value (0x00u, 0x06u, 0x21000000u);
+
+  TMC2209 tmc;
+  tmc.setup (serial, TMC2209::SERIAL_ADDRESS_0);
+  serial.reset ();
+
+  tmc2209::reg::GCONF gconf = tmc.gconf_;
+  gconf.shaft (true);
+  serial.set_register_value (0x00u, TMC2209::ADDRESS_GCONF, gconf.raw);
+
+  tmc2209::reg::IHOLD_IRUN ihold_irun = tmc.ihold_irun_;
+  ihold_irun.irun (9u);
+  serial.set_register_value (0x00u, TMC2209::ADDRESS_IHOLD_IRUN,
+                             ihold_irun.raw);
+
+  tmc2209::reg::CHOPCONF chopconf = tmc.chopconf_;
+  chopconf.mres (tmc2209::reg::Mres::M32);
+  serial.set_register_value (0x00u, TMC2209::ADDRESS_CHOPCONF, chopconf.raw);
+
+  serial.set_register_value (0x00u, TMC2209::ADDRESS_REPLYDELAY, 5u);
+  serial.set_register_value (0x00u, TMC2209::ADDRESS_TPOWERDOWN, 11u);
+  serial.set_register_value (0x00u, TMC2209::ADDRESS_TPWMTHRS, 0x3456u);
+  serial.set_register_value (0x00u, TMC2209::ADDRESS_VACTUAL, 0x4567u);
+  serial.set_register_value (0x00u, TMC2209::ADDRESS_TCOOLTHRS, 0x5678u);
+  serial.set_register_value (0x00u, TMC2209::ADDRESS_SGTHRS, 0x19u);
+
+  tmc.notePossibleMirrorDrift ();
+  TEST_ASSERT_TRUE (tmc.resyncReadableConfiguration ());
+
+  TEST_ASSERT_FALSE (tmc.mirrorResyncRequired ());
+  TEST_ASSERT_EQUAL_HEX32 (gconf.raw, tmc.gconf_.raw);
+  TEST_ASSERT_EQUAL_HEX32 (ihold_irun.raw, tmc.ihold_irun_.raw);
+  TEST_ASSERT_EQUAL_HEX32 (chopconf.raw, tmc.chopconf_.raw);
+  TEST_ASSERT_EQUAL_UINT16 (32u, tmc.getMicrostepsPerStep ());
+  TEST_ASSERT_EQUAL_HEX32 (5u, tmc.reply_delay_raw_);
+  TEST_ASSERT_EQUAL_HEX32 (11u, tmc.tpowerdown_raw_);
+  TEST_ASSERT_EQUAL_HEX32 (0x3456u, tmc.tpwmthrs_raw_);
+  TEST_ASSERT_EQUAL_HEX32 (0x4567u, tmc.vactual_raw_);
+  TEST_ASSERT_EQUAL_HEX32 (0x5678u, tmc.tcoolthrs_raw_);
+  TEST_ASSERT_EQUAL_HEX32 (0x19u, tmc.sgthrs_raw_);
+}
+
 
 int
 main (int argc, char **argv)
@@ -890,12 +1104,18 @@ main (int argc, char **argv)
   RUN_TEST (test_uartbus_devices_read_address_specific_register_values);
   RUN_TEST (test_uartbus_shared_bus_scopes_results_to_the_started_device);
   RUN_TEST (test_registers_typed_helpers_read_ioin_version);
+  RUN_TEST (test_device_write_verification_succeeds_when_ifcnt_increments);
+  RUN_TEST (test_device_write_verification_reports_ifcnt_mismatch);
   RUN_TEST (test_driver_initialize_configures_serial_mode_defaults);
   RUN_TEST (test_facade_exposes_driver_and_registers_on_internal_bus);
   RUN_TEST (test_driver_microsteps_follows_legacy_power_of_two_flooring);
   RUN_TEST (test_facade_nonblocking_and_subobjects_share_bus_state);
   RUN_TEST (test_facade_getSettings_tracks_subobject_register_changes);
   RUN_TEST (test_facade_getMicrostepsPerStep_tracks_driver_changes_when_configured);
+  RUN_TEST (test_facade_enableWriteVerification_uses_ifcnt_verification);
+  RUN_TEST (test_family_style_done_aliases_follow_result_ready_state);
+  RUN_TEST (test_recoverFromDeviceReset_replays_cached_configuration);
+  RUN_TEST (test_resyncReadableConfiguration_refreshes_cached_state_from_device);
 
   return UNITY_END ();
 }

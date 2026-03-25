@@ -17,6 +17,7 @@ public:
 
   void bind (UartBus &bus, uint8_t serial_address);
   void bind (UartBus &bus, const UartParameters &parameters);
+  void setParameters (const UartParameters &parameters);
 
   bool isBound () const;
   uint8_t serialAddress () const;
@@ -30,6 +31,11 @@ public:
   void poll () const;
   bool busy () const;
   bool resultReady () const;
+  bool
+  done () const
+  {
+    return resultReady ();
+  }
   Result<uint32_t> takeReadResult () const;
   Result<void> takeWriteResult () const;
 
