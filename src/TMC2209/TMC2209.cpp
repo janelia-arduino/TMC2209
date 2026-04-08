@@ -25,8 +25,14 @@ void TMC2209::setup(HardwareSerial & serial,
   SerialAddress serial_address)
 {
   hardware_serial_ptr_ = &serial;
+#if defined(ESP32)
+  // Avoid end() on ESP32 because it can leave the UART in a flaky state
+  // immediately before the first configuration writes.
+  hardware_serial_ptr_->begin(serial_baud_rate);
+#else
   hardware_serial_ptr_->end();
   hardware_serial_ptr_->begin(serial_baud_rate);
+#endif
 
   initialize(serial_baud_rate, serial_address);
 }
