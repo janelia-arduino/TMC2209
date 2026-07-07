@@ -1,2 +1,0 @@
-# Required by the android-esp32 component.
-CONFIG_FREERTOS_HZ=1000
